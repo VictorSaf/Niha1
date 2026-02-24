@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NIHA Agent Test Report — {{ scenario }}</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0a0f1a; color: #e2e8f0; margin: 0; padding: 24px; }
+  h1 { color: #38bdf8; margin-bottom: 4px; }
+  .meta { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+  .summary { display: flex; gap: 16px; margin-bottom: 32px; }
+  .badge { padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; }
+  .pass { background: #064e3b; color: #34d399; }
+  .fail { background: #450a0a; color: #f87171; }
+  .neutral { background: #1e293b; color: #94a3b8; }
+  .assertions { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+  .assertions th { background: #1e293b; padding: 10px 14px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b; }
+  .assertions td { padding: 10px 14px; border-bottom: 1px solid #1e293b; font-size: 13px; }
+  .assertions tr.pass td:first-child { color: #34d399; }
+  .assertions tr.fail td:first-child { color: #f87171; }
+  .screenshots { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .screenshot-card { background: #1e293b; border-radius: 8px; overflow: hidden; }
+  .screenshot-card img { width: 100%; display: block; }
+  .screenshot-card .label { padding: 8px 12px; font-size: 12px; color: #94a3b8; }
+  .screenshot-card .url { padding: 0 12px 8px; font-size: 11px; color: #475569; word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>NIHA Agent Test Report</h1>
+<div class="meta">Scenario: <strong>{{ scenario }}</strong> | Model: {{ model }} | {{ timestamp }} | {{ elapsed }}s elapsed</div>
+
+<div class="summary">
+  <div class="badge {{ 'pass' if success else 'fail' }}">
+    {{ '&#x2713; PASSED' if success else '&#x2717; FAILED' }}
+  </div>
+  <div class="badge neutral">{{ passed }}/{{ total }} assertions</div>
+  <div class="badge neutral">{{ screenshot_count }} screenshots</div>
+  <div class="badge neutral">{{ iteration_count }} agent iterations</div>
+</div>
+
+<h2>Assertions</h2>
+<table class="assertions">
+  <thead><tr><th>Status</th><th>Description</th><th>Expected</th><th>Actual</th></tr></thead>
+  <tbody>
+  {% for r in results %}
+  <tr class="{{ 'pass' if r.status == 'PASS' else 'fail' }}">
+    <td>{{ r.status }}</td>
+    <td>{{ r.description }}</td>
+    <td>{{ r.expected }}</td>
+    <td>{{ r.actual }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Screenshots ({{ screenshot_count }})</h2>
+<div class="screenshots">
+{% for ss in screenshots %}
+<div class="screenshot-card">
+  <img src="{{ ss.path }}" alt="{{ ss.label }}" loading="lazy">
+  <div class="label">{{ ss.label }}</div>
+  <div class="url">{{ ss.url }}</div>
+</div>
+{% endfor %}
+</div>
+</body>
+</html>
