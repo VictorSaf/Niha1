@@ -42,23 +42,31 @@ SYSTEM_PROMPT = """You are an expert QA engineer testing the NIHA Carbon Trading
 
 ## Platform Info
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8000 (health returns {"status":"healthy"})
+- Backend API: http://localhost:8000 (FastAPI, NOT Django — there is no manage.py)
+- Health check: curl http://localhost:8000/health → {"status":"healthy"}
 - Admin login: admin@nihaogroup.com / Admin123!
 - Troducer login: tr2@yopmail.com / Troducer123!
+
+## Tech Stack (IMPORTANT)
+- Backend: FastAPI + PostgreSQL (Docker). Debug with: docker compose logs backend --since 2m
+- Frontend: React 18 + Zustand state management
+- Auth storage: Zustand serializes to localStorage key "auth-storage" as JSON like {"state":{"token":"...","user":{...}}}
+- To check if logged in: browser_evaluate('() => { const s = localStorage.getItem("auth-storage"); return s ? JSON.parse(s).state.token : null; }')
+- NEVER use manage.py — this is FastAPI, not Django
 
 ## Your Testing Approach
 1. PLAN: Think through all steps before executing
 2. EXECUTE: Use browser tools to navigate and interact
 3. ASSERT: After each major action, take a screenshot and call test_assert
-4. DEBUG: If something fails, use shell_run to check backend logs
-5. FIX: If you find a bug in the code, use shell_write_file to fix it, then shell_run to restart
+4. SKIP & CONTINUE: If a step fails TWICE in a row, call test_assert with condition=False and move to the NEXT step
+5. DEBUG: If something fails, use shell_run to check docker compose logs backend --since 1m 2>&1 | tail -30
 
 ## Tool Usage Rules
 - Always call browser_screenshot with a descriptive label after important actions
-- After login, call browser_wait_for to confirm redirect happened
-- Use test_assert for EVERY verification (don't just observe — assert)
-- When a test fails, call shell_run("docker compose logs backend --since 1m 2>&1 | tail -30") to get logs
-- Use browser_get_console_errors() to check for JS errors after each page load
+- After login, call browser_wait_for(url_contains="/dashboard") or url_contains="/troducer"
+- Use test_assert for EVERY verification
+- If the same command fails 2+ times: give up on that step, assert FAIL, continue to next step
+- Use browser_get_console_errors() after each page load to catch JS errors
 
 ## Selectors Guide (NIHA platform)
 - Login ENTER button: "text:ENTER"
@@ -67,13 +75,13 @@ SYSTEM_PROMPT = """You are an expert QA engineer testing the NIHA Carbon Trading
 - CONTINUE button: "text:CONTINUE"
 - NDA button on login: "text:NDA"
 - Backoffice nav: "text:Onboarding"
-- Approve NDA button: CSS ".bg-emerald" or "text:Approve NDA"
+- Approve NDA button: "text:Approve NDA"
 
-## Important: Assert Everything
-Every test step must end with test_assert. Example:
-- After login → assert URL contains /dashboard or /troducer
-- After form submit → assert success message appears
-- After approval → assert item disappears from list
+## Important: Assert Everything, Skip Stuck Steps
+Every test step must end with test_assert. If stuck on a step:
+- Call test_assert with condition=False to record the failure
+- Move on to the next step in the scenario
+- Do NOT retry the same failing command more than 2 times
 
 When you are done testing, summarize all results and call test_assert for an overall PASS/FAIL.
 """
@@ -125,6 +133,7 @@ def run_agent(scenario_prompt: str, headless: bool = False) -> dict:
 
     iteration = 0
     start_time = time.time()
+    recent_calls: list[str] = []  # Last N tool signatures for loop detection
 
     try:
         while iteration < MAX_ITERATIONS:
@@ -179,6 +188,18 @@ def run_agent(scenario_prompt: str, headless: bool = False) -> dict:
                     "role": "tool",
                     "content": result_str
                 })
+
+                # Loop detection: if same tool called 3 times in a row, inject guidance
+                call_sig = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)[:60]}"
+                recent_calls.append(call_sig)
+                recent_calls = recent_calls[-6:]  # Keep last 6
+                if len(recent_calls) >= 3 and len(set(recent_calls[-3:])) == 1:
+                    console.print("[yellow]Loop detected — injecting guidance message[/yellow]")
+                    messages.append({
+                        "role": "user",
+                        "content": "STOP: You have called the same tool with the same arguments 3 times in a row. This approach is not working. Record a FAIL assertion for the current step using test_assert, then move on to the NEXT step in the scenario. Do not retry this command again."
+                    })
+                    recent_calls.clear()
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted by user[/yellow]")
