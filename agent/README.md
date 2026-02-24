@@ -6,7 +6,9 @@ Ollama-powered browser testing agent for the NIHA Carbon Trading Platform.
 
 ```bash
 cd agent
-pip3 install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 python3 -m playwright install chromium
 
 # Run a scenario
