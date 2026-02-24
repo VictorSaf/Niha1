@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Eye, Trash2, Send, CheckCircle2 } from 'lucide-react';
+import { Users, Eye, Trash2, CheckCircle2 } from 'lucide-react';
 import { Button, Badge } from '../common';
 import { Typography } from '../common/Typography';
 import { clientStatusVariant } from '../../utils/roleBadge';
@@ -35,7 +35,6 @@ interface ContactRequestsTabProps {
   onOpenNDA: (requestId: string) => Promise<void>;
   onIpLookup: (ip: string) => void;
   onOpenUserNDA?: (userId: string) => Promise<void>;
-  onSendNDA?: (requestId: string) => void;
   onApproveIntroducer?: (userId: string) => void;
   onSendBuyerNDA?: (requestId: string) => void;
   onAcceptNDA?: (requestId: string) => Promise<void>;
@@ -54,7 +53,6 @@ export function ContactRequestsTab({
   onOpenNDA,
   onOpenUserNDA,
   onIpLookup,
-  onSendNDA,
   onApproveIntroducer,
   onSendBuyerNDA,
   onAcceptNDA,
@@ -168,7 +166,7 @@ export function ContactRequestsTab({
                     ) : null}
                     {/* Introducer NDA status badge */}
                     {request.introducerNdaStatus === 'sent' && (
-                      <Badge variant="warning" className="shrink-0 text-xs">NDA Sent</Badge>
+                      <Badge variant="warning" className="shrink-0 text-xs">Awaiting NDA</Badge>
                     )}
                     {request.introducerNdaStatus === 'uploaded' && (
                       <Badge variant="success" className="shrink-0 text-xs">NDA Uploaded</Badge>
@@ -179,7 +177,7 @@ export function ContactRequestsTab({
                     {/* Buyer NDA status badges */}
                     {request.requestFlow === 'buyer' && request.buyerNdaStatus === 'sent' && (
                       <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                        NDA Sent
+                        Awaiting NDA
                       </span>
                     )}
                     {request.requestFlow === 'buyer' && request.buyerNdaStatus === 'uploaded' && (
@@ -201,18 +199,6 @@ export function ContactRequestsTab({
                     {/* Introducer requests: conditional buttons based on NDA status */}
                     {isIntroducerWithStatus(request) ? (
                       <>
-                        {request.introducerNdaStatus === 'not_sent' && onSendNDA && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => onSendNDA(request.id)}
-                            loading={actionLoading === `send-nda-${request.id}`}
-                            aria-label={`Send NDA to ${ariaName(request)}`}
-                          >
-                            <Send className="w-3.5 h-3.5 mr-1" />
-                            Send NDA
-                          </Button>
-                        )}
                         {request.introducerNdaStatus === 'attached' && (
                           <Button
                             variant="primary"
@@ -267,7 +253,7 @@ export function ContactRequestsTab({
                             )}
                             {request.buyerNdaStatus === 'sent' && (
                               <span className="px-2.5 py-1 text-xs font-medium text-blue-400">
-                                NDA Sent
+                                Awaiting NDA
                               </span>
                             )}
                             {request.buyerNdaStatus === 'uploaded' && request.buyerUserId && onApproveBuyerNDA && (

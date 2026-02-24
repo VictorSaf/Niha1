@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIHA — Design Preview V4+</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f9f7f3;
+  --ink: #1a1714;
+  --ink-light: #8a8076;
+  --ink-faint: #d4cfc8;
+  --accent: #2d5a8e;
+  --accent-light: rgba(45,90,142,0.08);
+  --rule: #e8e3db;
+  --ghost: rgba(45,90,142,0.06);
+}
+
+body {
+  background: #1a1a1f;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 24px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.meta-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #444;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+/* ── THE DOCUMENT ── */
+.document {
+  width: 100%;
+  max-width: 860px;
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+}
+
+/* ── COVER BAND ── */
+.cover-band {
+  padding: 64px 72px 56px;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-ghost {
+  position: absolute;
+  right: 56px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 9rem;
+  color: var(--ghost);
+  letter-spacing: -6px;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.doc-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.doc-eyebrow::after {
+  content: '';
+  flex: 0 0 32px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.doc-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 2.6rem;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 16px;
+  max-width: 520px;
+}
+.doc-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.doc-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 0.85rem;
+  color: var(--ink-light);
+  letter-spacing: 0.2px;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.cover-meta {
+  margin-top: 36px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.cover-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cover-meta-key {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.cover-meta-val {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-light);
+}
+.cover-meta-sep {
+  width: 1px;
+  height: 28px;
+  background: var(--rule);
+}
+
+/* ── BODY ── */
+.doc-body {
+  padding: 0 72px;
+}
+
+/* ── SECTION ── */
+.section {
+  padding: 52px 0 0;
+  position: relative;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 36px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.section-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  opacity: 0.7;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ── QA PAIR ── */
+.qa-pair {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-bottom: 36px;
+  position: relative;
+}
+
+.q-marker {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  color: var(--accent);
+  opacity: 0.5;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.q-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.92rem;
+  color: var(--ink);
+  line-height: 1.55;
+  margin-bottom: 12px;
+  max-width: 600px;
+  letter-spacing: -0.2px;
+}
+
+.a-text {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 0.82rem;
+  color: #3d3730;
+  line-height: 1.8;
+  max-width: 640px;
+  padding-left: 20px;
+  border-left: 1.5px solid var(--rule);
+}
+
+/* Key term highlight */
+.a-text strong {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Data callout inline */
+.data-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid rgba(45,90,142,0.15);
+  padding: 2px 7px;
+  border-radius: 2px;
+  vertical-align: middle;
+  white-space: nowrap;
+  margin: 0 2px;
+}
+
+/* Metrics strip */
+.metrics-strip {
+  display: flex;
+  gap: 0;
+  margin: 20px 0 0 20px;
+  border: 1px solid var(--rule);
+}
+.metric-cell {
+  flex: 1;
+  padding: 14px 18px;
+  border-right: 1px solid var(--rule);
+}
+.metric-cell:last-child { border-right: none; }
+.metric-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  display: block;
+  line-height: 1;
+}
+.metric-val span { font-size: 0.7rem; font-weight: 400; color: var(--ink-light); }
+.metric-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  display: block;
+  margin-top: 5px;
+}
+
+/* Note block */
+.note-block {
+  margin: 16px 0 0 20px;
+  padding: 12px 16px;
+  background: var(--accent-light);
+  border-left: 2px solid var(--accent);
+}
+.note-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 5px;
+  opacity: 0.7;
+}
+.note-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 300;
+  color: var(--accent);
+  line-height: 1.6;
+}
+
+/* Section divider */
+.section-divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 52px 0 0;
+}
+
+/* ── FOOTER ── */
+.doc-footer {
+  margin-top: 56px;
+  padding: 20px 72px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-brand {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.footer-page {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--ink-faint);
+}
+.footer-conf {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+</style>
+</head>
+<body>
+
+<div class="meta-label">Design Preview — Variant IV Extended</div>
+
+<div class="document">
+
+  <!-- COVER -->
+  <div class="cover-band">
+    <div class="cover-ghost">DQ</div>
+    <div class="doc-eyebrow">Client Due Diligence</div>
+    <h1 class="doc-title">Platform <em>Questions</em><br>& Answers</h1>
+    <p class="doc-subtitle">Responses to institutional and professional client enquiries regarding NIHA Carbon Trading Platform operations, compliance, and settlement infrastructure.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-key">Issued</span>
+        <span class="cover-meta-val">February 2026</span>
+      </div>
+      <div class="cover-meta-sep"></div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-key">Classification</span>
+        <span class="cover-meta-val">Confidential</span>
+      </div>
+      <div class="cover-meta-sep"></div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-key">Platform</span>
+        <span class="cover-meta-val">NIHA Carbon</span>
+      </div>
+      <div class="cover-meta-sep"></div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-key">Markets</span>
+        <span class="cover-meta-val">EUA · CEA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="doc-body">
+
+    <!-- SECTION 1 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">01 ——</span>
+        <span class="section-title">Platform Legitimacy & Regulation</span>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Is the platform regulated by ESMA or national financial authorities?</p>
+        <div class="a-text">
+          NIHA Carbon operates in strict compliance with <strong>AMLO Cap. 615</strong> (Anti-Money Laundering and Counter-Terrorist Financing Ordinance), implementing mandatory <strong>KYC/AML procedures</strong> for all clients prior to onboarding. All records are retained for <span class="data-tag">7 years</span> post-termination. Specific regulatory registration details are available upon request via our Compliance Pack.
+        </div>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Does it operate as an authorised exchange, broker, or intermediary under EU ETS rules?</p>
+        <div class="a-text">
+          NIHA Carbon operates as a <strong>trading platform and intermediary</strong>, facilitating EUA and CEA exchange through a structured order book and settlement infrastructure. Spot EUA transactions are currently excluded from MiFID II financial instrument classification under EU ETS regulations — clients should verify their own regulatory obligations independently.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- SECTION 2 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">02 ——</span>
+        <span class="section-title">Security & Settlement Processes</span>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">What security measures are in place — KYC, AML, fraud prevention, transaction monitoring?</p>
+        <div class="a-text">
+          The platform implements a <strong>5-step KYC process</strong> including PEP declarations for all directors and UBOs, carbon market experience assessment, <strong>source of funds</strong> declaration, tax residency and CRS disclosures, and 9 mandatory legal declarations. All first deposits are subject to a mandatory <span class="data-tag">3-day AML hold</span>; large deposits <span class="data-tag">≥ €500K</span> trigger enhanced due diligence. Every action generates an immutable audit ticket.
+        </div>
+        <div class="note-block">
+          <div class="note-label">Enhanced DD</div>
+          <div class="note-text">Deposits ≥ €500,000 are subject to extended AML review. First-time deposits from new clients are held for 3 business days regardless of amount.</div>
+        </div>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">What are the settlement timelines and how are transfers tracked?</p>
+        <div class="a-text">
+          Settlement progresses through <strong>five auditable stages</strong>: Pending → Transfer Initiated → In Transit → At Custody → Settled. Each stage corresponds to a real-world registry step. Overdue alerts trigger at <span class="data-tag">+1 biz day</span> (warning) and <span class="data-tag">+3 biz days</span> (critical).
+        </div>
+        <div class="metrics-strip">
+          <div class="metric-cell">
+            <span class="metric-val">T+3</span>
+            <span class="metric-lbl">CEA Cash</span>
+          </div>
+          <div class="metric-cell">
+            <span class="metric-val">T+5</span>
+            <span class="metric-lbl">EUA Delivery</span>
+          </div>
+          <div class="metric-cell">
+            <span class="metric-val">T+10</span>
+            <span class="metric-lbl">Full Cycle</span>
+          </div>
+          <div class="metric-cell">
+            <span class="metric-val">5<span> stages</span></span>
+            <span class="metric-lbl">Audit Trail</span>
+          </div>
+          <div class="metric-cell">
+            <span class="metric-val">7<span> yrs</span></span>
+            <span class="metric-lbl">Retention</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- SECTION 3 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">03 ——</span>
+        <span class="section-title">Fees & Pricing Transparency</span>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">What are the platform's trading fees, and are there any hidden costs?</p>
+        <div class="a-text">
+          The fee structure is flat and fully transparent. <strong>CEA cash purchases</strong>: <span class="data-tag">1.5%</span> of transaction value. <strong>CEA/EUA swaps</strong>: <span class="data-tag">2.0%</span> of transaction value. There are no custody fees, maintenance fees, or withdrawal surcharges. Fund return requests are processed within <span class="data-tag">5 biz days</span> at no additional cost.
+        </div>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Is pricing transparent and linked to EUA spot benchmarks?</p>
+        <div class="a-text">
+          Yes. <strong>EUA and CEA prices</strong> are sourced in real-time from carboncredits.com and Trading Economics. The CEA/EUA swap ratio is derived directly as <strong>CEA price ÷ EUA price</strong> — ensuring full benchmark linkage. Price history is accessible to all authenticated users.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- SECTION 4 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">04 ——</span>
+        <span class="section-title">Counterparty & Transaction Risk</span>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Does the platform act as principal or only as intermediary?</p>
+        <div class="a-text">
+          NIHA Carbon acts as <strong>intermediary only</strong>. The platform facilitates trades through an order book mechanism. Liquidity is provided by verified <strong>Market Maker entities</strong> — which serve as counterparties when trading against their orders. NIHA Carbon does not hold or sell its own EUA inventory.
+        </div>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Does the platform require pre-funding, or does it support DvP settlement?</p>
+        <div class="a-text">
+          The platform operates on a <strong>pre-funding model</strong>: wire transfers are announced in advance, confirmed, and cleared through AML review before trading access is granted. This provides the equivalent protection of a <strong>Delivery vs Payment</strong> arrangement — funds are verified and secured before certificates are transferred through the settlement chain.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- SECTION 5 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">05 ——</span>
+        <span class="section-title">Verification & Audit Trail</span>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Will you receive registry-level confirmation of transfer into your nominated EU ETS account?</p>
+        <div class="a-text">
+          Yes. Upon reaching <strong>Settled</strong> status, clients receive registry-level confirmation of EUA transfer into their nominated EU ETS account. The <strong>AT_CUSTODY</strong> stage confirms certificates are held pending final delivery; <strong>SETTLED</strong> confirms the registry transfer is complete.
+        </div>
+      </div>
+
+      <div class="qa-pair">
+        <div class="q-marker">Question</div>
+        <p class="q-text">Is there a complete audit trail for all transactions carried out on the platform?</p>
+        <div class="a-text">
+          Every deposit, trade, settlement, and administrative action generates an <strong>immutable audit ticket</strong> with action type, entity, timestamp, and reference. Settlement statuses are timestamped at each of the five transition stages. All KYC documents and declarations are stored with a <span class="data-tag">7-year retention</span> policy per AMLO Cap. 615. Full transaction history is available for export at any time.
+        </div>
+        <div class="note-block">
+          <div class="note-label">Compliance Pack</div>
+          <div class="note-text">For regulatory certifications, AML policy documents, and platform agreements — contact compliance@nihaogroup.com</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /doc-body -->
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <span class="footer-brand">NIHA Carbon</span>
+    <div class="footer-right">
+      <span class="footer-conf">Confidential · Not for distribution</span>
+      <span class="footer-page">Feb 2026</span>
+    </div>
+  </div>
+
+</div><!-- /document -->
+
+</body>
+</html>

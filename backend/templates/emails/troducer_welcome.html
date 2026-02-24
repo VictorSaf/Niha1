@@ -1,0 +1,31 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="icon-header success">&#x1F91D;</div>
+<h1>Welcome Aboard, {{ name }}!</h1>
+<p>Your Troducer account on the Nihao Carbon Trading Platform has been created.
+You can log in immediately using the credentials provided to you.</p>
+
+<div class="callout success">
+    <p class="callout-title">What's Available to You</p>
+    <p>As a Troducer, you can refer clients to Nihao Group's carbon trading platform
+    and earn commissions on successful referrals.</p>
+</div>
+
+<div class="feature-list">
+    <div class="feature-item">
+        <div class="feature-icon">&#x1F517;</div>
+        <div class="feature-text">Generate unique referral codes for your clients</div>
+    </div>
+    <div class="feature-item">
+        <div class="feature-icon">&#x1F4CA;</div>
+        <div class="feature-text">Track referral activity in real time</div>
+    </div>
+    <div class="feature-item">
+        <div class="feature-icon">&#x1F4B0;</div>
+        <div class="feature-text">Earn commissions on successful referrals</div>
+    </div>
+</div>
+
+<a href="{{ login_url }}" class="btn btn-primary">Go to Introducer Portal</a>
+{% endblock %}

@@ -93,8 +93,8 @@ export function SetupPasswordPage() {
       // Store auth (user is now logged in)
       setAuth(user, access_token);
 
-      // If TRODUCER (intermediate introducer), show NDA upload step
-      if (user.role === 'TRODUCER') {
+      // TRODUCER or form-submitted PREINTRODUCER (nda_signed=false) → show NDA upload step
+      if (user.role === 'TRODUCER' || (user.role === 'PREINTRODUCER' && !user.ndaSigned)) {
         setStep('nda');
         return;
       }

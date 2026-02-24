@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIHA — Pure Minimal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #e8e8e8;
+  padding: 60px 24px;
+  font-family: 'Inter', sans-serif;
+}
+
+.doc {
+  max-width: 740px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 80px 88px;
+  color: #111;
+}
+
+/* ── COVER ── */
+.cover {
+  padding-bottom: 64px;
+  border-bottom: 1px solid #111;
+}
+
+.cover-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 56px;
+}
+
+.brand {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.cover-meta {
+  text-align: right;
+  font-size: 0.7rem;
+  font-weight: 300;
+  color: #888;
+  line-height: 1.8;
+}
+
+.doc-title {
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  max-width: 480px;
+}
+
+.doc-title strong {
+  font-weight: 600;
+}
+
+.doc-desc {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: #666;
+  line-height: 1.7;
+  max-width: 400px;
+}
+
+/* ── SECTION ── */
+.section {
+  padding-top: 52px;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.section-n {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.section-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── QA ── */
+.qa {
+  margin-bottom: 40px;
+}
+
+.q {
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.a {
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: #333;
+  padding-left: 24px;
+  border-left: 1px solid #ddd;
+}
+
+.a strong {
+  font-weight: 600;
+  color: #111;
+}
+
+/* ── RULE ── */
+.rule {
+  height: 1px;
+  background: #eee;
+  margin-top: 52px;
+}
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid #111;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-top">
+      <div class="brand">NIHA Carbon</div>
+      <div class="cover-meta">
+        Confidential<br>
+        February 2026
+      </div>
+    </div>
+    <h1 class="doc-title">Client Due<br><strong>Diligence</strong><br>Q&amp;A</h1>
+    <p class="doc-desc">Responses to institutional and professional client enquiries regarding platform operations, compliance, and settlement infrastructure.</p>
+  </div>
+
+  <!-- 01 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-n">01</span>
+      <span class="section-name">Legitimacy &amp; Regulation</span>
+    </div>
+
+    <div class="qa">
+      <p class="q">Is the platform regulated by ESMA or national financial authorities?</p>
+      <p class="a">NIHA Carbon operates in compliance with <strong>AMLO Cap. 615</strong>, implementing mandatory KYC/AML procedures for all clients prior to onboarding. All records are retained for <strong>7 years</strong> post-termination. Regulatory registration details are available upon request via our Compliance Pack.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">Does it operate as an authorised exchange, broker, or intermediary?</p>
+      <p class="a">NIHA Carbon operates as a <strong>trading platform and intermediary</strong>, facilitating EUA and CEA exchange through a structured order book and settlement infrastructure. Spot EUA transactions are currently excluded from MiFID II financial instrument classification under EU ETS regulations.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">How long has the platform been operating, and what is its trading volume history?</p>
+      <p class="a">Volume figures and operational history are available upon request under NDA. Please contact your account representative for detailed trading statistics.</p>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- 02 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-n">02</span>
+      <span class="section-name">Security &amp; Settlement</span>
+    </div>
+
+    <div class="qa">
+      <p class="q">How are EUA transfers executed on the platform?</p>
+      <p class="a">Settlement progresses through <strong>five auditable stages</strong>: Pending → Transfer Initiated → In Transit → At Custody → Settled. Each stage corresponds to a real-world registry step with timestamped confirmation. Overdue alerts trigger at +1 and +3 business days past expected settlement.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">What security measures are in place — KYC, AML, transaction monitoring?</p>
+      <p class="a">The platform implements a <strong>5-step KYC process</strong> including PEP declarations for all directors and UBOs, source of funds declaration, CRS disclosures, and 9 mandatory legal declarations. First deposits are subject to a <strong>3-day AML hold</strong>; deposits of <strong>€500,000 or more</strong> trigger enhanced due diligence. Every action generates an immutable audit ticket.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">What are the standard settlement timelines?</p>
+      <p class="a">CEA cash purchase: <strong>T+3 business days.</strong> Swap CEA leg: <strong>T+2.</strong> Swap EUA leg: <strong>T+5.</strong> Full cycle purchase to EUA delivery: <strong>T+10 business days.</strong> Fund return requests are processed within 5 business days.</p>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- 03 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-n">03</span>
+      <span class="section-name">Fees &amp; Transparency</span>
+    </div>
+
+    <div class="qa">
+      <p class="q">What are the platform's trading fees? Are there any hidden costs?</p>
+      <p class="a">The fee structure is flat and fully transparent. CEA cash purchases: <strong>1.5%</strong> of transaction value. CEA/EUA swaps: <strong>2.0%</strong> of transaction value. There are no custody fees, maintenance fees, withdrawal surcharges, or registry transfer fees.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">Is pricing linked to EUA spot/futures benchmarks?</p>
+      <p class="a">Yes. EUA and CEA prices are sourced in real-time from carboncredits.com and Trading Economics. The CEA/EUA swap ratio is derived directly as <strong>CEA price ÷ EUA price</strong>, ensuring full benchmark linkage. Price history is accessible to all authenticated users.</p>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- 04 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-n">04</span>
+      <span class="section-name">Counterparty Risk</span>
+    </div>
+
+    <div class="qa">
+      <p class="q">Does the platform act as principal or only as intermediary?</p>
+      <p class="a">NIHA Carbon acts as <strong>intermediary only</strong>. Liquidity is provided by verified <strong>Market Maker entities</strong> which serve as counterparties when trading against their orders. NIHA Carbon does not hold or sell its own EUA inventory.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">Does the platform require pre-funding, or does it support DvP settlement?</p>
+      <p class="a">The platform operates on a <strong>pre-funding model</strong>: client wire transfers are announced in advance, confirmed, and cleared through AML review before trading access is granted. This provides equivalent protection to a Delivery vs Payment arrangement — funds are verified and secured before certificates enter the settlement chain.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">What legal recourse is available in case of dispute?</p>
+      <p class="a">Governing law, dispute resolution mechanism, and jurisdiction are specified in the <strong>NIHA Platform Agreement</strong> executed during onboarding. Contact legal@nihaogroup.com for the current version.</p>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- 05 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-n">05</span>
+      <span class="section-name">Verification &amp; Audit Trail</span>
+    </div>
+
+    <div class="qa">
+      <p class="q">Can the platform provide evidence of EUAs held before purchase?</p>
+      <p class="a">Real-time EUA and CEA holdings are maintained at the entity level and available to authenticated clients via the platform dashboard. For institutional pre-trade proof of holdings, contact your account representative.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">Will you receive registry-level confirmation of transfer into your nominated EU ETS account?</p>
+      <p class="a">Yes. Upon reaching <strong>Settled</strong> status, clients receive registry-level confirmation of EUA transfer into their nominated EU ETS account. The At Custody stage confirms certificates are held pending final delivery; Settled confirms the registry transfer is complete.</p>
+    </div>
+
+    <div class="qa">
+      <p class="q">Is there a complete audit trail for all transactions?</p>
+      <p class="a">Every deposit, trade, settlement, and administrative action generates an <strong>immutable audit ticket</strong> with action type, entity, timestamp, and reference. All KYC documents and declarations are stored with a <strong>7-year retention policy</strong> per AMLO Cap. 615. Full transaction history is available for export at any time.</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>NIHA Carbon Trading Platform</span>
+    <span>Confidential — Not for distribution</span>
+  </div>
+
+</div>
+</body>
+</html>

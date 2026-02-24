@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NIHA — Information Presentation Simulation (BEFORE vs AFTER)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+              950: '#020617',
+            },
+            emerald: {
+              400: '#34d399',
+              500: '#10b981',
+            },
+            amber: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+            },
+            blue: {
+              400: '#60a5fa',
+              500: '#3b82f6',
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .value-text-fluid { font-family: ui-monospace, monospace; font-weight: 700; font-variant-numeric: tabular-nums; font-size: clamp(0.75rem, 8cqi, 1.5rem); }
+  </style>
+</head>
+<body class="bg-navy-900 text-white p-8 font-sans">
+  <div class="max-w-6xl mx-auto space-y-16">
+    <header class="text-center border-b border-navy-700 pb-8">
+      <h1 class="text-3xl font-bold">Information Presentation Simulation</h1>
+      <p class="text-navy-400 mt-2">BEFORE (plat) vs AFTER (containere evidente, valori bold, scannable)</p>
+    </header>
+
+    <!-- Example 1: Stat / Summary -->
+    <section>
+      <h2 class="text-xl font-bold text-emerald-400 mb-4">Exemplu 1: Stat cards (ex. Balance, Holdings)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-sm text-navy-500 uppercase tracking-wider mb-3">❌ BEFORE (plat)</h3>
+          <div class="bg-navy-800/50 rounded-xl p-6 border border-navy-700 space-y-4">
+            <p class="text-sm text-navy-300">Cash (EUR): €12,345.67. Total deposited: €15,000.00. CEA Holdings: 1,234 tCO₂. EUA Holdings: 567 tCO₂.</p>
+            <p class="text-sm text-navy-300">Portfolio value: €98,765.43. Pending: €2,000.</p>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm text-emerald-400 uppercase tracking-wider mb-3">✅ AFTER (containere, valori evidente)</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4 flex flex-col">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">Cash (EUR)</span>
+              <span class="value-text-fluid text-white mt-1">€12,345.67</span>
+              <span class="text-xs text-navy-500 mt-1">Total deposited: €15,000</span>
+            </div>
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4 flex flex-col">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">CEA Holdings</span>
+              <span class="value-text-fluid text-amber-400 mt-1">1,234 <span class="text-sm text-navy-500">tCO₂</span></span>
+            </div>
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4 flex flex-col">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">EUA Holdings</span>
+              <span class="value-text-fluid text-blue-400 mt-1">567 <span class="text-sm text-navy-500">tCO₂</span></span>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 rounded-xl border border-emerald-500/30 p-4 flex flex-col col-span-2">
+              <span class="text-xs text-emerald-300/70 uppercase tracking-wider">Total Portfolio Value</span>
+              <span class="value-text-fluid text-white mt-1">€98,765.43</span>
+              <span class="text-xs text-emerald-400 mt-1">+€2,000 pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Example 2: Comparison table -->
+    <section>
+      <h2 class="text-xl font-bold text-emerald-400 mb-4">Exemplu 2: Tabel comparație (ex. NIHA vs Direct)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-sm text-navy-500 uppercase tracking-wider mb-3">❌ BEFORE (plat)</h3>
+          <div class="bg-navy-800/50 rounded-xl p-6 border border-navy-700">
+            <table class="w-full text-sm">
+              <tr><td class="py-2 text-navy-400">Feature</td><td class="py-2">Direct EUA</td><td class="py-2">Via NIHA</td></tr>
+              <tr><td class="py-2 text-navy-400">Cost</td><td class="py-2">€81/t</td><td class="py-2">€71-74/t</td></tr>
+              <tr><td class="py-2 text-navy-400">Settlement</td><td class="py-2">5-10 days</td><td class="py-2">T+2–T+5</td></tr>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm text-emerald-400 uppercase tracking-wider mb-3">✅ AFTER (coloană evidențiată, check icons)</h3>
+          <div class="bg-navy-800/50 rounded-xl overflow-hidden border border-navy-700">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs uppercase tracking-wider text-navy-400">
+                  <th class="pb-3 pr-4 text-left font-medium">Feature</th>
+                  <th class="pb-3 px-4 text-left font-medium">Direct EUA Purchase</th>
+                  <th class="pb-3 pl-4 text-left font-medium border-l-2 border-emerald-500 bg-emerald-500/5">Via NIHA (Recommended)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-navy-800">
+                  <td class="py-3 pr-4 text-navy-300 font-medium">Cost</td>
+                  <td class="py-3 px-4 text-navy-400">€81/t</td>
+                  <td class="py-3 pl-4 border-l-2 border-emerald-500 bg-emerald-500/5">
+                    <span class="flex items-center gap-2 text-emerald-300">✓ €71-74/t</span>
+                  </td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-3 pr-4 text-navy-300 font-medium">Settlement</td>
+                  <td class="py-3 px-4 text-navy-400">5-10 days</td>
+                  <td class="py-3 pl-4 border-l-2 border-emerald-500 bg-emerald-500/5">
+                    <span class="flex items-center gap-2 text-emerald-300">✓ T+2–T+5</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Example 3: List / Details -->
+    <section>
+      <h2 class="text-xl font-bold text-emerald-400 mb-4">Exemplu 3: Listă de detalii (ex. Key Advantages)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-sm text-navy-500 uppercase tracking-wider mb-3">❌ BEFORE (paragraf plat)</h3>
+          <div class="bg-navy-800/50 rounded-xl p-6 border border-navy-700">
+            <p class="text-sm text-navy-300">Price Premium 5-8%. Confidentiality: High. Regulatory: Medium. Structuring: High. Tax optimization available. All advantages via Nihao Platform.</p>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm text-emerald-400 uppercase tracking-wider mb-3">✅ AFTER (containere per item, valori bold)</h3>
+          <div class="rounded-xl p-6 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/40">
+            <h5 class="font-semibold mb-4 text-emerald-400">Key Advantages via Nihao Platform</h5>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="text-center p-3 rounded-lg bg-navy-800/50">
+                <div class="text-xl font-bold text-teal-300">5-8%</div>
+                <div class="text-xs text-navy-200">Price Premium</div>
+              </div>
+              <div class="text-center p-3 rounded-lg bg-navy-800/50">
+                <div class="text-xl font-bold text-amber-500">High</div>
+                <div class="text-xs text-navy-200">Confidentiality</div>
+              </div>
+              <div class="text-center p-3 rounded-lg bg-navy-800/50">
+                <div class="text-xl font-bold text-emerald-500">Medium</div>
+                <div class="text-xs text-navy-200">Regulatory</div>
+              </div>
+              <div class="text-center p-3 rounded-lg bg-navy-800/50">
+                <div class="text-xl font-bold text-blue-400">High</div>
+                <div class="text-xs text-navy-200">Structuring</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Example 4: Form / Section -->
+    <section>
+      <h2 class="text-xl font-bold text-emerald-400 mb-4">Exemplu 4: Formular sau secțiune configurare</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-sm text-navy-500 uppercase tracking-wider mb-3">❌ BEFORE (plat)</h3>
+          <div class="bg-navy-800/50 rounded-xl p-6 border border-navy-700">
+            <p class="text-sm text-navy-400">Max daily volume: 10000. Min order: 100. Fee: 0.5%.</p>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm text-emerald-400 uppercase tracking-wider mb-3">✅ AFTER (containere per câmp)</h3>
+          <div class="space-y-4">
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">Max Daily Volume</span>
+              <div class="text-xl font-mono font-bold text-white mt-1">10,000</div>
+            </div>
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">Min Order</span>
+              <div class="text-xl font-mono font-bold text-white mt-1">100</div>
+            </div>
+            <div class="bg-navy-800 rounded-xl border border-navy-700 p-4">
+              <span class="text-xs text-navy-400 uppercase tracking-wider">Fee</span>
+              <div class="text-xl font-mono font-bold text-emerald-400 mt-1">0.5%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-navy-700 pt-8 text-center text-navy-500 text-sm">
+      <p><strong>Implementare:</strong> Nicio modificare de cod până la aprobare.</p>
+      <p class="mt-2">Regulile sunt în <code class="text-emerald-400">.cursor/rules/information-presentation.mdc</code></p>
+    </footer>
+  </div>
+</body>
+</html>

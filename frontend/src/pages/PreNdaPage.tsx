@@ -18,7 +18,6 @@ export function PreNdaPage() {
     setError('');
     try {
       await contactApi.uploadIntroducerNDA(file);
-      useAuthStore.getState().logout();
       setSuccess(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed');
@@ -45,7 +44,7 @@ export function PreNdaPage() {
             You may close this page. No further action is required.
           </p>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => { useAuthStore.getState().logout(); navigate('/login'); }}
             className="mt-4 px-6 py-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-sm text-navy-300 hover:text-white transition-colors"
           >
             Back to Login

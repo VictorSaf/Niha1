@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIHA — Document Design Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0f0f13;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .page-title {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+  .page-title h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: -0.5px;
+  }
+  .page-title p {
+    color: #64748b;
+    margin-top: 8px;
+    font-size: 0.95rem;
+  }
+
+  .variants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .variant-card {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+    background: #13131a;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .variant-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 60px rgba(0,0,0,0.6);
+  }
+
+  .variant-label {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e293b;
+  }
+  .variant-label h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .variant-label .badge {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .doc-preview {
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* ============ VARIANT 1: BANKING CLASSIC ============ */
+  .v1-doc {
+    width: 100%;
+    background: #fff;
+    color: #111;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+  .v1-header {
+    background: #0a2342;
+    padding: 24px 28px 20px;
+    border-bottom: 3px solid #10b981;
+  }
+  .v1-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .v1-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+  .v1-logo span { color: #10b981; }
+  .v1-doc-type {
+    font-size: 0.65rem;
+    color: #64748b;
+    text-align: right;
+    line-height: 1.6;
+  }
+  .v1-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .v1-subtitle { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+  .v1-body { padding: 22px 28px; }
+  .v1-section-title {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #10b981;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .v1-qa { margin-bottom: 14px; }
+  .v1-q {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #0a2342;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .v1-a { font-size: 0.68rem; color: #475569; line-height: 1.6; }
+  .v1-highlight {
+    background: #f0fdf4;
+    border-left: 3px solid #10b981;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 0.66rem;
+    color: #047857;
+  }
+  .v1-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 10px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .v1-footer span { font-size: 0.6rem; color: #94a3b8; }
+
+  /* ============ VARIANT 2: LUXURY EDITORIAL ============ */
+  .v2-doc {
+    width: 100%;
+    background: #faf9f6;
+    font-family: 'Cormorant Garamond', serif;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+  .v2-header {
+    background: #faf9f6;
+    padding: 28px 32px 0;
+    border-bottom: 0.5px solid #c8b88a;
+    text-align: center;
+    position: relative;
+  }
+  .v2-overline {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.58rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c8b88a;
+    margin-bottom: 10px;
+  }
+  .v2-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #1a1208;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .v2-subtitle {
+    font-size: 0.85rem;
+    color: #8a7a5a;
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .v2-ornament {
+    color: #c8b88a;
+    font-size: 1.2rem;
+    letter-spacing: 8px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .v2-body { padding: 20px 32px; }
+  .v2-section-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #8a7a5a;
+    font-style: italic;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid #e8dfc8;
+    font-family: 'Cormorant Garamond', serif;
+  }
+  .v2-qa { margin-bottom: 14px; }
+  .v2-q {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #1a1208;
+    margin-bottom: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+  }
+  .v2-a { font-size: 0.75rem; color: #5a4a30; line-height: 1.7; }
+  .v2-pullquote {
+    border-left: 2px solid #c8b88a;
+    padding: 8px 14px;
+    margin: 10px 0;
+    font-size: 0.82rem;
+    font-style: italic;
+    color: #8a7a5a;
+  }
+  .v2-footer {
+    background: #f0ebe0;
+    border-top: 0.5px solid #c8b88a;
+    padding: 10px 32px;
+    text-align: center;
+  }
+  .v2-footer span { font-family: 'Inter', sans-serif; font-size: 0.58rem; color: #8a7a5a; letter-spacing: 1px; }
+
+  /* ============ VARIANT 3: MODERN FINTECH ============ */
+  .v3-doc {
+    width: 100%;
+    background: #070b14;
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', sans-serif;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    border: 1px solid #1e293b;
+  }
+  .v3-header {
+    padding: 24px 28px;
+    background: linear-gradient(135deg, #0d1b35 0%, #070b14 100%);
+    border-bottom: 1px solid #1e3a5f;
+    position: relative;
+    overflow: hidden;
+  }
+  .v3-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .v3-chip {
+    display: inline-block;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #10b981;
+    font-size: 0.6rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .v3-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .v3-meta {
+    font-size: 0.62rem;
+    color: #475569;
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .v3-meta span { display: flex; align-items: center; gap: 4px; }
+  .v3-dot { width: 4px; height: 4px; border-radius: 50%; background: #10b981; display: inline-block; }
+  .v3-body { padding: 20px 28px; }
+  .v3-section-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.2);
+    color: #10b981;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .v3-qa { margin-bottom: 14px; padding: 12px; background: #0d1526; border-radius: 6px; border: 1px solid #1e293b; }
+  .v3-q { font-size: 0.68rem; font-weight: 600; color: #94a3b8; margin-bottom: 6px; line-height: 1.4; }
+  .v3-a { font-size: 0.67rem; color: #cbd5e1; line-height: 1.6; font-family: 'DM Sans', sans-serif; }
+  .v3-stat-row {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .v3-stat {
+    flex: 1;
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .v3-stat-val { font-size: 0.85rem; font-weight: 700; color: #10b981; display: block; }
+  .v3-stat-lbl { font-size: 0.55rem; color: #475569; display: block; margin-top: 2px; letter-spacing: 0.5px; }
+  .v3-footer {
+    background: #050810;
+    border-top: 1px solid #1e293b;
+    padding: 10px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .v3-footer span { font-size: 0.6rem; color: #334155; }
+
+  /* ============ VARIANT 4: SWISS MINIMAL ============ */
+  .v4-doc {
+    width: 100%;
+    background: #ffffff;
+    font-family: 'Inter', sans-serif;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+  }
+  .v4-top-bar { height: 4px; background: #000; }
+  .v4-header {
+    padding: 28px 32px 22px;
+    border-bottom: 1px solid #000;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .v4-logo-block {}
+  .v4-logo { font-size: 0.9rem; font-weight: 700; color: #000; letter-spacing: 3px; text-transform: uppercase; }
+  .v4-tagline { font-size: 0.58rem; color: #666; margin-top: 3px; letter-spacing: 1px; }
+  .v4-doc-info { text-align: right; }
+  .v4-doc-title { font-size: 0.65rem; font-weight: 600; color: #000; letter-spacing: 0.5px; text-transform: uppercase; }
+  .v4-doc-sub { font-size: 0.58rem; color: #999; margin-top: 2px; }
+  .v4-body { padding: 24px 32px; }
+  .v4-section-marker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .v4-num { font-size: 1.6rem; font-weight: 300; color: #e5e5e5; line-height: 1; }
+  .v4-section-name { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #000; }
+  .v4-rule { flex: 1; height: 1px; background: #e5e5e5; }
+  .v4-qa { margin-bottom: 14px; display: grid; grid-template-columns: 3fr 5fr; gap: 12px; }
+  .v4-q { font-size: 0.67rem; font-weight: 600; color: #000; line-height: 1.5; }
+  .v4-a { font-size: 0.66rem; color: #444; line-height: 1.65; }
+  .v4-divider { height: 1px; background: #e5e5e5; margin: 14px 0; }
+  .v4-footer {
+    border-top: 2px solid #000;
+    padding: 10px 32px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .v4-footer span { font-size: 0.58rem; color: #999; letter-spacing: 0.5px; }
+
+  /* ============ VARIANT 5: PREMIUM DARK ============ */
+  .v5-doc {
+    width: 100%;
+    background: #12100e;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    border: 1px solid #2a2218;
+  }
+  .v5-header {
+    padding: 26px 30px;
+    background: linear-gradient(135deg, #1a1208 0%, #12100e 100%);
+    border-bottom: 1px solid #2a2218;
+    position: relative;
+  }
+  .v5-gold-line { height: 1px; background: linear-gradient(90deg, #c8a84b, transparent); margin-bottom: 18px; }
+  .v5-header-inner { display: flex; justify-content: space-between; align-items: flex-start; }
+  .v5-brand { }
+  .v5-logo { font-size: 1rem; font-weight: 700; color: #f5e6c8; letter-spacing: 2px; font-family: 'Space Grotesk', sans-serif; }
+  .v5-divider-text { font-size: 0.58rem; color: #c8a84b; letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
+  .v5-badge {
+    border: 1px solid #c8a84b;
+    color: #c8a84b;
+    font-size: 0.58rem;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+  .v5-title-block { margin-top: 16px; }
+  .v5-title { font-size: 1.1rem; font-weight: 600; color: #f5e6c8; letter-spacing: -0.3px; font-family: 'Playfair Display', serif; }
+  .v5-subtitle { font-size: 0.7rem; color: #8a7a5a; margin-top: 4px; }
+  .v5-body { padding: 22px 30px; }
+  .v5-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .v5-section-num { font-size: 0.6rem; color: #c8a84b; font-weight: 600; letter-spacing: 2px; }
+  .v5-section-name { font-size: 0.65rem; font-weight: 600; color: #c8a84b; letter-spacing: 1.5px; text-transform: uppercase; }
+  .v5-section-line { flex: 1; height: 1px; background: linear-gradient(90deg, #2a2218, transparent); }
+  .v5-qa { margin-bottom: 14px; background: #1a1612; border: 1px solid #2a2218; padding: 12px 14px; border-radius: 4px; }
+  .v5-q { font-size: 0.68rem; font-weight: 500; color: #c8a84b; margin-bottom: 6px; line-height: 1.4; font-style: italic; }
+  .v5-a { font-size: 0.67rem; color: #a89880; line-height: 1.65; }
+  .v5-metric-row { display: flex; gap: 8px; margin-top: 10px; }
+  .v5-metric {
+    flex: 1; text-align: center;
+    border-top: 1px solid #c8a84b; padding-top: 8px;
+  }
+  .v5-metric-val { font-size: 0.9rem; font-weight: 700; color: #f5e6c8; display: block; font-family: 'Space Grotesk', sans-serif; }
+  .v5-metric-lbl { font-size: 0.55rem; color: #8a7a5a; display: block; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .v5-footer {
+    border-top: 1px solid #2a2218;
+    padding: 10px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .v5-footer-line { height: 1px; background: linear-gradient(90deg, transparent, #c8a84b, transparent); margin-bottom: 10px; }
+  .v5-footer span { font-size: 0.6rem; color: #4a3e2a; letter-spacing: 0.5px; }
+
+  /* Select button */
+  .select-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-top: 1px solid #1e293b;
+  }
+  .select-btn:hover { color: #f1f5f9; background: #1e293b; }
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>NIHA Carbon — Document Design Options</h1>
+  <p>Alege stilul preferat pentru documentele oficiale ale platformei</p>
+</div>
+
+<div class="variants-grid">
+
+  <!-- VARIANT 1: BANKING CLASSIC -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <h3>Opțiunea 1 — Banking Classic</h3>
+      <span class="badge" style="background:#0a2342;color:#10b981;">Corporate</span>
+    </div>
+    <div class="doc-preview">
+      <div class="v1-doc">
+        <div class="v1-header">
+          <div class="v1-header-top">
+            <div class="v1-logo">NIHA <span>CARBON</span></div>
+            <div class="v1-doc-type">CONFIDENTIAL<br>February 2026<br>Page 1 of 6</div>
+          </div>
+          <div class="v1-title">Client Due Diligence — Platform Q&A</div>
+          <div class="v1-subtitle">Responses to institutional investor enquiries</div>
+        </div>
+        <div class="v1-body">
+          <div class="v1-section-title">1. Platform Legitimacy & Regulation</div>
+          <div class="v1-qa">
+            <div class="v1-q">Is the platform regulated by ESMA or national financial authorities?</div>
+            <div class="v1-a">NIHA Carbon operates in strict compliance with AMLO Cap. 615 (Anti-Money Laundering and Counter-Terrorist Financing Ordinance), implementing mandatory KYC/AML procedures for all clients prior to onboarding.</div>
+            <div class="v1-highlight">✓ 7-year record retention · ✓ AML hold on all deposits · ✓ Enhanced DD for ≥€500K</div>
+          </div>
+          <div class="v1-qa">
+            <div class="v1-q">What security measures are in place?</div>
+            <div class="v1-a">5-step KYC including PEP declarations, source of funds, CRS disclosures, and 9 mandatory legal declarations. Settlement tracked through 5 auditable stages.</div>
+          </div>
+        </div>
+        <div class="v1-footer">
+          <span>NIHA Carbon Trading Platform</span>
+          <span>Confidential — Not for distribution</span>
+        </div>
+      </div>
+    </div>
+    <button class="select-btn">→ Alege acest stil</button>
+  </div>
+
+  <!-- VARIANT 2: LUXURY EDITORIAL -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <h3>Opțiunea 2 — Luxury Editorial</h3>
+      <span class="badge" style="background:#8a7a5a;color:#faf9f6;">Premium</span>
+    </div>
+    <div class="doc-preview">
+      <div class="v2-doc">
+        <div class="v2-header">
+          <div class="v2-overline">Nihao Carbon Trading Platform</div>
+          <div class="v2-title">Client Due Diligence</div>
+          <div class="v2-subtitle">Platform Questions & Answers — February 2026</div>
+          <span class="v2-ornament">— ✦ —</span>
+        </div>
+        <div class="v2-body">
+          <div class="v2-section-title">I. Platform Legitimacy & Regulation</div>
+          <div class="v2-qa">
+            <div class="v2-q">Is the platform regulated by ESMA or national financial authorities?</div>
+            <div class="v2-a">NIHA Carbon operates in strict compliance with applicable anti-money laundering legislation, including AMLO Cap. 615, implementing comprehensive KYC/AML procedures for all clients prior to onboarding.</div>
+          </div>
+          <div class="v2-pullquote">"All client records are retained for 7 years post-termination in compliance with AMLO Cap. 615."</div>
+          <div class="v2-qa">
+            <div class="v2-q">What are the settlement timelines?</div>
+            <div class="v2-a">CEA Cash T+3 · Swap EUA leg T+5 · Full cycle T+10 business days, tracked through five auditable status stages.</div>
+          </div>
+        </div>
+        <div class="v2-footer">
+          <span>CONFIDENTIAL · NIHAO GROUP · FEBRUARY 2026</span>
+        </div>
+      </div>
+    </div>
+    <button class="select-btn">→ Alege acest stil</button>
+  </div>
+
+  <!-- VARIANT 3: MODERN FINTECH -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <h3>Opțiunea 3 — Modern Fintech</h3>
+      <span class="badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);">Tech</span>
+    </div>
+    <div class="doc-preview">
+      <div class="v3-doc">
+        <div class="v3-header">
+          <div class="v3-chip">● Confidential Document</div>
+          <div class="v3-title">Client Due Diligence Q&A</div>
+          <div class="v3-meta">
+            <span><span class="v3-dot"></span>NIHA Carbon Platform</span>
+            <span><span class="v3-dot"></span>February 2026</span>
+            <span><span class="v3-dot"></span>Institutional</span>
+          </div>
+        </div>
+        <div class="v3-body">
+          <div class="v3-section-pill">01 / Legitimacy & Regulation</div>
+          <div class="v3-qa">
+            <div class="v3-q">Is the platform regulated by ESMA or national financial authorities?</div>
+            <div class="v3-a">NIHA Carbon operates in compliance with AMLO Cap. 615. All KYC/AML procedures are mandatory before onboarding, with enhanced DD for deposits ≥€500K.</div>
+          </div>
+          <div class="v3-stat-row">
+            <div class="v3-stat">
+              <span class="v3-stat-val">T+3</span>
+              <span class="v3-stat-lbl">CEA Settlement</span>
+            </div>
+            <div class="v3-stat">
+              <span class="v3-stat-val">T+5</span>
+              <span class="v3-stat-lbl">EUA Delivery</span>
+            </div>
+            <div class="v3-stat">
+              <span class="v3-stat-val">7 yrs</span>
+              <span class="v3-stat-lbl">Record Retention</span>
+            </div>
+            <div class="v3-stat">
+              <span class="v3-stat-val">5</span>
+              <span class="v3-stat-lbl">Audit Stages</span>
+            </div>
+          </div>
+        </div>
+        <div class="v3-footer">
+          <span>NIHA Carbon Trading Platform</span>
+          <span>Confidential</span>
+        </div>
+      </div>
+    </div>
+    <button class="select-btn">→ Alege acest stil</button>
+  </div>
+
+  <!-- VARIANT 4: SWISS MINIMAL -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <h3>Opțiunea 4 — Swiss Minimal</h3>
+      <span class="badge" style="background:#000;color:#fff;">Clean</span>
+    </div>
+    <div class="doc-preview">
+      <div class="v4-doc">
+        <div class="v4-top-bar"></div>
+        <div class="v4-header">
+          <div class="v4-logo-block">
+            <div class="v4-logo">NIHA CARBON</div>
+            <div class="v4-tagline">Carbon Trading Platform</div>
+          </div>
+          <div class="v4-doc-info">
+            <div class="v4-doc-title">Client Due Diligence</div>
+            <div class="v4-doc-sub">February 2026 · Confidential</div>
+          </div>
+        </div>
+        <div class="v4-body">
+          <div class="v4-section-marker">
+            <span class="v4-num">01</span>
+            <span class="v4-section-name">Regulation</span>
+            <span class="v4-rule"></span>
+          </div>
+          <div class="v4-qa">
+            <div class="v4-q">Is the platform regulated by ESMA or national financial authorities?</div>
+            <div class="v4-a">NIHA Carbon operates under AMLO Cap. 615. Mandatory KYC/AML for all clients. Enhanced DD for deposits ≥€500K. 7-year record retention.</div>
+          </div>
+          <div class="v4-divider"></div>
+          <div class="v4-qa">
+            <div class="v4-q">What are the trading fees?</div>
+            <div class="v4-a">1.5% CEA cash purchase · 2.0% CEA/EUA swap. No hidden costs. No custody or maintenance fees.</div>
+          </div>
+        </div>
+        <div class="v4-footer">
+          <span>NIHA CARBON · FEBRUARY 2026</span>
+          <span>CONFIDENTIAL</span>
+        </div>
+      </div>
+    </div>
+    <button class="select-btn">→ Alege acest stil</button>
+  </div>
+
+  <!-- VARIANT 5: PREMIUM DARK -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <h3>Opțiunea 5 — Premium Dark</h3>
+      <span class="badge" style="background:#1a1208;color:#c8a84b;border:1px solid #c8a84b;">Luxury</span>
+    </div>
+    <div class="doc-preview">
+      <div class="v5-doc">
+        <div class="v5-header">
+          <div class="v5-gold-line"></div>
+          <div class="v5-header-inner">
+            <div class="v5-brand">
+              <div class="v5-logo">NIHA CARBON</div>
+              <div class="v5-divider-text">Carbon Trading Platform</div>
+            </div>
+            <div class="v5-badge">Confidential</div>
+          </div>
+          <div class="v5-title-block">
+            <div class="v5-title">Client Due Diligence</div>
+            <div class="v5-subtitle">Platform Questions & Answers — February 2026</div>
+          </div>
+        </div>
+        <div class="v5-body">
+          <div class="v5-section-header">
+            <span class="v5-section-num">01</span>
+            <span class="v5-section-name">Regulation & Legitimacy</span>
+            <span class="v5-section-line"></span>
+          </div>
+          <div class="v5-qa">
+            <div class="v5-q">Is the platform regulated by ESMA or national financial authorities?</div>
+            <div class="v5-a">NIHA Carbon operates in compliance with AMLO Cap. 615. Comprehensive KYC/AML procedures mandatory for all clients. Enhanced due diligence for deposits ≥€500K. 7-year record retention post-termination.</div>
+          </div>
+          <div class="v5-metric-row">
+            <div class="v5-metric">
+              <span class="v5-metric-val">T+10</span>
+              <span class="v5-metric-lbl">Full Cycle</span>
+            </div>
+            <div class="v5-metric">
+              <span class="v5-metric-val">1.5%</span>
+              <span class="v5-metric-lbl">CEA Fee</span>
+            </div>
+            <div class="v5-metric">
+              <span class="v5-metric-val">2.0%</span>
+              <span class="v5-metric-lbl">Swap Fee</span>
+            </div>
+          </div>
+        </div>
+        <div class="v5-footer-line"></div>
+        <div class="v5-footer">
+          <span>NIHAO GROUP · CARBON TRADING DIVISION</span>
+          <span>NOT FOR DISTRIBUTION</span>
+        </div>
+      </div>
+    </div>
+    <button class="select-btn">→ Alege acest stil</button>
+  </div>
+
+</div>
+
+</body>
+</html>

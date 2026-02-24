@@ -126,6 +126,9 @@ export function BackofficeOnboardingPage() {
     referralCodeUsed: (r as { referralCodeUsed?: string }).referralCodeUsed,
     introducerNdaStatus: (r as { introducerNdaStatus?: 'not_sent' | 'sent' | 'uploaded' | 'attached' }).introducerNdaStatus,
     introducerUserId: (r as { introducerUserId?: string }).introducerUserId,
+    buyerNdaStatus: (r as { buyerNdaStatus?: 'not_sent' | 'sent' | 'uploaded' | 'attached' | 'no_nda' }).buyerNdaStatus,
+    buyerUserId: (r as { buyerUserId?: string }).buyerUserId,
+    ndaAccepted: (r as { ndaAccepted?: boolean }).ndaAccepted,
     notes: r.notes,
     createdAt: r.createdAt,
   }));
@@ -293,19 +296,6 @@ export function BackofficeOnboardingPage() {
 
   const handleApproveRequest = async () => {
     refreshContactRequests();
-  };
-
-  const handleSendNDA = async (requestId: string) => {
-    setActionLoading(`send-nda-${requestId}`);
-    try {
-      await adminApi.sendIntroducerNDA(requestId);
-      refreshContactRequests();
-    } catch (err: unknown) {
-      logger.error('Failed to send NDA', err);
-      setError(getApiErrorMessage(err));
-    } finally {
-      setActionLoading(null);
-    }
   };
 
   const handleApproveIntroducer = async (userId: string) => {
@@ -631,7 +621,6 @@ export function BackofficeOnboardingPage() {
           onOpenNDA={handleOpenNDA}
           onOpenUserNDA={handleOpenUserNDA}
           onIpLookup={handleIpLookup}
-          onSendNDA={handleSendNDA}
           onApproveIntroducer={handleApproveIntroducer}
           actionLoading={actionLoading}
         />

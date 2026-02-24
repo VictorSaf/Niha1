@@ -133,7 +133,7 @@ async def get_contact_requests(
     introducer_user_map: dict = {}
     if introducer_emails:
         user_result = await db.execute(
-            select(User).where(User.email.in_(introducer_emails), User.role.in_([UserRole.TRODUCER, UserRole.INTRODUCER]))
+            select(User).where(User.email.in_(introducer_emails), User.role.in_([UserRole.TRODUCER, UserRole.PREINTRODUCER, UserRole.INTRODUCER]))
         )
         for u in user_result.scalars().all():
             introducer_user_map[u.email] = u
@@ -439,11 +439,22 @@ async def create_user_from_contact_request(
             existing_user.first_name = first_name
             existing_user.last_name = last_name
             existing_user.position = position
-            existing_user.is_active = True
             existing_user.nda_signed = True
             if mode == "manual" and password:
                 existing_user.password_hash = hash_password(password)
                 existing_user.must_change_password = False
+                existing_user.is_active = True
+            elif mode == "invitation":
+                # Generate fresh token so invitation email has a valid link
+                existing_user.invitation_token = secrets.token_urlsafe(32)
+                existing_user.invitation_sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                existing_user.invitation_expires_at = (
+                    datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=invitation_expiry_days)
+                )
+                existing_user.must_change_password = True
+                existing_user.is_active = False
+            else:
+                existing_user.is_active = True
             user = existing_user
         else:
             if mode == "manual":
@@ -1040,14 +1051,82 @@ async def create_user(
     await db.commit()
     await db.refresh(user)
 
+    # Send welcome email to TRODUCER when created with a password
+    if user_data.password and user_data.role == UserRole.TRODUCER:
+        cfg_result = await db.execute(
+            select(MailConfig).order_by(MailConfig.updated_at.desc()).limit(1)
+        )
+        mail_row = cfg_result.scalar_one_or_none()
+        mail_cfg = None
+        if mail_row:
+            mail_cfg = {
+                "provider": mail_row.provider.value,
+                "use_env_credentials": mail_row.use_env_credentials,
+                "from_email": mail_row.from_email,
+                "resend_api_key": (
+                    mail_row.resend_api_key
+                    if not mail_row.use_env_credentials
+                    and mail_row.provider == MailProvider.RESEND
+                    else None
+                ),
+                "smtp_host": mail_row.smtp_host,
+                "smtp_port": mail_row.smtp_port,
+                "smtp_use_tls": mail_row.smtp_use_tls,
+                "smtp_username": mail_row.smtp_username,
+                "smtp_password": mail_row.smtp_password,
+                "invitation_link_base_url": mail_row.invitation_link_base_url,
+            }
+        try:
+            await email_service.send_troducer_welcome(user.email, user.first_name, mail_config=mail_cfg)
+        except Exception:
+            logger.exception("Failed to send welcome email to TRODUCER %s", user.email)
+
     # Send invitation email only if no password was provided
     if not user_data.password:
+        # Load mail config so emails use the correct URL and credentials
+        cfg_result = await db.execute(
+            select(MailConfig).order_by(MailConfig.updated_at.desc()).limit(1)
+        )
+        mail_row = cfg_result.scalar_one_or_none()
+        mail_cfg = None
+        if mail_row:
+            mail_cfg = {
+                "provider": mail_row.provider.value,
+                "use_env_credentials": mail_row.use_env_credentials,
+                "from_email": mail_row.from_email,
+                "resend_api_key": (
+                    mail_row.resend_api_key
+                    if not mail_row.use_env_credentials
+                    and mail_row.provider == MailProvider.RESEND
+                    else None
+                ),
+                "smtp_host": mail_row.smtp_host,
+                "smtp_port": mail_row.smtp_port,
+                "smtp_use_tls": mail_row.smtp_use_tls,
+                "smtp_username": mail_row.smtp_username,
+                "smtp_password": mail_row.smtp_password,
+                "invitation_link_base_url": mail_row.invitation_link_base_url,
+            }
         try:
-            await email_service.send_invitation(
-                user.email, user.first_name, user.invitation_token
-            )
+            if user_data.role == UserRole.TRODUCER:
+                invitation_expiry_days = (
+                    mail_row.invitation_token_expiry_days
+                    if mail_row and mail_row.invitation_token_expiry_days is not None
+                    else 14
+                )
+                nda_pdf_path = os.path.join(
+                    os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
+                )
+                await email_service.send_introducer_nda_invitation(
+                    user.email, user.first_name, user.invitation_token,
+                    nda_pdf_path, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
+                )
+            else:
+                await email_service.send_invitation(
+                    user.email, user.first_name, user.invitation_token, mail_config=mail_cfg,
+                )
         except Exception:
-            pass  # Don't fail if email fails
+            logger.exception("Failed to send invitation email to %s", user.email)
 
     return UserResponse.model_validate(user)
 
@@ -5148,12 +5227,12 @@ async def approve_introducer_nda(
     result = await db.execute(
         select(User).where(
             User.id == UUID(user_id),
-            User.role.in_([UserRole.TRODUCER, UserRole.PRE_NDA]),
+            User.role.in_([UserRole.TRODUCER, UserRole.PREINTRODUCER, UserRole.PRE_NDA]),
         )
     )
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Troducer/PRE_NDA user not found")
+        raise HTTPException(status_code=404, detail="Troducer/PREINTRODUCER/PRE_NDA user not found")
 
     is_pre_nda = user.role == UserRole.PRE_NDA
     request_flow = "buyer" if is_pre_nda else "introducer"
@@ -5171,6 +5250,7 @@ async def approve_introducer_nda(
         if is_pre_nda:
             user.role = UserRole.NDA
         else:
+            # TRODUCER or PREINTRODUCER (form-submitted, NDA pending) → INTRODUCER
             user.role = UserRole.INTRODUCER
             user.commission_rate = Decimal("0.010000")  # Default 1%
         user.nda_signed = True

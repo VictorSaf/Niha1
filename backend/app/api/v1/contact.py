@@ -475,7 +475,7 @@ async def create_introducer_nda_request(
                     email=contact_email.lower(),
                     first_name=contact_first_name,
                     last_name=contact_last_name,
-                    role=UserRole.TRODUCER,
+                    role=UserRole.PREINTRODUCER,
                     referral_code=referral_code_new,
                     nda_signed=False,
                     invitation_token=invitation_token,
@@ -532,7 +532,7 @@ async def create_introducer_nda_request(
                     })
                 )
                 logger.info(
-                    "Auto-created TRODUCER user and sent NDA for %s (referred by %s)",
+                    "Auto-created PREINTRODUCER user and sent NDA for %s (referred by %s)",
                     contact_email, referred_by_user_id,
                 )
         except Exception:
@@ -632,6 +632,97 @@ async def create_introducer_request(
     except Exception:
         pass
 
+    # Auto-create PREINTRODUCER user + send NDA email when no NDA uploaded
+    if not nda_file_name and referred_by_user_id:
+        try:
+            from ...services.referral_codes import get_unique_referral_code
+
+            existing = await db.execute(
+                select(User).where(User.email == contact_email.lower())
+            )
+            if not existing.scalar_one_or_none():
+                cfg_result = await db.execute(
+                    select(MailConfig).order_by(MailConfig.updated_at.desc()).limit(1)
+                )
+                mail_row = cfg_result.scalar_one_or_none()
+                invitation_expiry_days = (
+                    mail_row.invitation_token_expiry_days
+                    if mail_row and mail_row.invitation_token_expiry_days is not None
+                    else 14
+                )
+
+                invitation_token = secrets.token_urlsafe(32)
+                referral_code_new = await get_unique_referral_code(db)
+
+                new_user = User(
+                    email=contact_email.lower(),
+                    first_name=contact_first_name,
+                    last_name=contact_last_name,
+                    role=UserRole.PREINTRODUCER,
+                    referral_code=referral_code_new,
+                    nda_signed=False,
+                    invitation_token=invitation_token,
+                    invitation_sent_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                    invitation_expires_at=(
+                        datetime.now(timezone.utc).replace(tzinfo=None)
+                        + timedelta(days=invitation_expiry_days)
+                    ),
+                    must_change_password=True,
+                    is_active=False,
+                    creation_method="invitation",
+                )
+                db.add(new_user)
+                await db.commit()
+                await db.refresh(new_user)
+
+                mail_cfg = None
+                if mail_row:
+                    mail_cfg = {
+                        "provider": mail_row.provider.value,
+                        "use_env_credentials": mail_row.use_env_credentials,
+                        "from_email": mail_row.from_email,
+                        "resend_api_key": (
+                            mail_row.resend_api_key
+                            if not mail_row.use_env_credentials
+                            and mail_row.provider == MailProvider.RESEND
+                            else None
+                        ),
+                        "smtp_host": mail_row.smtp_host,
+                        "smtp_port": mail_row.smtp_port,
+                        "smtp_use_tls": mail_row.smtp_use_tls,
+                        "smtp_username": mail_row.smtp_username,
+                        "smtp_password": mail_row.smtp_password,
+                        "invitation_link_base_url": mail_row.invitation_link_base_url,
+                    }
+                nda_pdf_path = os.path.join(
+                    os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
+                )
+                await email_service.send_introducer_nda_invitation(
+                    new_user.email,
+                    new_user.first_name,
+                    new_user.invitation_token,
+                    nda_pdf_path,
+                    expiry_days=invitation_expiry_days,
+                    mail_config=mail_cfg,
+                )
+
+                asyncio.create_task(
+                    backoffice_ws_manager.broadcast("request_updated", {
+                        "id": str(contact.id),
+                        "introducer_nda_status": "sent",
+                        "introducer_user_id": str(new_user.id),
+                    })
+                )
+                logger.info(
+                    "Auto-created PREINTRODUCER user and sent NDA for %s (referred by %s)",
+                    contact_email, referred_by_user_id,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to auto-create user/send NDA for %s (non-blocking)",
+                contact_email,
+            )
+
     return contact
 
 
@@ -642,8 +733,8 @@ async def upload_introducer_nda(
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """Authenticated: TRODUCER, INTRODUCER, or PRE_NDA with nda_signed=false uploads their signed NDA."""
-    if current_user.role not in (UserRole.TRODUCER, UserRole.INTRODUCER, UserRole.PRE_NDA):
-        raise HTTPException(status_code=403, detail="Only TRODUCER/INTRODUCER/PRE_NDA users can upload NDA")
+    if current_user.role not in (UserRole.TRODUCER, UserRole.INTRODUCER, UserRole.PRE_NDA, UserRole.PREINTRODUCER):
+        raise HTTPException(status_code=403, detail="Only TRODUCER/PREINTRODUCER/INTRODUCER/PRE_NDA users can upload NDA")
     if current_user.nda_signed:
         raise HTTPException(status_code=400, detail="NDA already signed")
 
@@ -665,7 +756,7 @@ async def upload_introducer_nda(
     await db.commit()
 
     # Notify backoffice — send request_updated so the existing WS handler picks it up
-    flow = "buyer" if current_user.role == UserRole.PRE_NDA else "introducer"
+    flow = "buyer" if current_user.role == UserRole.PRE_NDA else "introducer"  # PREINTRODUCER uses introducer flow
     contact_req = (
         await db.execute(
             select(ContactRequest).where(

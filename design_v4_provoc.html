@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIHA — Provocative Minimal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #d6d6d6;
+  padding: 60px 24px;
+  font-family: 'Inter', sans-serif;
+}
+
+.doc {
+  max-width: 680px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 96px 100px;
+  color: #111;
+}
+
+/* ── COVER ── */
+.cover-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 96px;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #bbb;
+}
+
+.doc-title {
+  margin-bottom: 80px;
+}
+
+.doc-title-main {
+  font-size: 3rem;
+  font-weight: 300;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: #111;
+  display: block;
+}
+
+.doc-title-sub {
+  font-size: 3rem;
+  font-weight: 600;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: #111;
+  display: block;
+  margin-top: 2px;
+}
+
+.cover-desc {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: #999;
+  line-height: 1.8;
+  max-width: 320px;
+  padding-top: 28px;
+  border-top: 1px solid #eee;
+}
+
+/* ── BODY ── */
+.body {
+  margin-top: 96px;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 72px;
+}
+
+.section-label {
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #ccc;
+  margin-bottom: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: attr(data-n);
+  color: #ddd;
+  font-weight: 300;
+}
+
+/* ── QA ── */
+.qa {
+  margin-bottom: 52px;
+}
+
+.qa:last-child {
+  margin-bottom: 0;
+}
+
+/* La întrebare: mică, uppercase, ca o etichetă */
+.q {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Răspunsul e conținutul principal */
+.a {
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: #222;
+  max-width: 480px;
+}
+
+.a strong {
+  font-weight: 500;
+  color: #111;
+}
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 96px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ccc;
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- COVER -->
+  <div class="cover-line">
+    <span>NIHA Carbon</span>
+    <span>Confidential · February 2026</span>
+  </div>
+
+  <div class="doc-title">
+    <span class="doc-title-main">Client</span>
+    <span class="doc-title-sub">Due Diligence</span>
+  </div>
+
+  <p class="cover-desc">Responses to institutional and professional client enquiries regarding platform operations, compliance, and settlement infrastructure.</p>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- 01 -->
+    <div class="section">
+      <div class="section-label" data-n="01">Legitimacy &amp; Regulation</div>
+
+      <div class="qa">
+        <p class="q">Is the platform regulated by ESMA or national financial authorities?</p>
+        <p class="a">NIHA Carbon operates in compliance with <strong>AMLO Cap. 615</strong>, implementing mandatory KYC/AML procedures for all clients prior to onboarding. All records are retained for <strong>7 years</strong> post-termination. Regulatory registration details are available upon request via our Compliance Pack.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Does it operate as an authorised exchange, broker, or intermediary?</p>
+        <p class="a">NIHA Carbon operates as a <strong>trading platform and intermediary</strong>, facilitating EUA and CEA exchange through a structured order book and settlement infrastructure. Spot EUA transactions are currently excluded from MiFID II financial instrument classification under EU ETS regulations.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Can you provide registration or licence details?</p>
+        <p class="a">Entity documentation, AML/CTF policy, and applicable registration details are available as part of our standard <strong>Compliance Pack</strong>, provided upon request during onboarding.</p>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div class="section">
+      <div class="section-label" data-n="02">Security &amp; Settlement</div>
+
+      <div class="qa">
+        <p class="q">How are EUA transfers executed on the platform?</p>
+        <p class="a">Settlement progresses through <strong>five auditable stages</strong> — Pending, Transfer Initiated, In Transit, At Custody, Settled — each corresponding to a real-world registry step with timestamped confirmation. Overdue alerts trigger at +1 and +3 business days past expected settlement.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">What security measures are in place?</p>
+        <p class="a">The platform implements a <strong>5-step KYC process</strong> including PEP declarations for all directors and UBOs, source of funds declaration, CRS disclosures, and 9 mandatory legal declarations. First deposits are subject to a <strong>3-day AML hold</strong>. Deposits of <strong>€500,000 or more</strong> trigger enhanced due diligence. Every action generates an immutable audit ticket.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">What are the standard settlement timelines?</p>
+        <p class="a">CEA cash purchase <strong>T+3</strong>. Swap CEA leg <strong>T+2</strong>. Swap EUA leg <strong>T+5</strong>. Full cycle purchase to EUA delivery <strong>T+10 business days</strong>. Fund return requests processed within 5 business days.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">What protections exist in case of platform insolvency or technical failure?</p>
+        <p class="a">Client assets are held in <strong>segregated entity-level holdings</strong> with full auditability, maintained in a persistent database with independent backup infrastructure. The settlement processor includes continuous monitoring with automated escalation.</p>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div class="section">
+      <div class="section-label" data-n="03">Fees &amp; Transparency</div>
+
+      <div class="qa">
+        <p class="q">What are the trading fees? Are there any hidden costs?</p>
+        <p class="a">CEA cash purchases: <strong>1.5%</strong> of transaction value. CEA/EUA swaps: <strong>2.0%</strong> of transaction value. No custody fees, no maintenance fees, no withdrawal surcharges, no registry transfer fees.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Is pricing linked to EUA spot or futures benchmarks?</p>
+        <p class="a">EUA and CEA prices are sourced in real-time from carboncredits.com and Trading Economics. The CEA/EUA swap ratio is derived directly as <strong>CEA price ÷ EUA price</strong>, ensuring full benchmark linkage. Price history is accessible to all authenticated users.</p>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div class="section">
+      <div class="section-label" data-n="04">Counterparty Risk</div>
+
+      <div class="qa">
+        <p class="q">Does the platform act as principal or only as intermediary?</p>
+        <p class="a">NIHA Carbon acts as <strong>intermediary only</strong>. Liquidity is provided by verified <strong>Market Maker entities</strong> which serve as counterparties when trading against their orders. NIHA Carbon does not hold or sell its own EUA inventory.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Does the platform require pre-funding, or does it support DvP settlement?</p>
+        <p class="a">The platform operates on a <strong>pre-funding model</strong> — client wire transfers are announced in advance, confirmed, and cleared through AML review before trading access is granted. This provides equivalent protection to a Delivery vs Payment arrangement: funds are verified and secured before certificates enter the settlement chain.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">What legal recourse is available in case of dispute?</p>
+        <p class="a">Governing law, dispute resolution mechanism, and jurisdiction are specified in the <strong>NIHA Platform Agreement</strong> executed during onboarding. Contact legal@nihaogroup.com for the current version.</p>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div class="section">
+      <div class="section-label" data-n="05">Verification &amp; Audit</div>
+
+      <div class="qa">
+        <p class="q">Can the platform provide evidence of EUAs held before purchase?</p>
+        <p class="a">Real-time EUA and CEA holdings are maintained at the entity level and available to authenticated clients via the platform dashboard. Pre-trade proof of holdings for institutional counterparties is available upon request.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Will you receive registry-level confirmation of transfer into your nominated EU ETS account?</p>
+        <p class="a">Yes. Upon reaching <strong>Settled</strong> status, clients receive registry-level confirmation of EUA transfer into their nominated EU ETS account. At Custody confirms certificates are held pending final delivery. Settled confirms the registry transfer is complete.</p>
+      </div>
+
+      <div class="qa">
+        <p class="q">Is there a complete audit trail for all transactions?</p>
+        <p class="a">Every deposit, trade, settlement, and administrative action generates an <strong>immutable audit ticket</strong> with action type, entity, timestamp, and reference. All KYC documents and declarations are stored with a <strong>7-year retention policy</strong> per AMLO Cap. 615. Full transaction history is available for export at any time.</p>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>NIHA Carbon Trading Platform</span>
+    <span>Not for distribution</span>
+  </div>
+
+</div>
+</body>
+</html>

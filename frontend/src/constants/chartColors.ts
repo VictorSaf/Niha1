@@ -37,7 +37,7 @@ export const TREND_COLORS = {
   downFill: 'rgba(239,68,68,0.08)',
 } as const;
 
-/** CEAPriceChart (lightweight-charts) color config */
+/** Candlestick / line chart color config */
 export const CANDLESTICK_COLORS = {
   background: 'transparent',
   text: CHART_NAVY[400],

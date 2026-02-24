@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIHA — Due Diligence Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:        #0f0f0f;
+  --ink-mid:    #444;
+  --ink-light:  #999;
+  --ink-faint:  #ccc;
+  --rule:       #e8e8e8;
+  --bg-lift:    #f7f6f3;   /* block highlight — stampa fara pierdere de contrast */
+  --page:       #ffffff;
+}
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .doc { box-shadow: none; max-width: 100%; padding: 60px 72px; }
+}
+
+body {
+  background: #d0d0d0;
+  padding: 60px 24px;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.doc {
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--page);
+  padding: 88px 96px;
+  color: var(--ink);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ COVER PAGE ━━━━━━━━━━━━━━━━━━━━━━ */
+
+.cover-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 88px;
+}
+
+.cover-meta-left {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.cover-meta-right {
+  text-align: right;
+  font-size: 0.62rem;
+  font-weight: 300;
+  color: var(--ink-light);
+  line-height: 2;
+  letter-spacing: 0.3px;
+}
+
+.cover-title {
+  margin-bottom: 72px;
+}
+
+.cover-title-line1 {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 300;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.cover-title-line2 {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.cover-divider {
+  height: 1px;
+  background: var(--ink);
+  margin-bottom: 24px;
+}
+
+.cover-abstract {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.8;
+  max-width: 380px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ INDEX ━━━━━━━━━━━━━━━━━━━━━━ */
+
+.toc {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--rule);
+}
+
+.toc-title {
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 20px;
+}
+
+.toc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.72rem;
+}
+
+.toc-row:last-child { border-bottom: none; }
+
+.toc-num {
+  font-weight: 500;
+  color: var(--ink-light);
+  font-size: 0.62rem;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.toc-name {
+  font-weight: 400;
+  color: var(--ink-mid);
+  flex: 1;
+  padding: 0 12px;
+}
+
+.toc-dots {
+  flex: 1;
+  border-bottom: 1px dotted var(--rule);
+  margin: 0 8px;
+  position: relative;
+  top: -3px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ CHAPTER ━━━━━━━━━━━━━━━━━━━━━━ */
+
+.chapter {
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 1px solid var(--ink);
+}
+
+.chapter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+.chapter-n {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.chapter-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ ARTICLE ━━━━━━━━━━━━━━━━━━━━━━ */
+
+.article {
+  margin-bottom: 44px;
+}
+
+.article:last-child { margin-bottom: 0; }
+
+.article-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.article-n {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  flex-shrink: 0;
+  width: 32px;
+}
+
+/* Titlul articolului — mic, uppercase, etichetă */
+.article-title {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+/* Corpul articolului — conținutul principal */
+.article-body {
+  font-size: 0.86rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--ink-mid);
+  padding-left: 44px;   /* aliniat cu titlul */
+}
+
+.article-body strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ HIGHLIGHT BLOCK ━━━━━━━━━━━━━━━━━━━━━━ */
+/* Folosit pentru informații critice — contrast garantat la printare */
+
+.highlight {
+  background: var(--bg-lift);
+  padding: 20px 24px;
+  margin: 14px 0 0 44px;
+}
+
+.highlight-label {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+
+.highlight-body {
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.highlight-body strong {
+  font-weight: 500;
+}
+
+/* Tabel de date în highlight */
+.data-table {
+  margin-top: 12px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table td {
+  padding: 7px 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-mid);
+  font-weight: 300;
+}
+
+.data-table td:first-child {
+  color: var(--ink-light);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  width: 40%;
+  padding-right: 16px;
+  vertical-align: top;
+  padding-top: 9px;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━ FOOTER ━━━━━━━━━━━━━━━━━━━━━━ */
+
+.footer {
+  margin-top: 80px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.8px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ══ COVER ══ -->
+  <div class="cover-meta">
+    <div class="cover-meta-left">NIHA Carbon</div>
+    <div class="cover-meta-right">
+      Ref. DDQ-2026-01<br>
+      February 2026<br>
+      Confidential
+    </div>
+  </div>
+
+  <div class="cover-title">
+    <span class="cover-title-line1">Due Diligence</span>
+    <span class="cover-title-line2">Questionnaire</span>
+  </div>
+
+  <div class="cover-divider"></div>
+  <p class="cover-abstract">This document provides formal responses to institutional and professional client due diligence enquiries submitted to NIHA Carbon Trading Platform in relation to platform operations, compliance framework, settlement infrastructure, and transactional risk.</p>
+
+  <!-- ══ TABLE OF CONTENTS ══ -->
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-row">
+      <span class="toc-num">1</span>
+      <span class="toc-name">Platform Legitimacy &amp; Regulation</span>
+      <span class="toc-dots"></span>
+    </div>
+    <div class="toc-row">
+      <span class="toc-num">2</span>
+      <span class="toc-name">Platform Security &amp; Settlement Processes</span>
+      <span class="toc-dots"></span>
+    </div>
+    <div class="toc-row">
+      <span class="toc-num">3</span>
+      <span class="toc-name">Fees &amp; Transparency</span>
+      <span class="toc-dots"></span>
+    </div>
+    <div class="toc-row">
+      <span class="toc-num">4</span>
+      <span class="toc-name">Counterparty &amp; Transaction Risk</span>
+      <span class="toc-dots"></span>
+    </div>
+    <div class="toc-row">
+      <span class="toc-num">5</span>
+      <span class="toc-name">Verification &amp; Audit Trail</span>
+      <span class="toc-dots"></span>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CHAPTER 1                                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-head">
+      <span class="chapter-n">Chapter 1</span>
+      <span class="chapter-title">Platform Legitimacy &amp; Regulation</span>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">1.1</span>
+        <span class="article-title">Regulatory Status</span>
+      </div>
+      <p class="article-body">
+        NIHA Carbon operates in strict compliance with <strong>AMLO Cap. 615</strong> (Anti-Money Laundering and Counter-Terrorist Financing Ordinance), implementing mandatory KYC/AML procedures for all clients prior to onboarding. All records are retained for a minimum of <strong>7 years</strong> post-termination. Regarding formal registration with ESMA or EU national financial authorities, specific regulatory certifications are available upon request via the NIHA Compliance Pack. Please contact compliance@nihaogroup.com.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">1.2</span>
+        <span class="article-title">Authorisation &amp; Operating Basis</span>
+      </div>
+      <p class="article-body">
+        NIHA Carbon operates as a <strong>trading platform and intermediary</strong>, facilitating the exchange of EU Allowances (EUA) and Chinese Emission Allowances (CEA) between counterparties through a structured order book and settlement infrastructure. Spot EUA transactions are currently excluded from MiFID II financial instrument classification under EU ETS regulations. Clients are advised to verify their own regulatory obligations independently.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">1.3</span>
+        <span class="article-title">Registration &amp; Licensing</span>
+      </div>
+      <p class="article-body">
+        Entity incorporation documentation, AML/CTF policy, and applicable registration or licensing details are provided as part of the standard <strong>NIHA Compliance Pack</strong>, made available to clients upon request during onboarding. The platform maintains a 7-year record retention policy for all KYC, transactional, and STR records in compliance with AMLO Cap. 615.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">1.4</span>
+        <span class="article-title">Operational History &amp; Volume</span>
+      </div>
+      <p class="article-body">
+        Trading volume history and operational statistics are available upon execution of a non-disclosure agreement. Please contact your account representative to request detailed platform performance data.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CHAPTER 2                                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-head">
+      <span class="chapter-n">Chapter 2</span>
+      <span class="chapter-title">Platform Security &amp; Settlement Processes</span>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">2.1</span>
+        <span class="article-title">EUA Transfer Execution</span>
+      </div>
+      <p class="article-body">
+        EUA transfers on NIHA Carbon follow a structured settlement process with full status tracking and registry linkage. Upon execution, settlement progresses through <strong>five auditable stages</strong>, each timestamped and corresponding to a real-world registry step, culminating in registry-level confirmation of transfer into the client's nominated EU ETS account.
+      </p>
+      <div class="highlight">
+        <div class="highlight-label">Settlement Status Flow</div>
+        <table class="data-table">
+          <tr><td>Stage 1</td><td><strong>Pending</strong> — trade confirmed, settlement initiated</td></tr>
+          <tr><td>Stage 2</td><td><strong>Transfer Initiated</strong> — registry instruction submitted</td></tr>
+          <tr><td>Stage 3</td><td><strong>In Transit</strong> — transfer in progress</td></tr>
+          <tr><td>Stage 4</td><td><strong>At Custody</strong> — certificates held pending final delivery</td></tr>
+          <tr><td>Stage 5</td><td><strong>Settled</strong> — registry-level confirmation issued</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">2.2</span>
+        <span class="article-title">Internal Ledger &amp; Registry Linkage</span>
+      </div>
+      <p class="article-body">
+        The platform maintains an internal ledger to reflect pre-settlement positions during the settlement window, which is reconciled against the official <strong>EU Union Registry</strong> upon settlement completion. Clients receive direct registry-level confirmation of transfer into their nominated account at the Settled stage.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">2.3</span>
+        <span class="article-title">KYC, AML &amp; Security Measures</span>
+      </div>
+      <p class="article-body">
+        The platform implements a mandatory <strong>5-step KYC process</strong> for all clients, comprising: (i) PEP declarations for all directors and UBOs; (ii) carbon market experience and risk appetite assessment; (iii) source of funds declaration and expected transaction volume; (iv) tax residency and CRS disclosures; and (v) 9 mandatory legal declarations. Every platform action generates an immutable audit ticket with action type, entity, timestamp, and transaction reference. All KYC and transactional records are retained for <strong>7 years</strong> post-termination per AMLO Cap. 615.
+      </p>
+      <div class="highlight">
+        <div class="highlight-label">AML Hold Schedule</div>
+        <table class="data-table">
+          <tr><td>First deposit — new client</td><td><strong>3 business days</strong> mandatory AML hold</td></tr>
+          <tr><td>Subsequent deposits</td><td><strong>1 business day</strong> standard hold</td></tr>
+          <tr><td>Deposits ≥ €500,000</td><td><strong>3 business days</strong> enhanced due diligence</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">2.4</span>
+        <span class="article-title">Standard Settlement Timelines</span>
+      </div>
+      <p class="article-body">
+        Settlement timelines are defined at the transaction level and tracked automatically by the platform's settlement processor. Business days are calculated on a Monday–Friday basis, excluding public holidays. Overdue monitoring alerts trigger at <strong>+1 business day</strong> (warning) and <strong>+3 business days</strong> (critical) past expected settlement date.
+      </p>
+      <div class="highlight">
+        <div class="highlight-label">Canonical Timelines</div>
+        <table class="data-table">
+          <tr><td>CEA Cash Purchase</td><td><strong>T+3</strong> business days</td></tr>
+          <tr><td>Swap — CEA leg</td><td><strong>T+2</strong> business days</td></tr>
+          <tr><td>Swap — EUA leg</td><td><strong>T+5</strong> business days</td></tr>
+          <tr><td>Full cycle (purchase → swap → EUA)</td><td><strong>T+10</strong> business days</td></tr>
+          <tr><td>Fund return on written request</td><td><strong>5</strong> business days</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">2.5</span>
+        <span class="article-title">Platform Insolvency &amp; Technical Failure Protections</span>
+      </div>
+      <p class="article-body">
+        Client assets are maintained in <strong>segregated entity-level holdings</strong>, tracked independently at the entity level with full auditability. All balances and transaction records are persisted in an independently backed-up database infrastructure. The settlement processor operates continuous monitoring with automated escalation for overdue or stuck settlements. Fund return requests are processed within 5 business days per the terms of the NIHA Custody Agreement.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CHAPTER 3                                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-head">
+      <span class="chapter-n">Chapter 3</span>
+      <span class="chapter-title">Fees &amp; Transparency</span>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">3.1</span>
+        <span class="article-title">Fee Structure</span>
+      </div>
+      <p class="article-body">
+        The platform applies a flat, fully transparent fee structure with no hidden costs.
+      </p>
+      <div class="highlight">
+        <div class="highlight-label">Standard Fee Schedule</div>
+        <table class="data-table">
+          <tr><td>CEA Cash Purchase</td><td><strong>1.5%</strong> of transaction value</td></tr>
+          <tr><td>CEA / EUA Swap</td><td><strong>2.0%</strong> of transaction value</td></tr>
+          <tr><td>Custody &amp; Maintenance</td><td>Nil</td></tr>
+          <tr><td>Withdrawal &amp; Registry Transfer</td><td>Nil</td></tr>
+          <tr><td>Fund Return Processing</td><td>Nil</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">3.2</span>
+        <span class="article-title">Benchmark Pricing &amp; Transparency</span>
+      </div>
+      <p class="article-body">
+        EUA and CEA prices are sourced in real-time from <strong>carboncredits.com</strong> and <strong>Trading Economics</strong>, providing benchmark-linked pricing consistent with EEX and ICE spot market references. The CEA/EUA swap ratio is derived directly as <strong>CEA price (EUR) ÷ EUA price (EUR)</strong>, with full price history accessible to all authenticated users.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">3.3</span>
+        <span class="article-title">Disclosure of All Costs</span>
+      </div>
+      <p class="article-body">
+        All fees applicable to a transaction are disclosed prior to execution. The platform does not charge separate settlement fees, transfer fees, or registry fees. The trading fees stated in Article 3.1 are the sole costs imposed by the platform on client transactions.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CHAPTER 4                                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-head">
+      <span class="chapter-n">Chapter 4</span>
+      <span class="chapter-title">Counterparty &amp; Transaction Risk</span>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">4.1</span>
+        <span class="article-title">Platform Role — Principal vs. Intermediary</span>
+      </div>
+      <p class="article-body">
+        NIHA Carbon acts exclusively as <strong>intermediary</strong>. The platform facilitates trades through an order book mechanism and does not hold or sell EUA inventory on its own account. Liquidity on the platform is provided by verified <strong>Market Maker entities</strong>, which serve as counterparties when client orders are matched against their liquidity.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">4.2</span>
+        <span class="article-title">Counterparty Identification</span>
+      </div>
+      <p class="article-body">
+        All counterparties, including Market Maker entities, are subject to the same mandatory KYC/AML onboarding process as buyers. Each entity is individually verified, screened against sanctions lists, and approved by the NIHA compliance team prior to being permitted to trade. Counterparty identity records are retained for 7 years per AMLO Cap. 615.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">4.3</span>
+        <span class="article-title">Funding Model &amp; Settlement Assurance</span>
+      </div>
+      <p class="article-body">
+        The platform operates on a <strong>pre-funding model</strong>. Client wire transfers are announced in advance, confirmed by the platform, and cleared through AML review before trading access is granted. This mechanism provides equivalent protection to a <strong>Delivery vs Payment (DvP)</strong> arrangement: client funds are verified and secured prior to any certificate transfer entering the settlement chain.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">4.4</span>
+        <span class="article-title">Legal Recourse &amp; Governing Law</span>
+      </div>
+      <p class="article-body">
+        The governing law, dispute resolution mechanism, and jurisdiction applicable to all platform transactions are specified in the <strong>NIHA Platform Agreement</strong> executed by each client during onboarding. The platform's compliance framework references AMLO Cap. 615 as a key regulatory baseline. For the current version of the Platform Agreement, contact legal@nihaogroup.com.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- CHAPTER 5                                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="chapter">
+    <div class="chapter-head">
+      <span class="chapter-n">Chapter 5</span>
+      <span class="chapter-title">Verification &amp; Audit Trail</span>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">5.1</span>
+        <span class="article-title">Pre-Purchase Evidence of Holdings</span>
+      </div>
+      <p class="article-body">
+        Real-time EUA and CEA holdings are maintained at the entity level and are visible to authenticated users via the platform dashboard. Institutional counterparties requiring formal written evidence of holdings prior to a transaction should contact their account representative, who will arrange the appropriate documentation.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">5.2</span>
+        <span class="article-title">Registry-Level Transfer Confirmation</span>
+      </div>
+      <p class="article-body">
+        Upon settlement completion (status: <strong>Settled</strong>), clients receive registry-level confirmation of EUA transfer into their nominated EU ETS registry account. The <strong>At Custody</strong> stage confirms that certificates are held pending final delivery; the <strong>Settled</strong> stage confirms that the EU Union Registry transfer is complete and the certificates are in the client's account.
+      </p>
+    </div>
+
+    <div class="article">
+      <div class="article-head">
+        <span class="article-n">5.3</span>
+        <span class="article-title">Transaction Audit Trail</span>
+      </div>
+      <p class="article-body">
+        Every deposit, trade, settlement, and administrative action executed on the platform generates an <strong>immutable audit ticket</strong> comprising action type, entity identifier, timestamp, and transaction reference. Settlement status transitions are individually timestamped across all five stages. All KYC documentation and client declarations are stored under a <strong>7-year retention policy</strong> per AMLO Cap. 615. Clients may request a full export of their transaction history at any time by contacting compliance@nihaogroup.com.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    <span>NIHA Carbon Trading Platform · DDQ-2026-01</span>
+    <span>Confidential · Not for distribution</span>
+  </div>
+
+</div>
+</body>
+</html>

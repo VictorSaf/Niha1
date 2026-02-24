@@ -291,13 +291,14 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      await contactApi.submitIntroducerRequest({
+      await contactApi.submitIntroducerNDARequest({
         contact_email: sanitizedEmail,
         contact_first_name: sanitizedFirstName,
         contact_last_name: sanitizedLastName,
-        entity_name: sanitizeString(entity) || undefined,
+        entity_name: sanitizeString(entity) || '',
+        position: '',
         referral_code: referralCode.trim(),
-        file: ndaFile || undefined,
+        nda_file: ndaFile || undefined,
       });
       setRequestSent(true);
     } catch {

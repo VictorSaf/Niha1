@@ -493,7 +493,7 @@ function App() {
             <Route
               path="/introducer/sign-nda"
               element={
-                <RoleProtectedRoute allowedRoles={['INTRODUCER', 'ADMIN']}>
+                <RoleProtectedRoute allowedRoles={['TRODUCER', 'PREINTRODUCER', 'INTRODUCER', 'ADMIN']}>
                   <IntroducerSignNDAPage />
                 </RoleProtectedRoute>
               }

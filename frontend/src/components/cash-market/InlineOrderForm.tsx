@@ -202,14 +202,14 @@ export function InlineOrderForm({
       {/* Header */}
       <div className="px-3 py-1 border-b border-navy-700/50 flex items-center gap-1.5 shrink-0">
         <ShoppingCart className="w-3 h-3 text-emerald-400" />
-        <span className="text-[10px] font-semibold text-navy-300 uppercase tracking-wider">Buy {certificateType}</span>
+        <span className="text-xs font-semibold text-navy-300 uppercase tracking-wider">Buy {certificateType}</span>
       </div>
 
       {/* Form content — vertical stack */}
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-y-auto px-3 py-2 gap-1.5">
         {/* Ask price */}
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-navy-500 uppercase">Market Ask</span>
+          <span className="text-xs text-navy-500 uppercase">Market Ask</span>
           <span className="text-sm font-mono font-bold text-red-400 tabular-nums">
             €{formatNumber(bestAsk)}
           </span>
@@ -217,43 +217,43 @@ export function InlineOrderForm({
 
         {/* Balance */}
         <div>
-          <label className="text-[10px] text-navy-500 uppercase block">Amount (EUR)</label>
+          <label className="text-xs text-navy-500 uppercase block">Amount (EUR)</label>
           <div className="h-7 px-2.5 rounded-lg border border-navy-700 bg-navy-900/50 text-xs font-mono text-white flex items-center justify-between">
             <span className="tabular-nums">€{formatNumber(availableBalance)}</span>
-            <span className="text-[9px] text-navy-600">full balance</span>
+            <span className="text-[10px] text-navy-600">full balance</span>
           </div>
         </div>
 
         {/* Est. Quantity */}
         <div>
-          <label className="text-[10px] text-navy-500 uppercase block">Est. Quantity</label>
+          <label className="text-xs text-navy-500 uppercase block">Est. Quantity</label>
           <div className="h-7 px-2.5 rounded-lg border border-navy-700 bg-navy-900/50 text-xs font-mono text-white flex items-center justify-between">
             {calc ? (
               <span className="tabular-nums">{formatNumber(calc.totalQty, 0)}</span>
             ) : (
               <span className="text-navy-500">—</span>
             )}
-            <span className="text-[9px] text-navy-600">{certificateType}</span>
+            <span className="text-[10px] text-navy-600">{certificateType}</span>
           </div>
         </div>
 
         {/* Preview details */}
         {calc && (
           <div className="rounded-lg bg-navy-900/50 border border-navy-700/50 px-2.5 py-1.5 space-y-0.5">
-            <div className="flex justify-between text-[10px]">
+            <div className="flex justify-between text-xs">
               <span className="text-navy-500">Avg Price</span>
               <span className="font-mono text-amber-400 tabular-nums">€{formatNumber(calc.avgPrice)}</span>
             </div>
-            <div className="flex justify-between text-[10px]">
+            <div className="flex justify-between text-xs">
               <span className="text-navy-500">Total Cost</span>
               <span className="font-mono text-white tabular-nums">€{formatNumber(calc.totalCost)}</span>
             </div>
-            <div className="flex justify-between text-[10px]">
+            <div className="flex justify-between text-xs">
               <span className="text-navy-500">Levels</span>
               <span className="font-mono text-navy-300 tabular-nums">{calc.levelsUsed}</span>
             </div>
             {preview?.platformFeeAmount != null && preview.platformFeeAmount > 0 && (
-              <div className="flex justify-between text-[10px]">
+              <div className="flex justify-between text-xs">
                 <span className="text-navy-500">Fee</span>
                 <span className="font-mono text-navy-300 tabular-nums">
                   €{formatNumber(preview.platformFeeAmount)}
@@ -270,14 +270,14 @@ export function InlineOrderForm({
         {isLoadingPreview && !calc && (
           <div className="flex items-center justify-center py-2 rounded-lg bg-navy-900/50 border border-navy-700/50">
             <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500 mr-1.5" />
-            <span className="text-[10px] text-navy-400">Calculating...</span>
+            <span className="text-xs text-navy-400">Calculating...</span>
           </div>
         )}
 
         {previewError && (
           <div className="flex items-start gap-1.5 p-2 rounded-lg bg-red-900/15 border border-red-800/30">
             <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-[10px] text-red-300">{previewError}</p>
+            <p className="text-xs text-red-300">{previewError}</p>
           </div>
         )}
 
@@ -285,7 +285,7 @@ export function InlineOrderForm({
         {!preview?.canExecute && preview && (
           <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-red-900/20 border border-red-800/30">
             <AlertCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
-            <span className="text-[10px] text-red-300">{preview.executionMessage}</span>
+            <span className="text-xs text-red-300">{preview.executionMessage}</span>
           </div>
         )}
 
@@ -324,7 +324,7 @@ export function InlineOrderForm({
               className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-emerald-900/20 border border-emerald-800/30 shrink-0"
             >
               <TrendingUp className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] font-medium text-emerald-400">Order placed</span>
+              <span className="text-xs font-medium text-emerald-400">Order placed</span>
             </motion.div>
           )}
         </AnimatePresence>

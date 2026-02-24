@@ -4,7 +4,7 @@
  */
 
 /** user_role values that mean the request is still "pending" and should appear in the Contact Requests list. */
-export const PENDING_CONTACT_REQUEST_ROLES: readonly string[] = ['NDA', 'new'];
+export const PENDING_CONTACT_REQUEST_ROLES: readonly string[] = ['NDA', 'PRE_NDA', 'new'];
 
 /**
  * Returns true if the contact request should be shown in the pending list

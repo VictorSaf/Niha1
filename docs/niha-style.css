@@ -1,0 +1,321 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NIHA Carbon — Document Design System v1.0
+   CSS partajat — toate documentele oficiale NIHA
+   Actualizat: Februarie 2026
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --ink:        #0f0f0f;
+  --ink-mid:    #444444;
+  --ink-light:  #999999;
+  --ink-faint:  #cccccc;
+  --rule:       #e8e8e8;
+  --rule-strong:#0f0f0f;
+  --page:       #ffffff;
+  --bg-lift:    #f7f6f3;
+  --accent-line:#0f0f0f;
+  --accent-warm:#c8a96e;
+}
+
+/* ── PRINT ──────────────────────────────────────────────── */
+@media print {
+  body { background: #fff; padding: 0; }
+  .doc { box-shadow: none; max-width: 100%; padding: 60px 72px; }
+}
+
+/* ── BODY ───────────────────────────────────────────────── */
+body {
+  background: #d0d0d0;
+  padding: 60px 24px;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── DOCUMENT CONTAINER ─────────────────────────────────── */
+.doc {
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--page);
+  padding: 88px 96px;
+  color: var(--ink);
+  box-shadow: 0 2px 40px rgba(0,0,0,0.12);
+}
+
+/* ── COVER ──────────────────────────────────────────────── */
+.cover-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 88px;
+}
+.cover-meta-left {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.cover-meta-right {
+  text-align: right;
+  font-size: 0.62rem;
+  font-weight: 300;
+  color: var(--ink-light);
+  line-height: 2;
+  letter-spacing: 0.3px;
+}
+.cover-title { margin-bottom: 72px; }
+.cover-title-line1 {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 300;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.cover-title-line2 {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.cover-divider {
+  height: 1px;
+  background: var(--ink);
+  margin-bottom: 24px;
+}
+.cover-abstract {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.8;
+  max-width: 380px;
+}
+
+/* ── TABLE OF CONTENTS ──────────────────────────────────── */
+.toc {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--rule);
+}
+.toc-title {
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 20px;
+}
+.toc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.72rem;
+}
+.toc-row:last-child { border-bottom: none; }
+.toc-num {
+  font-weight: 500;
+  color: var(--ink-light);
+  font-size: 0.62rem;
+  flex-shrink: 0;
+  width: 28px;
+}
+.toc-name {
+  font-weight: 400;
+  color: var(--ink-mid);
+  flex: 1;
+  padding: 0 12px;
+}
+.toc-dots {
+  flex: 1;
+  border-bottom: 1px dotted var(--rule);
+  margin: 0 8px;
+  position: relative;
+  top: -3px;
+}
+
+/* ── CHAPTER ────────────────────────────────────────────── */
+.chapter {
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 1px solid var(--ink);
+}
+.chapter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 40px;
+}
+.chapter-n {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.chapter-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ── ARTICLE ────────────────────────────────────────────── */
+.article { margin-bottom: 44px; }
+.article:last-child { margin-bottom: 0; }
+.article-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.article-n {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  flex-shrink: 0;
+  width: 32px;
+}
+.article-title {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+.article-body {
+  font-size: 0.86rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--ink-mid);
+  padding-left: 44px;
+}
+.article-body strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.article-body p + p { margin-top: 12px; }
+
+/* ── HIGHLIGHT BLOCKS ───────────────────────────────────── */
+/* A — fundal cald (cel mai frecvent) */
+.highlight {
+  background: var(--bg-lift);
+  padding: 20px 24px;
+  margin: 14px 0 0 44px;
+}
+/* B — linie verticală neutră */
+.highlight-line {
+  border-left: 2px solid var(--accent-line);
+  padding: 14px 0 14px 20px;
+  margin: 14px 0 0 44px;
+}
+/* C — linie verticală caldă */
+.highlight-line-warm {
+  border-left: 2px solid var(--accent-warm);
+  padding: 14px 0 14px 20px;
+  margin: 14px 0 0 44px;
+}
+/* D — chenar complet */
+.highlight-box {
+  border: 1px solid var(--rule-strong);
+  padding: 20px 24px;
+  margin: 14px 0 0 44px;
+}
+/* E — linie + fundal (impact maxim) */
+.highlight-line-filled {
+  border-left: 2px solid var(--accent-line);
+  background: var(--bg-lift);
+  padding: 20px 24px;
+  margin: 14px 0 0 44px;
+}
+
+.highlight-label {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+.highlight-body {
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--ink);
+}
+.highlight-body strong { font-weight: 500; }
+
+/* ── DATA TABLE ─────────────────────────────────────────── */
+.data-table {
+  margin-top: 12px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table td {
+  padding: 7px 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-mid);
+  font-weight: 300;
+}
+.data-table td:first-child {
+  color: var(--ink-light);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  width: 40%;
+  padding-right: 16px;
+  vertical-align: top;
+  padding-top: 9px;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table strong { font-weight: 500; color: var(--ink); }
+
+/* ── SIGNATURE BLOCK ────────────────────────────────────── */
+.signature-block {
+  margin: 14px 0 0 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.signature-field {
+  padding-top: 40px;
+  border-top: 1px solid var(--ink);
+}
+.signature-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.signature-name {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.8;
+}
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+.footer {
+  margin-top: 80px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.8px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}

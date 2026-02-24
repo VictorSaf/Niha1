@@ -1,0 +1,978 @@
+{% extends "_base.html.j2" %}
+{% set doc_ref = doc_ref or ("NIHA-MSA-" ~ doc_date[-4:] ~ "-001") %}
+{% block content %}
+
+<!-- ── COVER ──────────────────────────────────────────────── -->
+<div class="cover-meta">
+  <div class="cover-meta-left">NIHA Carbon</div>
+  <div class="cover-meta-right">
+    {{ doc_ref }}<br>{{ doc_date }}<br>Confidential
+  </div>
+</div>
+
+<div class="cover-title">
+  <span class="cover-title-line1">Master Service</span>
+  <span class="cover-title-line2">Agreement</span>
+</div>
+<div class="cover-divider"></div>
+<p class="cover-abstract">
+  for Carbon Credit Facilitation Services<br><br>
+  This Master Service Agreement is entered into between
+  <strong>Italy Nihao Group Limited</strong> (&ldquo;NIHA&rdquo; or &ldquo;Service Provider&rdquo;)
+  and <strong>{{ client_entity_name or "________________________________" }}</strong>{% if client_entity_type %} ({{ client_entity_type }}){% endif %}{% if client_jurisdiction %}, incorporated in {{ client_jurisdiction }}{% endif %}
+  (&ldquo;Client&rdquo;).
+</p>
+
+<!-- ── PARTIES ──────────────────────────────────────────── -->
+<div class="highlight-line" style="margin-left:0; margin-top: 32px;">
+  <div class="highlight-label">Parties</div>
+  <div class="highlight-body">
+    <table class="data-table">
+      <tr>
+        <td>Service Provider</td>
+        <td><strong>Italy Nihao Group Limited</strong><br>Hong Kong SAR</td>
+      </tr>
+      <tr>
+        <td>Client</td>
+        <td>
+          <strong>{{ client_entity_name or "________________________________" }}</strong>{% if client_entity_type %}<br>{{ client_entity_type }}{% endif %}{% if client_jurisdiction %}<br>{{ client_jurisdiction }}{% endif %}
+          {% if client_representative %}<br>{{ client_representative }}{% endif %}
+          {% if client_email %}<br>{{ client_email }}{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td>Effective Date</td>
+        <td>{{ doc_date }}</td>
+      </tr>
+      <tr>
+        <td>Reference</td>
+        <td>{{ doc_ref }}</td>
+      </tr>
+      <tr>
+        <td>Governing Law</td>
+        <td>Laws of Hong Kong Special Administrative Region</td>
+      </tr>
+      <tr>
+        <td>Dispute Resolution</td>
+        <td>Negotiation &rarr; Mediation &rarr; HKIAC Arbitration</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ── TABLE OF CONTENTS ──────────────────────────────────── -->
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <div class="toc-row"><span class="toc-num">Art. 1</span><span class="toc-name">Definitions and Interpretation</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 2</span><span class="toc-name">Scope of Services</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 3</span><span class="toc-name">Role of the Service Provider</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 4</span><span class="toc-name">Transaction Execution</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 5</span><span class="toc-name">Pricing and Fees</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 6</span><span class="toc-name">Settlement and Delivery</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 7</span><span class="toc-name">Client Funds</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 8</span><span class="toc-name">Carbon Credit Custody</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 9</span><span class="toc-name">Reporting and Transparency</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 10</span><span class="toc-name">Representations and Warranties</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 11</span><span class="toc-name">Risk Acknowledgement</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 12</span><span class="toc-name">Indemnification</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 13</span><span class="toc-name">Limitation of Liability</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 14</span><span class="toc-name">Confidentiality</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 15</span><span class="toc-name">Data Protection</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 16</span><span class="toc-name">Anti-Money Laundering and Compliance</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 17</span><span class="toc-name">Anti-Bribery and Anti-Corruption</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 18</span><span class="toc-name">Non-Circumvention</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 19</span><span class="toc-name">Force Majeure</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 20</span><span class="toc-name">Term and Termination</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 21</span><span class="toc-name">Consequences of Termination</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 22</span><span class="toc-name">Governing Law and Dispute Resolution</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Art. 23</span><span class="toc-name">General Provisions</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Sch. A</span><span class="toc-name">Fee Schedule</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Sch. B</span><span class="toc-name">Service Level Standards</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Sch. C</span><span class="toc-name">Approved Registries and Markets</span><span class="toc-dots"></span></div>
+  <div class="toc-row"><span class="toc-num">Sch. D</span><span class="toc-name">Designated Bank Accounts and Notices</span><span class="toc-dots"></span></div>
+</div>
+
+<!-- ── RECITALS ───────────────────────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Recitals</span>
+    <span class="chapter-title"></span>
+  </div>
+  <div class="article">
+    <div class="article-body">
+      <p>WHEREAS the Service Provider is a company incorporated under the laws of Hong Kong SAR, with established expertise in cross-border carbon credit facilitation, operating as a facilitator of transactions.</p>
+      <br>
+      <p>WHEREAS the Service Provider has maintained active participation in carbon credit markets, facilitating access to cross-border carbon credit markets for its clients through its proprietary infrastructure.</p>
+      <br>
+      <p>WHEREAS the Client wishes to engage the Service Provider to facilitate access to cross-border carbon credit markets, including but not limited to the acquisition, conversion, custody, delivery, and retirement of Carbon Credits.</p>
+      <br>
+      <p>WHEREAS the structural separation between EU and PRC carbon markets, including mutually exclusive regulatory regimes and the absence of cross-border recognition mechanisms, necessitates an intermediation structure of the kind provided by the Service Provider.</p>
+      <br>
+      <p>WHEREAS the parties wish to establish a comprehensive framework governing their commercial relationship on the terms and conditions set out herein.</p>
+      <br>
+      <p><strong>NOW, THEREFORE,</strong> in consideration of the mutual promises, covenants, and agreements herein contained, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged:</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 1: DEFINITIONS ─────────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 1</span>
+    <span class="chapter-title">Definitions and Interpretation</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.1</span></div>
+    <div class="article-body">
+      In this Agreement, unless the context otherwise requires:
+      <br><br>
+      <strong>&ldquo;Applicable Law&rdquo;</strong> means all laws, regulations, rules, orders, directives, circulars, and guidelines applicable in Hong Kong SAR, the European Union, the PRC, and any other relevant jurisdiction, as amended from time to time.<br><br>
+      <strong>&ldquo;Business Day&rdquo;</strong> means a day on which banks are open for general business in Hong Kong SAR, excluding Saturdays, Sundays, and gazetted public holidays.<br><br>
+      <strong>&ldquo;Carbon Credits&rdquo;</strong> means any and all carbon emission allowances, certificates, or credits, including: (i) European Union Allowances (&ldquo;EUA&rdquo;); (ii) China Emission Allowances (&ldquo;CEA&rdquo;); (iii) China Certified Emission Reductions (CCER); and (iv) Voluntary Carbon Credits (VCC).<br><br>
+      <strong>&ldquo;Confirmation&rdquo;</strong> means the electronic document generated by the Platform evidencing the terms of a Transaction, accessible to the Client through the Platform and delivered by email.<br><br>
+      <strong>&ldquo;Conversion&rdquo;</strong> means the process by which the Service Provider, acting as principal, acquires Carbon Credits of one type and delivers Carbon Credits of another type to the Client, effecting a cross-border facilitation.<br><br>
+      <strong>&ldquo;Custody Agreement&rdquo;</strong> means the Carbon Credit Custody Agreement entered into between the parties on or about the date of this Agreement.<br><br>
+      <strong>&ldquo;Fee Schedule&rdquo;</strong> means the schedule of fees set out in Schedule A, as may be amended from time to time in accordance with Article 5.<br><br>
+      <strong>&ldquo;NDA&rdquo;</strong> means the Non-Disclosure and Non-Circumvention Agreement entered into between the parties on or about the date of this Agreement.<br><br>
+      <strong>&ldquo;Platform&rdquo;</strong> means the NIHA Carbon Platform accessible at <strong>https://nihacarbon.com</strong> or such successor URL as the Service Provider may notify to the Client.<br><br>
+      <strong>&ldquo;Protected Relationship&rdquo;</strong> has the meaning given to it in the NDA and, for the purposes of this Agreement, includes any client, counterparty, supplier, introducer, registry, exchange, bank, or other business contact.<br><br>
+      <strong>&ldquo;Registry&rdquo;</strong> means any registry or platform used for the issuance, holding, transfer, retirement, or cancellation of Carbon Credits, including those listed in Schedule C.<br><br>
+      <strong>&ldquo;Segregated Account&rdquo;</strong> means the client money account described in Article 7.<br><br>
+      <strong>&ldquo;Services&rdquo;</strong> means the services described in Article 2.<br><br>
+      <strong>&ldquo;Transaction&rdquo;</strong> means any acquisition, sale, conversion (swap), delivery, or retirement of Carbon Credits pursuant to this Agreement.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.2</span></div>
+    <div class="article-body">References to &ldquo;parties&rdquo; means the Service Provider and the Client, and &ldquo;party&rdquo; means either of them.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.3</span></div>
+    <div class="article-body">Headings are for convenience only and shall not affect interpretation.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.4</span></div>
+    <div class="article-body">References to legislation include amendments, re-enactments, and subsidiary legislation.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.5</span></div>
+    <div class="article-body">This Agreement shall be read in conjunction with the NDA and the Custody Agreement. In the event of conflict between this Agreement and the NDA regarding matters other than confidentiality and non-circumvention, the MSA shall prevail. Regarding confidentiality and non-circumvention, the NDA shall take precedence.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 2: SCOPE OF SERVICES ───────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 2</span>
+    <span class="chapter-title">Scope of Services</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">2.1</span></div>
+    <div class="article-body">
+      The Service Provider shall provide the following services to the Client:<br><br>
+      (a) <strong>Carbon Credit Acquisition:</strong> facilitating the sourcing and acquisition of Carbon Credits from PRC pilot ETS markets, voluntary carbon markets, and other approved markets;<br><br>
+      (b) <strong>Cross-Border Conversion (Swap):</strong> facilitating the conversion of Carbon Credits from one type to another (e.g., CEA to EUA or EUA to CEA) through the Service Provider&rsquo;s principal counterparty mechanism;<br><br>
+      (c) <strong>Custody:</strong> holding and safeguarding Carbon Credits in accordance with the Custody Agreement;<br><br>
+      (d) <strong>Delivery:</strong> transferring Carbon Credits to Registry accounts designated by the Client;<br><br>
+      (e) <strong>Retirement:</strong> retiring Carbon Credits on the Client&rsquo;s behalf for compliance or voluntary purposes;<br><br>
+      (f) <strong>Market Intelligence:</strong> providing periodic market reports on carbon credit pricing, trends, and regulatory developments;<br><br>
+      (g) <strong>Platform Access:</strong> granting the Client access to the Platform for transaction management, reporting, and communication.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">2.2</span></div>
+    <div class="article-body">The Service Provider may introduce additional services from time to time, which shall be offered to the Client by written notice. Such additional services shall be subject to the terms of this Agreement or such other terms as the parties may agree in writing.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">2.3</span></div>
+    <div class="article-body">The Service Provider does not provide investment advice, tax advice, or legal advice. The Client is responsible for obtaining its own independent professional advice in relation to Transactions.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 3: ROLE OF SERVICE PROVIDER ────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 3</span>
+    <span class="chapter-title">Role of the Service Provider</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">3.1</span></div>
+    <div class="article-body">The Client acknowledges and agrees that the Service Provider acts as a facilitator of cross-border carbon credit transactions. Due to the structural separation between EU and PRC carbon markets, the Service Provider necessarily operates as a principal counterparty to the Client.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">3.2</span></div>
+    <div class="article-body">
+      Under this structure, the Service Provider:<br><br>
+      (a) acquires Carbon Credits in its own name and for its own account as a necessary step to facilitate cross-border value exchanges for the Client;<br><br>
+      (b) bears market risk, regulatory risk, and operational risk during the intermediation period between acquisition and delivery;<br><br>
+      (c) earns compensation through fees as set out in the Fee Schedule (Schedule A) and, where applicable, through the spread between its acquisition cost and the facilitation price offered to the Client;<br><br>
+      (d) has no obligation to disclose its acquisition cost or its upstream counterparties to the Client.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">3.3</span></div>
+    <div class="article-body">
+      For the avoidance of doubt, the Service Provider is NOT acting as:<br><br>
+      (a) a trustee or fiduciary (except as expressly provided in the Custody Agreement);<br><br>
+      (b) an investment adviser or financial adviser;<br><br>
+      (c) an exchange or marketplace operator.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">3.4</span></div>
+    <div class="article-body">The Service Provider&rsquo;s facilitation price to the Client shall reflect: (i) the prevailing market price of the relevant Carbon Credits; (ii) the cross-border facilitation cost; (iii) the Service Provider&rsquo;s compensation spread; and (iv) all applicable fees as set out in Schedule A.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 4: TRANSACTION EXECUTION ───────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 4</span>
+    <span class="chapter-title">Transaction Execution</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">4.1</span></div>
+    <div class="article-body">
+      The Client may request a Transaction by submitting an instruction through the Platform or by authenticated written means. Each instruction shall specify:<br><br>
+      (a) the type and volume of Carbon Credits (in whole units);<br><br>
+      (b) whether the Transaction is an acquisition, conversion (swap), delivery, retirement, or sale;<br><br>
+      (c) any preferred settlement date or special conditions.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">4.2</span></div>
+    <div class="article-body">The Service Provider shall use commercially reasonable efforts to execute the Transaction and shall provide the Client with a Confirmation within <strong>two (2) Business Days</strong> of execution.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">4.3</span></div>
+    <div class="article-body">A Transaction is binding upon both parties from the moment the Confirmation is issued. The Client has <strong>twenty-four (24) hours</strong> to notify the Service Provider of any discrepancy in the Confirmation; failure to notify shall constitute acceptance of the Confirmation terms.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">4.4</span></div>
+    <div class="article-body">
+      The Service Provider may decline to execute a Transaction if:<br><br>
+      (a) the Client has insufficient funds on deposit;<br><br>
+      (b) execution would cause the Service Provider to breach Applicable Law;<br><br>
+      (c) market conditions render execution impracticable or would result in pricing materially adverse to the Client;<br><br>
+      (d) the requested Carbon Credits are not available in the relevant market within a reasonable timeframe.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">4.5</span></div>
+    <div class="article-body">The Service Provider shall notify the Client promptly of any refusal, with reasons, and shall propose alternative arrangements where possible.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 5: PRICING AND FEES ────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 5</span>
+    <span class="chapter-title">Pricing and Fees</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.1</span></div>
+    <div class="article-body">The Client shall pay the Service Provider fees in accordance with the Fee Schedule (Schedule A). Fees are payable in the currency specified in the relevant Confirmation or the Fee Schedule.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.2</span></div>
+    <div class="article-body">
+      All prices quoted by the Service Provider include the Service Provider&rsquo;s facilitation spread. Benchmark references are:<br><br>
+      (a) EUA: <strong>ICE Endex EUA Futures (front month)</strong> or equivalent publicly available benchmark;<br><br>
+      (b) CEA/SZA: <strong>Official closing price published by the relevant PRC pilot ETS exchange</strong>;<br><br>
+      (c) VCC: <strong>Published price on Core Climate</strong> or equivalent marketplace.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.3</span></div>
+    <div class="article-body">The Service Provider may revise the Fee Schedule by giving <strong>sixty (60) days&rsquo;</strong> written notice. Any single revision shall not increase any fee rate by more than <strong>twenty-five percent (25%)</strong> relative to the then-current rate.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.4</span></div>
+    <div class="article-body"><strong>Swap (Conversion) Fee Methodology:</strong> For CEA-to-EUA conversions, the platform fee is calculated and deducted in CEA units before execution against the order book. The fee amount in CEA is computed by the formula: <strong>(CEA Volume) &times; (Fee Rate)</strong>, rounded up to the nearest whole unit.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.5</span></div>
+    <div class="article-body">All fees are exclusive of value-added tax, goods and services tax, or equivalent taxes, which shall be charged at the applicable rate and borne by the Client.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">5.6</span></div>
+    <div class="article-body">The Service Provider may deduct fees from the Client&rsquo;s funds in the Segregated Account or from the Client&rsquo;s Carbon Credit holdings (as applicable), provided that: (i) the fee has accrued; and (ii) the Service Provider has given the Client written notice.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 6: SETTLEMENT AND DELIVERY ─────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 6</span>
+    <span class="chapter-title">Settlement and Delivery</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">6.1</span></div>
+    <div class="article-body">Settlement shall be on a delivery-versus-payment (&ldquo;DVP&rdquo;) basis unless otherwise agreed in the Confirmation.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">6.2</span></div>
+    <div class="article-body">
+      Standard settlement windows are as follows (all timelines expressed in Business Days from trade date &ldquo;T&rdquo;):
+      <br><br>
+      <table class="data-table">
+        <thead>
+          <tr><th>Transaction Type</th><th>Settlement Timeline</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CEA Cash Purchase</td><td><strong>T+3 (standard); T+5 (complex)</strong></td><td>Pre-funding model; Client must have cleared funds on deposit</td></tr>
+          <tr><td>Swap &mdash; CEA leg</td><td><strong>T+2</strong></td><td>CEA transferred to the EUA holder&rsquo;s account</td></tr>
+          <tr><td>Swap &mdash; EUA leg</td><td><strong>T+5</strong></td><td>EUA transferred to the Client&rsquo;s EU entity account</td></tr>
+          <tr><td>EUA Cash Purchase</td><td><strong>T+2</strong></td><td>Standard EU settlement cycle</td></tr>
+          <tr><td>VCC Retirement/Delivery</td><td><strong>T+5</strong></td><td>Subject to registry processing times</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">6.3</span></div>
+    <div class="article-body">If the Service Provider is unable to settle by the settlement date due to causes beyond its reasonable control (including Registry delays, regulatory actions, or counterparty defaults), the Service Provider may extend settlement by up to <strong>thirty (30) additional Business Days</strong> with notice to the Client.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">6.4</span></div>
+    <div class="article-body">If settlement cannot be effected within the extended period, the Client may elect to: (i) continue to wait; (ii) cancel the Transaction and receive a full refund of funds paid; or (iii) accept alternative arrangements proposed by the Service Provider.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 7: CLIENT FUNDS ────────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 7</span>
+    <span class="chapter-title">Client Funds</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">7.1</span></div>
+    <div class="article-body">The Client shall deposit funds with the Service Provider in advance of Transactions, by wire transfer to the Designated Bank Account set out in Schedule D.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">7.2</span></div>
+    <div class="article-body">Client funds shall be held in a segregated bank account (the &ldquo;Segregated Account&rdquo;) at a <strong>licensed Hong Kong bank</strong>, separate from the Service Provider&rsquo;s operational accounts.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">7.3</span></div>
+    <div class="article-body">The Service Provider shall not use Client funds for any purpose other than: (i) executing Transactions on behalf of the Client; (ii) deducting accrued fees; and (iii) returning funds to the Client upon request.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">7.4</span></div>
+    <div class="article-body">Interest accrued on the Segregated Account shall be for the Client&rsquo;s benefit, net of withholding tax and bank charges.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">7.5</span></div>
+    <div class="article-body">The Client may request return of unencumbered funds at any time by written request. The Service Provider shall effect return within <strong>five (5) Business Days</strong> of receipt of such request.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 8: CARBON CREDIT CUSTODY ───────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 8</span>
+    <span class="chapter-title">Carbon Credit Custody</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">8.1</span></div>
+    <div class="article-body">Carbon Credits acquired pursuant to this Agreement shall be held in custody in accordance with the Custody Agreement.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">8.2</span></div>
+    <div class="article-body">The Service Provider holds legal title to Carbon Credits in custody; the Client holds beneficial ownership as recorded in the Client Ledger maintained by the Service Provider.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">8.3</span></div>
+    <div class="article-body">The terms of the Custody Agreement are incorporated by reference into this Agreement to the extent relevant.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 9: REPORTING AND TRANSPARENCY ──────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 9</span>
+    <span class="chapter-title">Reporting and Transparency</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">9.1</span></div>
+    <div class="article-body">
+      The Service Provider shall provide the Client with:<br><br>
+      (a) Transaction Confirmations within <strong>two (2) Business Days</strong> of each Transaction;<br><br>
+      (b) monthly custody and cash statements within <strong>ten (10) Business Days</strong> of month-end;<br><br>
+      (c) quarterly market intelligence reports;<br><br>
+      (d) annual audit confirmation of custody holdings and segregated funds.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">9.2</span></div>
+    <div class="article-body">The Client shall have access to real-time portfolio information through the Platform, including current Carbon Credit holdings, EUR balance, and transaction history.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">9.3</span></div>
+    <div class="article-body">Benchmark pricing references shall be published on the Platform daily, based on ICE EUA spot and relevant PRC pilot ETS exchange prices.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 10: REPRESENTATIONS AND WARRANTIES ─────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 10</span>
+    <span class="chapter-title">Representations and Warranties</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">10.1</span></div>
+    <div class="article-body">
+      Each party represents and warrants to the other, as of the Effective Date and on each trade date, that:<br><br>
+      (a) it is duly organised and validly existing under the laws of its jurisdiction;<br><br>
+      (b) it has full corporate power and authority to execute and perform this Agreement;<br><br>
+      (c) this Agreement constitutes a legal, valid, and binding obligation;<br><br>
+      (d) no consent, approval, or authorisation of any governmental authority is required that has not been obtained;<br><br>
+      (e) it is not insolvent, bankrupt, or subject to winding-up proceedings.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">10.2</span></div>
+    <div class="article-body">
+      The Service Provider additionally represents that:<br><br>
+      (a) it maintains adequate operational, technical, and compliance infrastructure to perform the Services;<br><br>
+      (b) it implements AML/KYC procedures aligned with applicable anti-money laundering and counter-terrorist financing legislation in Hong Kong;<br><br>
+      (c) it has access to the Registries and markets listed in Schedule C;<br><br>
+      (d) should any new regulatory requirement be introduced that materially affects the Services, the Service Provider shall promptly notify the Client and take all reasonable steps to comply or to propose alternative arrangements.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">10.3</span></div>
+    <div class="article-body">
+      The Client represents that:<br><br>
+      (a) it is acting for its own account and has made its own independent decision to enter into Transactions;<br><br>
+      (b) it has sufficient knowledge and experience to evaluate the risks of carbon credit trading;<br><br>
+      (c) it is not relying on the Service Provider for investment advice or recommendations.
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 11: RISK ACKNOWLEDGEMENT ───────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 11</span>
+    <span class="chapter-title">Risk Acknowledgement</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">11.1</span></div>
+    <div class="article-body">
+      The Client acknowledges the risks set out in the Custody Agreement and additionally acknowledges:<br><br>
+      (a) <strong>Market Risk:</strong> Carbon credit prices may fluctuate significantly and without warning;<br><br>
+      (b) <strong>Conversion Risk:</strong> The CEA/EUA conversion ratio is not fixed and depends on prevailing market conditions at the time of the swap;<br><br>
+      (c) <strong>Regulatory Risk:</strong> Changes in EU ETS, PRC ETS, or Hong Kong regulation may materially affect Carbon Credit values, availability, or transferability;<br><br>
+      (d) <strong>Liquidity Risk:</strong> PRC pilot markets may have limited liquidity, affecting execution timing and pricing;<br><br>
+      (e) <strong>Cross-Border Risk:</strong> Currency fluctuation, legal divergence, and political risks inherent in EU-China transactions;<br><br>
+      (f) <strong>Technology Risk:</strong> Platform, Registry, or communication system failures may delay Transactions.
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 12: INDEMNIFICATION ────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 12</span>
+    <span class="chapter-title">Indemnification</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">12.1</span></div>
+    <div class="article-body">
+      The Client shall indemnify and hold harmless the Service Provider against all losses, damages, costs, and expenses (including reasonable legal fees) arising from:<br><br>
+      (a) any breach of the Client&rsquo;s representations, warranties, or obligations under this Agreement;<br><br>
+      (b) any instruction given by the Client that is subsequently found to be unauthorised, erroneous, or fraudulent;<br><br>
+      (c) any tax liability arising from the Client&rsquo;s Transactions.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">12.2</span></div>
+    <div class="article-body">
+      The Service Provider shall indemnify and hold harmless the Client against all losses arising from:<br><br>
+      (a) breach of the Service Provider&rsquo;s representations, warranties, or obligations;<br><br>
+      (b) gross negligence or wilful misconduct of the Service Provider;<br><br>
+      (c) failure to properly segregate Client funds or maintain accurate custody records.
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 13: LIMITATION OF LIABILITY ────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 13</span>
+    <span class="chapter-title">Limitation of Liability</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">13.1</span></div>
+    <div class="article-body">The Service Provider&rsquo;s aggregate liability under or in connection with this Agreement shall not exceed the total fees paid by the Client to the Service Provider in the <strong>twelve (12) months</strong> preceding the event giving rise to liability.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">13.2</span></div>
+    <div class="article-body">Neither party shall be liable to the other for any indirect, consequential, special, or punitive damages, including loss of profits, loss of opportunity, or loss of anticipated savings, except where such liability arises from: (a) fraud or wilful misconduct; (b) breach of confidentiality obligations under Article 14 or the NDA; (c) breach of non-circumvention obligations under Article 18 or the NDA.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">13.3</span></div>
+    <div class="article-body">Nothing in this Agreement shall exclude or limit either party&rsquo;s liability for fraud, wilful default, death or personal injury caused by negligence, or any liability that cannot be excluded or limited under Applicable Law.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 14: CONFIDENTIALITY ────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 14</span>
+    <span class="chapter-title">Confidentiality</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">14.1</span></div>
+    <div class="article-body">Each party shall keep confidential all Confidential Information (as defined in the NDA) received from the other in connection with this Agreement, including but not limited to: transaction details, pricing, market information, counterparty identities, and regulatory interactions.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">14.2</span></div>
+    <div class="article-body">The confidentiality obligations under this Article 14 are supplementary to and shall be read in conjunction with the NDA. In the event of any conflict or inconsistency between the confidentiality obligations under this Article and those in the NDA, the NDA shall prevail.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">14.3</span></div>
+    <div class="article-body">Exceptions to confidentiality: information that is publicly available through no fault of the Receiving Party, independently developed, lawfully received from a third party without restriction, or required to be disclosed by law or court order (provided notice is given where permitted).</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">14.4</span></div>
+    <div class="article-body">This confidentiality obligation survives termination for a period of <strong>five (5) years</strong>.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 15: DATA PROTECTION ────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 15</span>
+    <span class="chapter-title">Data Protection</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">15.1</span></div>
+    <div class="article-body">Each party shall comply with all applicable data protection laws in relation to personal data processed under this Agreement, including applicable Hong Kong data privacy legislation and, where applicable, the General Data Protection Regulation (GDPR) and PRC data protection requirements.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">15.2</span></div>
+    <div class="article-body">Personal data shall be processed only for the purposes of performing this Agreement and complying with Applicable Law. Each party shall be an independent data controller in respect of personal data it collects and processes.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 16: AML AND COMPLIANCE ─────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 16</span>
+    <span class="chapter-title">Anti-Money Laundering and Compliance</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">16.1</span></div>
+    <div class="article-body">The Client shall provide all information and documentation reasonably requested by the Service Provider for AML/KYC purposes in a timely manner.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">16.2</span></div>
+    <div class="article-body">The Service Provider may suspend Services or refuse to execute a Transaction if the Client fails to provide requested AML/KYC information within <strong>ten (10) Business Days</strong>.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">16.3</span></div>
+    <div class="article-body">The Service Provider reserves the right to file suspicious transaction reports with the Joint Financial Intelligence Unit (JFIU) without notifying the Client, as required by law.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">16.4</span></div>
+    <div class="article-body">
+      The Client represents that:<br><br>
+      (a) it is not a sanctioned person or entity under the sanctions programmes of the United Nations, European Union, United States, United Kingdom, or Hong Kong;<br><br>
+      (b) funds deposited with the Service Provider are derived from lawful sources;<br><br>
+      (c) it will not use the Services for money laundering, terrorist financing, sanctions evasion, or any unlawful purpose.
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 17: ANTI-BRIBERY ───────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 17</span>
+    <span class="chapter-title">Anti-Bribery and Anti-Corruption</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">17.1</span></div>
+    <div class="article-body">
+      Each party represents that it has not, and undertakes that it shall not, in connection with this Agreement:<br><br>
+      (a) offer, promise, give, or authorise the giving of any bribe, kickback, or other corrupt payment to any person, including any government official, public officer, or political party;<br><br>
+      (b) request, agree to receive, or accept any bribe, kickback, or other corrupt payment;<br><br>
+      (c) take any action that would cause either party to violate applicable anti-bribery and anti-corruption legislation in Hong Kong, the European Union, or any other relevant jurisdiction.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">17.2</span></div>
+    <div class="article-body">Each party shall maintain adequate procedures designed to prevent bribery and corruption by its officers, employees, agents, and any persons performing services on its behalf.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">17.3</span></div>
+    <div class="article-body">Each party shall promptly notify the other if it becomes aware of any breach or suspected breach of this Article 17. A breach of this Article shall constitute a material breach entitling the non-breaching party to terminate this Agreement immediately.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 18: NON-CIRCUMVENTION ──────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 18</span>
+    <span class="chapter-title">Non-Circumvention</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">18.1</span></div>
+    <div class="article-body">The non-circumvention and non-solicitation obligations set out in the NDA are hereby incorporated by reference and shall apply mutatis mutandis to the parties&rsquo; relationship under this Agreement.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">18.2</span></div>
+    <div class="article-body">
+      Without prejudice to the generality of the NDA provisions, the Client undertakes that during the term of this Agreement and for a period of <strong>two (2) years</strong> following its termination or expiry, it shall not:<br><br>
+      (a) directly or indirectly contact, deal with, or transact with any Protected Relationship of the Service Provider for the purpose of conducting carbon credit business that would circumvent the Service Provider&rsquo;s involvement;<br><br>
+      (b) use information obtained through the Platform or the performance of this Agreement to identify, approach, or solicit counterparties, registries, or market participants known to the Service Provider;<br><br>
+      (c) establish or assist in the establishment of any competing cross-border carbon credit facilitation service that exploits Protected Relationships.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">18.3</span></div>
+    <div class="article-body">This Article 18 shall not restrict the Client from conducting business with any person or entity with whom the Client had a pre-existing relationship prior to the date of this Agreement, evidenced by written documentation.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">18.4</span></div>
+    <div class="article-body">In the event of a breach of this Article 18, the Service Provider shall be entitled to injunctive relief and to recover from the Client any profits derived from the circumventing activity, in addition to other remedies available at law.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 19: FORCE MAJEURE ──────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 19</span>
+    <span class="chapter-title">Force Majeure</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">19.1</span></div>
+    <div class="article-body">
+      Neither party shall be liable for failure to perform due to events beyond its reasonable control (&ldquo;Force Majeure&rdquo;), including:<br><br>
+      (a) natural disasters, pandemics, wars, civil unrest, or government actions;<br><br>
+      (b) changes in Applicable Law or regulatory requirements that render performance unlawful or impracticable;<br><br>
+      (c) Registry outages, cyber attacks, or critical infrastructure failures;<br><br>
+      (d) sanctions or trade restrictions imposed by any government;<br><br>
+      (e) suspension of trading on any relevant exchange or market.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">19.2</span></div>
+    <div class="article-body">The affected party shall give notice within <strong>five (5) Business Days</strong> and use reasonable efforts to mitigate the impact.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">19.3</span></div>
+    <div class="article-body">If the Force Majeure event continues for more than <strong>sixty (60) days</strong>, either party may terminate this Agreement on <strong>thirty (30) days&rsquo;</strong> written notice.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 20: TERM AND TERMINATION ───────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 20</span>
+    <span class="chapter-title">Term and Termination</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">20.1</span></div>
+    <div class="article-body">This Agreement commences on the date of execution by both parties (the &ldquo;Effective Date&rdquo;) and continues for an initial term of <strong>twelve (12) months</strong>, automatically renewing for successive twelve-month periods unless terminated in accordance with this Article.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">20.2</span></div>
+    <div class="article-body">Either party may terminate by giving <strong>ninety (90) days&rsquo;</strong> written notice before the end of the then-current term.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">20.3</span></div>
+    <div class="article-body">
+      Either party may terminate immediately by written notice if:<br><br>
+      (a) the other party commits a material breach that is not remedied within <strong>thirty (30) days</strong> of written notice specifying the breach;<br><br>
+      (b) the other party becomes insolvent, enters liquidation, or is subject to analogous proceedings;<br><br>
+      (c) a change in Applicable Law makes performance of this Agreement unlawful;<br><br>
+      (d) the other party commits a breach of Article 17 (Anti-Bribery).
+    </div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 21: CONSEQUENCES OF TERMINATION ────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 21</span>
+    <span class="chapter-title">Consequences of Termination</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">21.1</span></div>
+    <div class="article-body">
+      Upon termination, the Service Provider shall:<br><br>
+      (a) cease executing new Transactions;<br><br>
+      (b) complete all pending Transactions within <strong>twenty (20) Business Days</strong> (or such longer period as may be reasonably necessary);<br><br>
+      (c) transfer all Carbon Credits held in custody to Client-designated Registry accounts within <strong>twenty (20) Business Days</strong>;<br><br>
+      (d) return all Client funds (net of accrued fees and charges) within <strong>ten (10) Business Days</strong>;<br><br>
+      (e) deliver a final statement of account within <strong>twenty (20) Business Days</strong>.
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">21.2</span></div>
+    <div class="article-body">Termination does not affect accrued rights or obligations, nor obligations that by their nature survive termination, including: confidentiality (Article 14 and NDA), non-circumvention (Article 18 and NDA), indemnification obligations, and representations and warranties made on trade dates.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 22: GOVERNING LAW ──────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 22</span>
+    <span class="chapter-title">Governing Law and Dispute Resolution</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">22.1</span></div>
+    <div class="article-body">This Agreement is governed by and shall be construed in accordance with the laws of <strong>Hong Kong Special Administrative Region</strong>.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">22.2</span></div>
+    <div class="article-body"><strong>Negotiation:</strong> In the event of any dispute arising out of or in connection with this Agreement, the parties shall first attempt to resolve through good faith negotiations between senior representatives within <strong>thirty (30) days</strong> of written notice of the dispute.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">22.3</span></div>
+    <div class="article-body"><strong>Mediation:</strong> If the dispute is not resolved through negotiation within the period specified in Article 22.2, either party may refer the dispute to mediation administered by the <strong>Hong Kong Mediation Centre</strong>.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">22.4</span></div>
+    <div class="article-body"><strong>Arbitration:</strong> If the dispute is not resolved through mediation within <strong>sixty (60) days</strong> of the referral to mediation (or such longer period as the parties may agree), either party may refer the dispute to final and binding arbitration under the <strong>HKIAC Administered Arbitration Rules</strong>. The seat of arbitration shall be Hong Kong. The language of arbitration shall be English. The arbitral tribunal shall consist of a sole arbitrator appointed in accordance with the HKIAC Rules.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">22.5</span></div>
+    <div class="article-body">Notwithstanding the above, either party may seek injunctive or other equitable relief from the courts of Hong Kong to protect its rights pending the outcome of any dispute resolution procedure under this Article 22.</div>
+  </div>
+</div>
+
+<!-- ── ARTICLE 23: GENERAL PROVISIONS ─────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Article 23</span>
+    <span class="chapter-title">General Provisions</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.1</span></div>
+    <div class="article-body"><strong>Entire Agreement:</strong> This Agreement (together with the NDA, the Custody Agreement, and all Schedules) constitutes the entire agreement between the parties regarding the subject matter hereof and supersedes all prior negotiations, understandings, and agreements.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.2</span></div>
+    <div class="article-body"><strong>Amendments:</strong> No amendment to this Agreement shall be effective unless made in writing and signed by an authorised representative of each party.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.3</span></div>
+    <div class="article-body"><strong>Waiver:</strong> No failure or delay by either party in exercising any right shall constitute a waiver of that right, nor shall any single or partial exercise preclude further exercise.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.4</span></div>
+    <div class="article-body"><strong>Severability:</strong> If any provision is held invalid or unenforceable, the remaining provisions shall continue in full force and effect. The parties shall negotiate in good faith to replace the invalid provision with a valid one that achieves the original intent.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.5</span></div>
+    <div class="article-body"><strong>Assignment:</strong> No assignment without prior written consent. The Service Provider may assign to a wholly-owned subsidiary upon <strong>thirty (30) days&rsquo;</strong> written notice, provided the assignee assumes all obligations.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.6</span></div>
+    <div class="article-body"><strong>Third Party Rights:</strong> Nothing in this Agreement confers rights on any third party under applicable third party rights legislation.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.7</span></div>
+    <div class="article-body"><strong>Notices:</strong> All notices shall be in writing and delivered to the addresses set out in Schedule D, or as subsequently notified. Notices by email shall be valid only if followed by a hard copy sent by registered mail or internationally recognised courier.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.8</span></div>
+    <div class="article-body"><strong>Counterparts:</strong> This Agreement may be executed in counterparts, each of which shall constitute an original and all of which together shall constitute one and the same agreement.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.9</span></div>
+    <div class="article-body"><strong>No Partnership or Agency:</strong> Nothing in this Agreement shall be construed as creating a partnership, joint venture, or employment relationship between the parties.</div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">23.10</span></div>
+    <div class="article-body"><strong>Order of Precedence:</strong> In the event of conflict between the main body of this Agreement and any Schedule, the main body shall prevail. In the event of conflict between this Agreement and the NDA or Custody Agreement, the order of precedence is: (i) NDA (for confidentiality and non-circumvention matters); (ii) this Agreement (for services and facilitation); (iii) Custody Agreement (for custody-specific matters).</div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE A: FEE SCHEDULE ────────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Schedule A</span>
+    <span class="chapter-title">Fee Schedule</span>
+  </div>
+  <div class="article">
+    <div class="article-body">
+      The following fee rates apply to Services provided under this Agreement. All fee rates are subject to revision in accordance with Article 5.3.
+      <br><br>
+      <table class="data-table">
+        <thead>
+          <tr><th>Service</th><th>Fee Type</th><th>Rate</th><th>Currency</th><th>Billing</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CEA Cash Purchase</td><td>Facilitation Fee</td><td><strong>1.5% of transaction value</strong></td><td>EUR</td><td>Per trade</td></tr>
+          <tr><td>CEA &rarr; EUA Swap</td><td>Swap Fee</td><td><strong>2.0% of CEA volume</strong></td><td>CEA (whole units, rounded up)</td><td>Per conversion</td></tr>
+          <tr><td>EUA &rarr; CEA Swap</td><td>Swap Fee</td><td><strong>2.0% of EUA volume</strong></td><td>EUA (whole units, rounded up)</td><td>Per conversion</td></tr>
+          <tr><td>Carbon Credit Custody</td><td>Custody Fee</td><td>As per Custody Agreement</td><td>See Custody Agreement</td><td>Monthly</td></tr>
+          <tr><td>Platform Access</td><td>—</td><td><strong>Included</strong></td><td>No separate charge</td><td>—</td></tr>
+          <tr><td>Market Intelligence Reports</td><td>—</td><td><strong>Included</strong></td><td>No separate charge</td><td>Quarterly</td></tr>
+        </tbody>
+      </table>
+      <br>
+      <strong>Notes:</strong><br><br>
+      1. <strong>Swap Fee Methodology:</strong> The swap fee is calculated in the source Carbon Credit currency (e.g., CEA for a CEA-to-EUA swap). The fee amount is: Volume &times; Fee Rate, rounded up to the nearest whole unit.<br><br>
+      2. <strong>Benchmark References:</strong> EUA &mdash; ICE Endex EUA Futures (front month); CEA/SZA &mdash; Official closing price of the relevant PRC pilot ETS exchange; VCC &mdash; Core Climate or equivalent marketplace.<br><br>
+      3. <strong>Fee Cap:</strong> Any single fee revision under Article 5.3 shall not increase any rate by more than 25% relative to the then-current rate.
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE B: SERVICE LEVEL STANDARDS ────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Schedule B</span>
+    <span class="chapter-title">Service Level Standards</span>
+  </div>
+  <div class="article">
+    <div class="article-body">
+      <table class="data-table">
+        <thead>
+          <tr><th>Service Element</th><th>Standard</th><th>Remedy for Breach</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Transaction execution</td><td>Confirmation within 2 Business Days</td><td>Fee waiver for affected trade</td></tr>
+          <tr><td>Settlement (CEA cash purchase)</td><td><strong>T+3 (standard)</strong></td><td>Interest compensation at HIBOR +1%</td></tr>
+          <tr><td>Settlement (swap &mdash; CEA leg)</td><td><strong>T+2</strong></td><td>Interest compensation at HIBOR +1%</td></tr>
+          <tr><td>Settlement (swap &mdash; EUA leg)</td><td><strong>T+5</strong></td><td>Interest compensation at HIBOR +1%</td></tr>
+          <tr><td>Settlement (EUA cash purchase)</td><td><strong>T+2</strong></td><td>Interest compensation at HIBOR +1%</td></tr>
+          <tr><td>Monthly custody statements</td><td>Within 10 Business Days of month-end</td><td>Written notification to Client</td></tr>
+          <tr><td>Fund return</td><td>Within 5 Business Days of request</td><td>Client may escalate per Article 22</td></tr>
+          <tr><td>Annual audit confirmation</td><td>Within 60 days of year-end</td><td>Written notification to Client</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE C: APPROVED REGISTRIES AND MARKETS ────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Schedule C</span>
+    <span class="chapter-title">Approved Registries and Markets</span>
+  </div>
+  <div class="article">
+    <div class="article-body">
+      This list may be updated by the Service Provider from time to time with prior written notice to the Client. Addition of new registries or markets shall not constitute an amendment to this Agreement.
+      <br><br>
+      <table class="data-table">
+        <thead>
+          <tr><th>Registry / Market</th><th>Jurisdiction</th><th>Products</th><th>Access Type</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>EU Transaction Log (EUTL)</strong></td><td>European Union</td><td>EUA</td><td>Via EU counterparty</td></tr>
+          <tr><td><strong>CEEX Shenzhen</strong></td><td>PRC (Shenzhen)</td><td>SZA, CCER</td><td>Direct participation</td></tr>
+          <tr><td><strong>Guangdong ETS</strong></td><td>PRC (Guangdong)</td><td>GDEA, CCER</td><td>Via partner</td></tr>
+          <tr><td><strong>Shanghai Environment &amp; Energy Exchange</strong></td><td>PRC (Shanghai)</td><td>CEA, CCER</td><td>Direct participation</td></tr>
+          <tr><td><strong>National Carbon Registry (PRC)</strong></td><td>PRC (National)</td><td>CEA, CCER</td><td>Via authorised participant</td></tr>
+          <tr><td><strong>Verra Registry</strong></td><td>Global</td><td>VCS / VCC</td><td>Direct access</td></tr>
+          <tr><td><strong>Gold Standard Registry</strong></td><td>Global</td><td>GS VER</td><td>Direct access</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE D: BANK ACCOUNTS AND NOTICES ──────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Schedule D</span>
+    <span class="chapter-title">Designated Bank Accounts and Notices</span>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">1.</span></div>
+    <div class="article-body">
+      <strong>Service Provider Designated Bank Account (Segregated Client Account)</strong>
+      <br><br>
+      <table class="data-table">
+        <tbody>
+          <tr><td>Account Name</td><td>[To be completed upon onboarding]</td></tr>
+          <tr><td>Bank Name</td><td>[Licensed Hong Kong Bank]</td></tr>
+          <tr><td>Bank Address</td><td>[Bank Address]</td></tr>
+          <tr><td>Account Number</td><td>[To be completed upon onboarding]</td></tr>
+          <tr><td>SWIFT/BIC</td><td>[To be completed upon onboarding]</td></tr>
+          <tr><td>Beneficiary</td><td><strong>Italy Nihao Group Limited</strong></td></tr>
+          <tr><td>Reference</td><td>[Client ID to be provided upon engagement]</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="article">
+    <div class="article-head"><span class="article-n">2.</span></div>
+    <div class="article-body">
+      <strong>Addresses for Notices</strong>
+      <br><br>
+      <table class="data-table">
+        <thead>
+          <tr><th></th><th>Service Provider</th><th>Client</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Entity Name</td><td><strong>Italy Nihao Group Limited</strong></td><td><strong>{{ client_entity_name or "[Client Full Legal Name]" }}</strong></td></tr>
+          <tr><td>Attention</td><td>Legal Department</td><td>{{ client_representative or "[Designated Contact Person]" }}</td></tr>
+          <tr><td>Address</td><td>[Registered Office Address, Hong Kong SAR]</td><td>[Client Registered Address]</td></tr>
+          <tr><td>Email</td><td>legal@niha.com</td><td>{{ client_email or "[Email to be provided by Client]" }}</td></tr>
+        </tbody>
+      </table>
+      <br>
+      <em>Note: Notices by email are valid only if followed by a hard copy sent by registered mail or internationally recognised courier within five (5) Business Days, as specified in Article 23.7.</em>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIGNATURE BLOCK ─────────────────────────────────────── -->
+<div class="chapter">
+  <div class="chapter-head">
+    <span class="chapter-n">Execution</span>
+    <span class="chapter-title"></span>
+  </div>
+  <div class="article">
+    <div class="article-body">
+      IN WITNESS WHEREOF the parties have executed this Agreement as of the date first written above.
+      <br><br>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr>
+          <td style="width:50%; vertical-align:top; padding-right: 24px;">
+            <div style="font-size: 0.58rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #999999; margin-bottom: 12px;">FOR AND ON BEHALF OF</div>
+            <div style="font-size: 0.78rem; font-weight: 500; margin-bottom: 4px;">ITALY NIHAO GROUP LIMITED</div>
+            <div class="sig-line"></div>
+            <div class="sig-label">Signature</div>
+            <br>
+            <div class="sig-line" style="margin-top: 24px;"></div>
+            <div class="sig-label">Name &nbsp;&middot;&nbsp; Title</div>
+            <br>
+            <div class="sig-line" style="margin-top: 24px;"></div>
+            <div class="sig-label">Date &nbsp;&middot;&nbsp; Address</div>
+            <br><br>
+            <div style="font-size: 0.58rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #999999; margin-bottom: 8px;">WITNESS</div>
+            <div class="sig-line" style="margin-top: 12px;"></div>
+            <div class="sig-label">Signature &nbsp;&middot;&nbsp; Name &nbsp;&middot;&nbsp; Occupation</div>
+          </td>
+          <td style="width:50%; vertical-align:top; padding-left: 24px;">
+            <div style="font-size: 0.58rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #999999; margin-bottom: 12px;">FOR AND ON BEHALF OF</div>
+            <div style="font-size: 0.78rem; font-weight: 500; margin-bottom: 4px;">{{ client_entity_name or "________________________________" }}</div>
+            <div class="sig-line"></div>
+            <div class="sig-label">Signature</div>
+            <br>
+            <div class="sig-line" style="margin-top: 24px;"></div>
+            <div class="sig-label">{{ client_representative or "Name &nbsp;&middot;&nbsp; Title" }}</div>
+            <br>
+            <div class="sig-line" style="margin-top: 24px;"></div>
+            <div class="sig-label">Date &nbsp;&middot;&nbsp; Address</div>
+            <br><br>
+            <div style="font-size: 0.58rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #999999; margin-bottom: 8px;">WITNESS</div>
+            <div class="sig-line" style="margin-top: 12px;"></div>
+            <div class="sig-label">Signature &nbsp;&middot;&nbsp; Name &nbsp;&middot;&nbsp; Occupation</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

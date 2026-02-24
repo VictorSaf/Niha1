@@ -373,6 +373,19 @@ class EmailService:
             to_email, subject, html, mail_config=mail_config, attachments=attachments,
         )
 
+    async def send_troducer_welcome(
+        self, to_email: str, first_name: str = "",
+        mail_config: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Send welcome email when a TRODUCER account is created by admin with a password."""
+        name = first_name or "there"
+        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
+        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        login_url = f"{base_url}/login"
+        subject = "Your Troducer Account is Ready - Nihao Group"
+        html = self._render_template("troducer_welcome.html", name=name, login_url=login_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
+
     async def send_introducer_approved(
         self, to_email: str, first_name: str = "",
         mail_config: Optional[Dict[str, Any]] = None,
@@ -708,12 +721,19 @@ class EmailService:
         )
         return await self._send_email(to_email, subject, html)
 
-    async def send_welcome_activated(self, to_email: str, first_name: str = "") -> bool:
+    async def send_welcome_activated(self, to_email: str, first_name: str = "", role: str = "") -> bool:
         """Welcome email sent after user sets their password from invitation."""
         name = first_name or "there"
         subject = "Welcome to Nihao Group - Account Activated"
-        html = self._render_template("welcome_activated.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        mail_config = await self._get_db_mail_config()
+        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
+        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        if role in ("INTRODUCER", "PREINTRODUCER", "TRODUCER"):
+            dashboard_url = f"{base_url}/introducer/dashboard"
+        else:
+            dashboard_url = f"{base_url}/dashboard"
+        html = self._render_template("welcome_activated.html", name=name, dashboard_url=dashboard_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_aml_review_started(
         self, to_email: str, first_name: str = "", amount: float = 0, currency: str = "EUR"

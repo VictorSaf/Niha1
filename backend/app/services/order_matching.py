@@ -624,6 +624,7 @@ async def execute_market_buy_order(
             executed_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(trade)
+        await db.flush()  # Populate trade.id before commission tracking
 
         # Persist trade price in price_history for chart data
         db.add(PriceHistory(
@@ -690,7 +691,7 @@ async def execute_market_buy_order(
         entity_id=entity_id,
         order_id=buy_order.id,
         trade_id=None,  # Multiple trades in this order
-        quantity=preview.total_quantity,
+        quantity=int(preview.total_quantity),  # Floor to integer — fractional CEA stays with NIHA
         price=preview.weighted_avg_price,
         seller_id=None,  # Multiple sellers possible
         created_by=user_id,

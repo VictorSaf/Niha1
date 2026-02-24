@@ -1,27 +1,23 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   RefreshCw,
-  Activity,
   AlertCircle,
   BarChart3,
   CheckCircle,
   FileText,
   TrendingUp,
 } from 'lucide-react';
-import { Subheader, Modal, Skeleton, KeyboardShortcutsHelp, ResizablePanelGroup } from '../components/common';
+import { Subheader, Modal, Skeleton, KeyboardShortcutsHelp } from '../components/common';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useMediaQuery } from '../hooks/useMediaQuery';
 import type { Shortcut } from '../hooks/useKeyboardShortcuts';
 import { useCashMarket } from '../hooks/useCashMarket';
 import { cashMarketApi, usersApi } from '../services/api';
 import { useAuthStore } from '../stores/useStore';
-import { formatCertificateQuantity, formatRelativeTime } from '../utils';
+import { formatCertificateQuantity } from '../utils';
 import { InlineOrderForm, calcMarketBuy } from '../components/cash-market/InlineOrderForm';
-import { CEAPriceChart } from '../components/cash-market/CEAPriceChart';
-import { NewsIntelligenceFeed } from '../components/cash-market/NewsIntelligenceFeed';
-import { EnvironmentalImpact } from '../components/cash-market/EnvironmentalImpact';
+import { CEALineChart } from '../components/cash-market/CEALineChart';
 import type {
   OrderBookLevel,
   CashMarketTrade,
@@ -205,70 +201,36 @@ interface RecentTradesTickerProps {
   bestAsk: number | null;
 }
 
+function formatTickerTime(dateStr: string): string {
+  if (!dateStr) return '-';
+  try {
+    const utcDateStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+    const date = new Date(utcDateStr);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    });
+  } catch {
+    return '-';
+  }
+}
+
 function RecentTradesTicker({ trades, bestBid, bestAsk }: RecentTradesTickerProps) {
-  /** Use backend side when available; otherwise infer from price vs mid (trade at ask = BUY, at bid = SELL). */
-  const isBuy = useCallback((trade: CashMarketTrade) => {
+  const isBuyFn = useCallback((trade: CashMarketTrade) => {
     if (trade.side === 'BUY' || trade.side === 'SELL') return trade.side === 'BUY';
-    if (bestBid != null && bestAsk != null) {
-      const mid = (bestBid + bestAsk) / 2;
-      return trade.price >= mid;
-    }
+    if (bestBid != null && bestAsk != null) return trade.price >= (bestBid + bestAsk) / 2;
     return true;
   }, [bestBid, bestAsk]);
 
-  const formatTime = (dateStr: string) => {
-    if (!dateStr) return '-';
-    try {
-      const utcDateStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
-      const date = new Date(utcDateStr);
-      if (isNaN(date.getTime())) return '-';
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-    } catch {
-      return '-';
-    }
-  };
+  // Compute buy/sell once per trade-set. React reconciliation updates only
+  // changed children — the animated parent div is never recreated, so the
+  // CSS animation continues uninterrupted (no innerHTML reset needed).
+  const items = useMemo(
+    () => trades.map(t => ({ ...t, buy: isBuyFn(t) })),
+    [trades, isBuyFn],
+  );
 
-  // Build HTML once per trade-set and inject via ref to avoid React re-renders
-  // that reset the CSS animation. We update content only when trade IDs change.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const prevTradeIdsRef = useRef<string>('');
-
-  useEffect(() => {
-    if (!scrollRef.current || trades.length === 0) return;
-
-    const tradeIds = trades.map((t) => t.id).join(',');
-    if (tradeIds === prevTradeIdsRef.current) return;
-    prevTradeIdsRef.current = tradeIds;
-
-    // Build the inner HTML for one copy of the trades
-    const buildCopy = () =>
-      trades
-        .map((trade) => {
-          const buy = isBuy(trade);
-          const bgClass = buy ? 'bg-emerald-500/[0.075]' : 'bg-red-500/[0.05]';
-          const priceColor = buy ? 'text-emerald-400' : 'text-red-400';
-          const time = trade.executedAt ? formatTime(trade.executedAt) : '-';
-          return `<div class="flex items-center gap-3 px-3 py-1 rounded shrink-0 ${bgClass}">
-            <span class="font-mono font-medium text-xs tabular-nums ${priceColor}">€${trade.price.toFixed(2)}</span>
-            <span class="text-xs font-mono text-white tabular-nums">${Math.round(trade.quantity).toLocaleString()}</span>
-            <span class="text-xs text-navy-500 tabular-nums">${time}</span>
-          </div>`;
-        })
-        .join('');
-
-    const copy = buildCopy();
-    // Two copies for seamless loop
-    scrollRef.current.innerHTML =
-      `<div class="flex items-center gap-x-2 shrink-0 px-2">${copy}</div>` +
-      `<div class="flex items-center gap-x-2 shrink-0 px-2">${copy}</div>`;
-  }, [trades, isBuy]);
-
-  if (trades.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="overflow-hidden">
         <div className="py-2 px-4 text-xs text-navy-500">No recent trades</div>
@@ -276,119 +238,36 @@ function RecentTradesTicker({ trades, bestBid, bestAsk }: RecentTradesTickerProp
     );
   }
 
+  const renderCopy = (keySuffix: string) =>
+    items.map((item) => (
+      <div
+        key={`${item.id}${keySuffix}`}
+        className={`flex items-center gap-3 px-3 py-1 rounded shrink-0 ${item.buy ? 'bg-emerald-500/[0.075]' : 'bg-red-500/[0.05]'}`}
+      >
+        <span className={`font-mono font-medium text-xs tabular-nums ${item.buy ? 'text-emerald-400' : 'text-red-400'}`}>
+          €{item.price.toFixed(2)}
+        </span>
+        <span className="text-xs font-mono text-white tabular-nums">
+          {Math.round(item.quantity).toLocaleString()}
+        </span>
+        <span className="text-xs text-navy-500 tabular-nums">
+          {item.executedAt ? formatTickerTime(item.executedAt) : '-'}
+        </span>
+      </div>
+    ));
+
   return (
     <div className="overflow-hidden">
-      <div
-        ref={scrollRef}
-        className="flex items-center min-w-max py-1.5 ticker-scroll"
-      />
-    </div>
-  );
-}
-
-// =============================================================================
-// ACTIVITY (vertical list, same source as ticker — BUY/SELL badge, total, relative time + full timestamp on hover)
-// =============================================================================
-
-interface RecentTradesActivityProps {
-  trades: CashMarketTrade[];
-  bestBid: number | null;
-  bestAsk: number | null;
-}
-
-function formatFullTimestamp(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  try {
-    const utcDateStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
-    const date = new Date(utcDateStr);
-    if (isNaN(date.getTime())) return '—';
-    return date.toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'medium',
-      timeZone: 'UTC',
-      hour12: true,
-    }) + ' UTC';
-  } catch {
-    return '—';
-  }
-}
-
-function RecentTradesActivity({ trades, bestBid, bestAsk }: RecentTradesActivityProps) {
-  const isBuy = (trade: CashMarketTrade) => {
-    if (trade.side === 'BUY' || trade.side === 'SELL') return trade.side === 'BUY';
-    if (bestBid != null && bestAsk != null) {
-      const mid = (bestBid + bestAsk) / 2;
-      return trade.price >= mid;
-    }
-    return true;
-  };
-
-  return (
-    <div className="bg-navy-900 rounded-lg border border-navy-700/50 overflow-hidden flex flex-col flex-1 min-h-0 widget-accent-amber glow-amber">
-      <div className="px-3 py-1.5 border-b border-navy-700 flex items-center gap-1.5 bg-navy-800/50 shrink-0">
-        <Activity className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-        <h3 className="text-[10px] font-semibold text-navy-300 uppercase tracking-wider">Activity</h3>
-        <span className="text-[10px] text-navy-500">(last 20)</span>
-        <div className="live-dot bg-amber-400 ml-auto" title="Live" />
-      </div>
-      {/* Column headers */}
-      <div className="grid grid-cols-[3rem_1fr_5rem_5.5rem_4rem] gap-x-1 px-3 py-1 border-b border-navy-700 text-[10px] text-navy-500 uppercase tracking-wider shrink-0">
-        <span>Side</span>
-        <span className="text-right">Qty</span>
-        <span className="text-right">Price</span>
-        <span className="text-right">Total</span>
-        <span className="text-right">Time</span>
-      </div>
-      <div className="overflow-y-auto flex-1 min-h-0">
-        {trades.length === 0 ? (
-          <div className="py-3 px-4 text-xs text-navy-500">No recent trades</div>
-        ) : (
-          <div className="flex flex-col">
-            {trades.map((trade, idx) => {
-              const buy = isBuy(trade);
-              const totalEur = trade.price * trade.quantity;
-              return (
-                <div
-                  key={`${trade.id}-${idx}`}
-                  className={`grid grid-cols-[3rem_1fr_5rem_5.5rem_4rem] gap-x-1 items-center px-3 py-1.5 border-b border-navy-700/30 ${
-                    buy ? 'bg-emerald-500/[0.05]' : 'bg-red-500/[0.04]'
-                  }`}
-                >
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-semibold text-center w-fit ${
-                      buy ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                    }`}
-                  >
-                    {buy ? 'BUY' : 'SELL'}
-                  </span>
-                  <span className="text-xs font-mono text-white tabular-nums text-right">
-                    {Math.round(trade.quantity).toLocaleString()}
-                  </span>
-                  <span className="text-xs font-mono text-navy-300 tabular-nums text-right">
-                    €{trade.price.toFixed(2)}
-                  </span>
-                  <span
-                    className={`text-xs font-mono font-medium tabular-nums text-right ${
-                      buy ? 'text-emerald-400' : 'text-red-400'
-                    }`}
-                  >
-                    €{totalEur.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                  </span>
-                  <span
-                    className="text-[10px] text-navy-500 tabular-nums text-right"
-                    title={formatFullTimestamp(trade.executedAt)}
-                  >
-                    {trade.executedAt ? formatRelativeTime(trade.executedAt) : '—'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+      {/* ticker-scroll animates this div. React only reconciles children —
+          it never removes/re-adds this element, so the CSS animation is stable. */}
+      <div className="flex items-center min-w-max py-1.5 ticker-scroll">
+        <div className="flex items-center gap-x-2 shrink-0 px-2">{renderCopy('')}</div>
+        <div className="flex items-center gap-x-2 shrink-0 px-2">{renderCopy('-dup')}</div>
       </div>
     </div>
   );
 }
+
 
 // =============================================================================
 // MAIN PAGE COMPONENT
@@ -509,7 +388,6 @@ export function CashMarketProPage() {
   ], [refresh, orderResult, handleModalClose, navigate]);
 
   const { helpOpen, closeHelp } = useKeyboardShortcuts(shortcuts);
-  const isMd = useMediaQuery('(min-width: 768px)');
 
   const formatNumber = (num: number | null | undefined, decimals: number = 2) => {
     if (num === null || num === undefined) return '-';
@@ -520,7 +398,7 @@ export function CashMarketProPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-navy-900">
       {/* Subheader */}
       <Subheader
         icon={<BarChart3 className="w-5 h-5 text-amber-500" />}
@@ -561,56 +439,41 @@ export function CashMarketProPage() {
         <span className="hidden sm:inline text-[10px] text-navy-600 border border-navy-700 rounded px-1.5 py-0.5 font-mono cursor-default" title="Press ? for keyboard shortcuts">?</span>
       </Subheader>
 
-      {/* Ticker — full width, edge-to-edge, no container */}
+      {/* Ticker — sticky just below the subheader */}
       {!loading && orderBook && (
-        <RecentTradesTicker
-          trades={recentTrades}
-          bestBid={safeOrderBook.bestBid}
-          bestAsk={safeOrderBook.bestAsk}
-        />
+        <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 -mt-[3px]">
+          <RecentTradesTicker
+            trades={recentTrades}
+            bestBid={safeOrderBook.bestBid}
+            bestAsk={safeOrderBook.bestAsk}
+          />
+        </div>
       )}
 
-      {/* Mobile notice */}
-      <div className="md:hidden px-4 py-3 bg-amber-500/10 border-b border-amber-500/20 text-center">
-        <p className="text-xs text-amber-400">For the best trading experience, use a desktop or landscape tablet. Scroll horizontally to view all panels.</p>
-      </div>
+      {/* Content */}
+      <div className="page-container py-6">
+        <div className="flex flex-col gap-4">
 
-      {/* Content — full page, flex to footer */}
-      <div className="bg-navy-900 flex flex-col flex-1 min-h-0 px-4 py-4 overflow-x-auto">
           {loading && !orderBook ? (
-            <div className="flex flex-col gap-2 flex-1 min-h-0">
-              {/* Skeleton Row 1: Order Book | Chart | Order Form */}
-              <div className="grid grid-cols-12 gap-2" style={{ flex: '5 1 0%', minHeight: 0 }}>
-                <div className="col-span-5 rounded-lg border border-navy-700/50 bg-navy-800/30 p-3 space-y-2">
-                  <Skeleton variant="text" width="40%" />
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} variant="rectangular" height={20} />
-                  ))}
-                </div>
-                <div className="col-span-4 rounded-lg border border-navy-700/50 bg-navy-800/30 p-3">
-                  <Skeleton variant="rectangular" height="100%" />
-                </div>
-                <div className="col-span-3 rounded-lg border border-navy-700/50 bg-navy-800/30 p-3 space-y-3">
-                  <Skeleton variant="text" width="60%" />
-                  <Skeleton variant="rectangular" height={36} />
-                  <Skeleton variant="rectangular" height={36} />
-                  <Skeleton variant="rectangular" height={40} />
-                </div>
-              </div>
-              {/* Skeleton Row 2: Activity | News | Impact */}
-              <div className="grid grid-cols-12 gap-2" style={{ flex: '3 1 0%', minHeight: 0 }}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="col-span-4 rounded-lg border border-navy-700/50 bg-navy-800/30 p-3 space-y-2">
-                    <Skeleton variant="text" width="50%" />
-                    <Skeleton variant="rectangular" height={20} />
-                    <Skeleton variant="rectangular" height={20} />
-                    <Skeleton variant="rectangular" height={20} />
-                  </div>
+            <>
+              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 p-4 space-y-2">
+                <Skeleton variant="text" width="30%" />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} variant="rectangular" height={22} />
                 ))}
               </div>
-            </div>
+              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 p-4">
+                <Skeleton variant="rectangular" height={208} />
+              </div>
+              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 p-4 space-y-3">
+                <Skeleton variant="text" width="50%" />
+                <Skeleton variant="rectangular" height={40} />
+                <Skeleton variant="rectangular" height={40} />
+                <Skeleton variant="rectangular" height={44} />
+              </div>
+            </>
           ) : error && !orderBook ? (
-            <div className="flex flex-col items-center justify-center h-96 text-center">
+            <div className="flex flex-col items-center justify-center py-24 text-center">
               <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
               <p className="text-red-400 mb-4">{error}</p>
               <button
@@ -620,127 +483,41 @@ export function CashMarketProPage() {
                 Retry
               </button>
             </div>
-          ) : isMd ? (
-            <ResizablePanelGroup
-              direction="vertical"
-              storageKey="cash_market_pro_vertical"
-              defaultSizes={[55.5, 44.5]}
-              minSize={20}
-              className="gap-0"
-            >
-              {/* Row 1: Order Book | Chart | Order Form — resizable horizontal */}
-              <div className="flex min-w-0 min-h-0 flex-1">
-                <ResizablePanelGroup
-                  direction="horizontal"
-                  storageKey="cash_market_pro_row1"
-                  defaultSizes={[41.67, 33.33, 25]}
-                  minSize={15}
-                >
-                  <div className="h-full min-h-0 flex flex-col">
-                    <div className="rounded-lg border border-navy-700/50 bg-navy-800/30 flex-1 min-h-0 overflow-y-auto widget-accent-purple">
-                      <ProfessionalOrderBook
-                        bids={safeOrderBook.bids}
-                        asks={safeOrderBook.asks}
-                        spread={safeOrderBook.spread}
-                        bestBid={safeOrderBook.bestBid}
-                        bestAsk={safeOrderBook.bestAsk}
-                        highlightAskCount={highlightAskCount}
-                      />
-                    </div>
-                  </div>
-                  <div className="h-full min-h-0 flex flex-col">
-                    <CEAPriceChart />
-                  </div>
-                  <div className="h-full min-h-0 flex flex-col">
-                    <InlineOrderForm
-                      certificateType="CEA"
-                      availableBalance={availableEur}
-                      bestBid={safeOrderBook.bestBid}
-                      bestAsk={safeOrderBook.bestAsk}
-                      spread={safeOrderBook.spread}
-                      asks={safeOrderBook.asks}
-                      onOrderSubmit={handleMarketOrderSubmit}
-                      onRefresh={refresh}
-                      onExpandChange={handleExpandChange}
-                    />
-                  </div>
-                </ResizablePanelGroup>
+          ) : (
+            <>
+              {/* 1 — Order Book */}
+              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 overflow-hidden widget-accent-purple">
+                <ProfessionalOrderBook
+                  bids={safeOrderBook.bids}
+                  asks={safeOrderBook.asks}
+                  spread={safeOrderBook.spread}
+                  bestBid={safeOrderBook.bestBid}
+                  bestAsk={safeOrderBook.bestAsk}
+                  highlightAskCount={highlightAskCount}
+                />
               </div>
 
-              {/* Row 2: Activity | News | Impact — resizable horizontal */}
-              <div className="flex min-w-0 min-h-0 flex-1">
-                <ResizablePanelGroup
-                  direction="horizontal"
-                  storageKey="cash_market_pro_row2"
-                  defaultSizes={[33.33, 33.33, 33.34]}
-                  minSize={15}
-                >
-                  <div className="h-full min-h-0 flex flex-col">
-                    <RecentTradesActivity
-                      trades={recentTrades}
-                      bestBid={safeOrderBook.bestBid}
-                      bestAsk={safeOrderBook.bestAsk}
-                    />
-                  </div>
-                  <div className="h-full min-h-0 flex flex-col">
-                    <NewsIntelligenceFeed />
-                  </div>
-                  <div className="h-full min-h-0 flex flex-col">
-                    <EnvironmentalImpact />
-                  </div>
-                </ResizablePanelGroup>
+              {/* 2 — Line Chart */}
+              <CEALineChart />
+
+              {/* 3 — Order Form */}
+              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 overflow-hidden widget-accent-amber">
+                <InlineOrderForm
+                  certificateType="CEA"
+                  availableBalance={availableEur}
+                  bestBid={safeOrderBook.bestBid}
+                  bestAsk={safeOrderBook.bestAsk}
+                  spread={safeOrderBook.spread}
+                  asks={safeOrderBook.asks}
+                  onOrderSubmit={handleMarketOrderSubmit}
+                  onRefresh={refresh}
+                  onExpandChange={handleExpandChange}
+                />
               </div>
-            </ResizablePanelGroup>
-          ) : (
-            <div className="flex flex-col gap-2 flex-1 min-h-0">
-              {/* Mobile: static grid */}
-              <div className="grid grid-cols-12 gap-2" style={{ flex: '5 1 0%', minHeight: 0 }}>
-                <div className="col-span-5 min-h-0 flex flex-col">
-                  <div className="rounded-lg border border-navy-700/50 bg-navy-800/30 flex-1 min-h-0 overflow-y-auto widget-accent-purple">
-                    <ProfessionalOrderBook
-                      bids={safeOrderBook.bids}
-                      asks={safeOrderBook.asks}
-                      spread={safeOrderBook.spread}
-                      bestBid={safeOrderBook.bestBid}
-                      bestAsk={safeOrderBook.bestAsk}
-                      highlightAskCount={highlightAskCount}
-                    />
-                  </div>
-                </div>
-                <div className="col-span-4 min-h-0 flex flex-col">
-                  <CEAPriceChart />
-                </div>
-                <div className="col-span-3 min-h-0 flex flex-col">
-                  <InlineOrderForm
-                    certificateType="CEA"
-                    availableBalance={availableEur}
-                    bestBid={safeOrderBook.bestBid}
-                    bestAsk={safeOrderBook.bestAsk}
-                    spread={safeOrderBook.spread}
-                    asks={safeOrderBook.asks}
-                    onOrderSubmit={handleMarketOrderSubmit}
-                    onRefresh={refresh}
-                    onExpandChange={handleExpandChange}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-2" style={{ flex: '4 1 0%', minHeight: 0 }}>
-                <div className="col-span-4 min-h-0 flex flex-col">
-                  <RecentTradesActivity
-                    trades={recentTrades}
-                    bestBid={safeOrderBook.bestBid}
-                    bestAsk={safeOrderBook.bestAsk}
-                  />
-                </div>
-                <div className="col-span-4 min-h-0 flex flex-col">
-                  <NewsIntelligenceFeed />
-                </div>
-                <div className="col-span-4 min-h-0 flex flex-col">
-                  <EnvironmentalImpact />
-                </div>
-              </div>
-            </div>
+            </>
           )}
+
+        </div>
       </div>
 
       {/* Order Success Modal */}

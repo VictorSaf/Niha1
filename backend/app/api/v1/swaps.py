@@ -930,9 +930,9 @@ async def execute_swap(
             detail=f"Insufficient swap liquidity. Can only swap {cea_quantity - remaining_cea:.2f} CEA out of {cea_quantity:.2f} requested.",
         )
 
-    # Apply platform fee (0.5%)
+    # Apply platform fee (0.5%) and floor to integer — fractional EUA stays with NIHA
     platform_fee_pct = 0.005
-    eua_output = eua_needed * (1 - platform_fee_pct)
+    eua_output = int(eua_needed * (1 - platform_fee_pct))
 
     # Calculate weighted average ratio
     total_cea_matched = sum(m["cea_amount"] for m in matched_orders)

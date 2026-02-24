@@ -179,6 +179,8 @@ class TicketService:
                 state[column.name] = value.isoformat()
             elif isinstance(value, Decimal):
                 state[column.name] = float(value)
+            elif isinstance(value, bytes):
+                state[column.name] = None  # Don't serialize binary blobs
             elif hasattr(value, 'value'):  # Enum
                 state[column.name] = value.value
             else:
