@@ -4,57 +4,60 @@
 PROMPT = """
 Test the login flow for multiple user roles on the NIHA platform.
 
-## IMPORTANT AUTH FACTS
-- Auth is in SESSIONSTORAGE key 'auth-storage' (NOT localStorage)
-- Logout: browser_evaluate('() => { sessionStorage.clear(); }') then navigate to http://localhost:5173/login
-- Check token: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? "TOKEN_FOUND" : "NO_TOKEN"; }')
-- WebSocket warnings in console are NORMAL — ignore them completely
+## AUTH RULES (read carefully before starting)
+- Auth state is in sessionStorage key 'auth-storage' (NOT localStorage)
+- To logout: call browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
+- WebSocket warnings in the browser console are NORMAL — do NOT debug them
 
-## Steps (follow EXACTLY in order, do not add extra steps):
+## Test Steps
 
 ### Step 1: Admin Login
-1. browser_navigate("http://localhost:5173/login")
-2. browser_click("text:ENTER")
-3. browser_fill("placeholder:Email", "admin@nihaogroup.com")
-4. browser_fill("placeholder:Password", "Admin123!")
-5. browser_click("text:CONTINUE")
-6. browser_wait_for(url_contains="/dashboard")
-7. browser_screenshot("admin-dashboard")
-8. test_assert("Admin login redirects to /dashboard", True if "/dashboard" in url else False, "/dashboard", current_url)
-9. browser_evaluate to check TOKEN_FOUND
-10. test_assert("Token in sessionStorage", True if result=="TOKEN_FOUND" else False, "TOKEN_FOUND", result)
+- browser_navigate to http://localhost:5173/login
+- browser_click selector="text:ENTER"
+- browser_fill selector="placeholder:Email" value="admin@nihaogroup.com"
+- browser_fill selector="placeholder:Password" value="Admin123!"
+- browser_click selector="text:CONTINUE"
+- browser_wait_for url_contains="/dashboard"
+- browser_screenshot label="admin-dashboard"
+- Get current URL with browser_evaluate('() => window.location.href')
+- Call test_assert: description="Admin login redirects to /dashboard", condition=True if the URL result contains "/dashboard" else False, expected="/dashboard in URL", actual=the URL you got
+- Call browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? "TOKEN_FOUND" : "NO_TOKEN"; }')
+- Call test_assert: description="Auth token present in sessionStorage after admin login", condition=True if result is "TOKEN_FOUND" else False, expected="TOKEN_FOUND", actual=the result you got
 
 ### Step 2: Logout Admin
-1. browser_evaluate('() => { sessionStorage.clear(); }')
-2. browser_navigate("http://localhost:5173/login")
-3. browser_screenshot("after-logout-login-page")
-4. test_assert("After logout URL is /login", True if url=="/login" or url contains "login", "/login", current_url)
+- Call browser_evaluate('() => { sessionStorage.clear(); }')
+- browser_navigate to http://localhost:5173/login
+- browser_screenshot label="after-logout"
+- Get current URL with browser_evaluate('() => window.location.href')
+- Call test_assert: description="After logout stays on /login", condition=True if "login" in URL else False, expected="URL contains /login", actual=the URL you got
 
 ### Step 3: Troducer Login
-1. browser_click("text:ENTER")
-2. browser_fill("placeholder:Email", "tr2@yopmail.com")
-3. browser_fill("placeholder:Password", "Troducer123!")
-4. browser_click("text:CONTINUE")
-5. browser_wait_for(url_contains="/troducer")
-6. browser_screenshot("troducer-page")
-7. test_assert("Troducer login redirects to /troducer", True if "/troducer" in url, "/troducer", current_url)
+- browser_click selector="text:ENTER"
+- browser_fill selector="placeholder:Email" value="tr2@yopmail.com"
+- browser_fill selector="placeholder:Password" value="Troducer123!"
+- browser_click selector="text:CONTINUE"
+- browser_wait_for url_contains="/troducer"
+- browser_screenshot label="troducer-page"
+- Get current URL with browser_evaluate('() => window.location.href')
+- Call test_assert: description="Troducer login redirects to /troducer", condition=True if "/troducer" in URL else False, expected="/troducer in URL", actual=the URL you got
 
 ### Step 4: Wrong Password Test
-1. browser_evaluate('() => { sessionStorage.clear(); }')   ← MUST DO THIS FIRST to logout troducer
-2. browser_navigate("http://localhost:5173/login")
-3. browser_click("text:ENTER")
-4. browser_fill("placeholder:Email", "admin@nihaogroup.com")
-5. browser_fill("placeholder:Password", "WrongPassword99!")
-6. browser_click("text:CONTINUE")
-7. Wait 2s: browser_wait_for(selector=".text-red-400", timeout_ms=5000) — may fail, that's OK
-8. browser_screenshot("login-error-wrong-password")
-9. Get page text: browser_get_text()
-10. test_assert("Wrong password shows error or stays on /login", True if "/login" in url or "Invalid" in text or "incorrect" in text, "error or /login", f"url={url}")
+- Call browser_evaluate('() => { sessionStorage.clear(); }')   (logout troducer first)
+- browser_navigate to http://localhost:5173/login
+- browser_click selector="text:ENTER"
+- browser_fill selector="placeholder:Email" value="admin@nihaogroup.com"
+- browser_fill selector="placeholder:Password" value="WrongPassword99!"
+- browser_click selector="text:CONTINUE"
+- Wait a moment with browser_wait_for timeout_ms=3000 (it may timeout, that is OK)
+- browser_screenshot label="wrong-password-test"
+- Get current URL with browser_evaluate('() => window.location.href')
+- Call test_assert: description="Wrong password keeps user on /login", condition=True if "login" in URL else False, expected="stay on /login", actual=the URL you got
 
-### Step 5: DB Role Check
-1. shell_run("docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY role;\\"")
-2. test_assert("Admin users exist in DB", True if "ADMIN" in stdout, "ADMIN role present", stdout[:100])
-3. test_assert("Troducer users exist in DB", True if "TRODUCER" in stdout, "TRODUCER role present", stdout[:100])
+### Step 5: DB Role Summary
+- shell_run command="docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT role, COUNT(*) FROM users GROUP BY role ORDER BY role;\\"" timeout=30
+- Look at the stdout result
+- Call test_assert: description="ADMIN role exists in DB", condition=True if "ADMIN" in the stdout else False, expected="ADMIN in output", actual=first 200 chars of stdout
+- Call test_assert: description="TRODUCER role exists in DB", condition=True if "TRODUCER" in the stdout else False, expected="TRODUCER in output", actual=first 200 chars of stdout
 
-After all 5 steps, report overall PASS/FAIL.
+After completing all 5 steps and their assertions, you are done. Do not do anything extra.
 """
