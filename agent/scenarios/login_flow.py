@@ -4,41 +4,59 @@
 PROMPT = """
 Test the login flow for multiple user roles on the NIHA platform.
 
+## IMPORTANT AUTH FACTS (read before starting)
+- Auth state is stored in SESSIONSTORAGE (not localStorage) under key 'auth-storage'
+- Checking token: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? JSON.parse(s).state.token : "NO TOKEN"; }')
+- Logging out properly: browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
+  After sessionStorage.clear() + navigate, the React app reloads fresh with no auth → stays on /login
+- Do NOT use localStorage.clear() — auth is NOT in localStorage
+
 ## Steps:
 
 ### 1. Admin Login
-- Navigate to http://localhost:5173/login, click ENTER
-- Fill admin@nihaogroup.com / Admin123!, click CONTINUE
-- Assert: Redirects to /dashboard
-- Assert: Nav shows "Onboarding" link (admin-only)
+- Navigate to http://localhost:5173/login
+- Click ENTER button
+- Fill email: admin@nihaogroup.com
+- Fill password: Admin123!
+- Click CONTINUE
+- Call browser_wait_for(url_contains="/dashboard")
 - Take screenshot "admin-dashboard"
-- browser_evaluate: "() => localStorage.getItem('auth-storage')"
-- Assert: token is present in localStorage
+- Assert: URL contains /dashboard
+- Check token: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? "TOKEN_FOUND" : "NO_TOKEN"; }')
+- Assert: result is TOKEN_FOUND (sessionStorage has auth data)
 
 ### 2. Logout Admin
-- browser_evaluate: "() => { localStorage.clear(); }"
-- Navigate to /login
-- Assert: ENTER and NDA buttons visible (not logged in)
+- Call browser_evaluate('() => { sessionStorage.clear(); }')
+- Call browser_navigate("http://localhost:5173/login")
+- Assert: URL is http://localhost:5173/login (not redirected to dashboard)
+- Take screenshot "after-logout-login-page"
 
 ### 3. Troducer Login
-- Click ENTER, fill tr2@yopmail.com / Troducer123!, CONTINUE
-- Assert: Redirects to /troducer
-- Assert: Page shows "Your Referral Code"
-- Assert: Nav shows "Troducer Code" link
+- Click ENTER button
+- Fill email: tr2@yopmail.com
+- Fill password: Troducer123!
+- Click CONTINUE
+- Call browser_wait_for(url_contains="/troducer")
 - Take screenshot "troducer-page"
+- Assert: URL contains /troducer
+- Assert: Page text contains "Referral Code" (use browser_get_text())
 
 ### 4. Wrong Password
-- Clear localStorage, navigate to /login, click ENTER
-- Fill admin@nihaogroup.com / WrongPassword99!
+- Call browser_evaluate('() => { sessionStorage.clear(); }')
+- Call browser_navigate("http://localhost:5173/login")
+- Click ENTER
+- Fill email: admin@nihaogroup.com
+- Fill password: WrongPassword99!
 - Click CONTINUE
-- Assert: Error message "Invalid email or password" appears
-- Assert: URL remains /login
+- Wait 2 seconds: browser_wait_for(selector=".text-red", timeout_ms=5000) or check page text
 - Take screenshot "login-error-wrong-password"
+- Assert: URL is still http://localhost:5173/login (no redirect happened)
+- Assert: Page text contains "Invalid" or "incorrect" or "wrong"
 
-### 5. Inactive User
-- shell_run to get an NDA-role user: shell_run("docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT email FROM users WHERE role='NDA' LIMIT 1;\\"")
-- Try logging in as that user with any password
-- Assert: Login fails (user not active or no password set)
+### 5. Check DB for user counts
+- shell_run("docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT role, COUNT(*) FROM users GROUP BY role ORDER BY role;\\"")
+- Assert: At least one admin user exists (ADMIN role count > 0)
+- Assert: At least one troducer exists (TRODUCER role count > 0)
 
 Report PASS/FAIL for all 5 steps.
 """

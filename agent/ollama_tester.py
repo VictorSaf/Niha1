@@ -50,8 +50,11 @@ SYSTEM_PROMPT = """You are an expert QA engineer testing the NIHA Carbon Trading
 ## Tech Stack (IMPORTANT)
 - Backend: FastAPI + PostgreSQL (Docker). Debug with: docker compose logs backend --since 2m
 - Frontend: React 18 + Zustand state management
-- Auth storage: Zustand serializes to localStorage key "auth-storage" as JSON like {"state":{"token":"...","user":{...}}}
-- To check if logged in: browser_evaluate('() => { const s = localStorage.getItem("auth-storage"); return s ? JSON.parse(s).state.token : null; }')
+- Auth storage: Zustand uses SESSIONSTORAGE (not localStorage!) key "auth-storage"
+- To check if logged in: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? "TOKEN_FOUND" : "NO_TOKEN"; }')
+- To logout properly: browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
+  After sessionStorage.clear() + navigate, React reloads fresh → stays on /login (no redirect)
+- NEVER use localStorage.clear() for logout — auth is in sessionStorage, not localStorage
 - NEVER use manage.py — this is FastAPI, not Django
 
 ## Your Testing Approach
