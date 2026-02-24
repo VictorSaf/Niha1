@@ -25,9 +25,15 @@ Explore the UI yourself. Take screenshots at every step. Read page text with bro
 ---
 
 ## TC-01: Troducer Login & Referral Code
+IMPORTANT: The login page shows two buttons — "ENTER" (password login) and "NDA" (new user flow).
+You MUST click "ENTER" first to reveal the email/password fields, then fill them, then click "CONTINUE".
 1. Navigate to http://localhost:5173/login
-2. Log in as tr2@yopmail.com / Troducer123!
-3. Take a screenshot of the page you land on
+2. Click the button with text "ENTER" (this reveals the email/password form)
+3. Fill email field (placeholder "Email") with tr2@yopmail.com
+4. Fill password field (placeholder "Password") with Troducer123!
+5. Click the button with text "CONTINUE"
+6. Wait for redirect to /troducer
+7. Take a screenshot of the page you land on
 4. Read the page text — find the referral code displayed on screen
 5. Confirm the code in DB: SELECT referral_code FROM users WHERE email='tr2@yopmail.com'
 6. test_assert: code visible on screen matches DB value
@@ -66,7 +72,7 @@ Explore the UI yourself. Take screenshots at every step. Read page text with bro
 5. test_assert: success or confirmation message visible
 
 ## TC-06: Admin Approves NDA in Backoffice
-1. Logout, navigate to http://localhost:5173/login, login as admin@nihaogroup.com / Admin123!
+1. Logout (sessionStorage.clear() + navigate to login), click "ENTER", fill admin@nihaogroup.com / Admin123!, click "CONTINUE", wait for /dashboard
 2. Navigate to the backoffice introducer onboarding section (explore the nav to find it)
 3. Take screenshot of the list
 4. Find the entry for e2e-auto@yopmail.com or "E2E Auto Corp"
