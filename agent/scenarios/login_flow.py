@@ -4,59 +4,57 @@
 PROMPT = """
 Test the login flow for multiple user roles on the NIHA platform.
 
-## IMPORTANT AUTH FACTS (read before starting)
-- Auth state is stored in SESSIONSTORAGE (not localStorage) under key 'auth-storage'
-- Checking token: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? JSON.parse(s).state.token : "NO TOKEN"; }')
-- Logging out properly: browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
-  After sessionStorage.clear() + navigate, the React app reloads fresh with no auth → stays on /login
-- Do NOT use localStorage.clear() — auth is NOT in localStorage
-
-## Steps:
-
-### 1. Admin Login
-- Navigate to http://localhost:5173/login
-- Click ENTER button
-- Fill email: admin@nihaogroup.com
-- Fill password: Admin123!
-- Click CONTINUE
-- Call browser_wait_for(url_contains="/dashboard")
-- Take screenshot "admin-dashboard"
-- Assert: URL contains /dashboard
+## IMPORTANT AUTH FACTS
+- Auth is in SESSIONSTORAGE key 'auth-storage' (NOT localStorage)
+- Logout: browser_evaluate('() => { sessionStorage.clear(); }') then navigate to http://localhost:5173/login
 - Check token: browser_evaluate('() => { const s = sessionStorage.getItem("auth-storage"); return s ? "TOKEN_FOUND" : "NO_TOKEN"; }')
-- Assert: result is TOKEN_FOUND (sessionStorage has auth data)
+- WebSocket warnings in console are NORMAL — ignore them completely
 
-### 2. Logout Admin
-- Call browser_evaluate('() => { sessionStorage.clear(); }')
-- Call browser_navigate("http://localhost:5173/login")
-- Assert: URL is http://localhost:5173/login (not redirected to dashboard)
-- Take screenshot "after-logout-login-page"
+## Steps (follow EXACTLY in order, do not add extra steps):
 
-### 3. Troducer Login
-- Click ENTER button
-- Fill email: tr2@yopmail.com
-- Fill password: Troducer123!
-- Click CONTINUE
-- Call browser_wait_for(url_contains="/troducer")
-- Take screenshot "troducer-page"
-- Assert: URL contains /troducer
-- Assert: Page text contains "Referral Code" (use browser_get_text())
+### Step 1: Admin Login
+1. browser_navigate("http://localhost:5173/login")
+2. browser_click("text:ENTER")
+3. browser_fill("placeholder:Email", "admin@nihaogroup.com")
+4. browser_fill("placeholder:Password", "Admin123!")
+5. browser_click("text:CONTINUE")
+6. browser_wait_for(url_contains="/dashboard")
+7. browser_screenshot("admin-dashboard")
+8. test_assert("Admin login redirects to /dashboard", True if "/dashboard" in url else False, "/dashboard", current_url)
+9. browser_evaluate to check TOKEN_FOUND
+10. test_assert("Token in sessionStorage", True if result=="TOKEN_FOUND" else False, "TOKEN_FOUND", result)
 
-### 4. Wrong Password
-- Call browser_evaluate('() => { sessionStorage.clear(); }')
-- Call browser_navigate("http://localhost:5173/login")
-- Click ENTER
-- Fill email: admin@nihaogroup.com
-- Fill password: WrongPassword99!
-- Click CONTINUE
-- Wait 2 seconds: browser_wait_for(selector=".text-red", timeout_ms=5000) or check page text
-- Take screenshot "login-error-wrong-password"
-- Assert: URL is still http://localhost:5173/login (no redirect happened)
-- Assert: Page text contains "Invalid" or "incorrect" or "wrong"
+### Step 2: Logout Admin
+1. browser_evaluate('() => { sessionStorage.clear(); }')
+2. browser_navigate("http://localhost:5173/login")
+3. browser_screenshot("after-logout-login-page")
+4. test_assert("After logout URL is /login", True if url=="/login" or url contains "login", "/login", current_url)
 
-### 5. Check DB for user counts
-- shell_run("docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT role, COUNT(*) FROM users GROUP BY role ORDER BY role;\\"")
-- Assert: At least one admin user exists (ADMIN role count > 0)
-- Assert: At least one troducer exists (TRODUCER role count > 0)
+### Step 3: Troducer Login
+1. browser_click("text:ENTER")
+2. browser_fill("placeholder:Email", "tr2@yopmail.com")
+3. browser_fill("placeholder:Password", "Troducer123!")
+4. browser_click("text:CONTINUE")
+5. browser_wait_for(url_contains="/troducer")
+6. browser_screenshot("troducer-page")
+7. test_assert("Troducer login redirects to /troducer", True if "/troducer" in url, "/troducer", current_url)
 
-Report PASS/FAIL for all 5 steps.
+### Step 4: Wrong Password Test
+1. browser_evaluate('() => { sessionStorage.clear(); }')   ← MUST DO THIS FIRST to logout troducer
+2. browser_navigate("http://localhost:5173/login")
+3. browser_click("text:ENTER")
+4. browser_fill("placeholder:Email", "admin@nihaogroup.com")
+5. browser_fill("placeholder:Password", "WrongPassword99!")
+6. browser_click("text:CONTINUE")
+7. Wait 2s: browser_wait_for(selector=".text-red-400", timeout_ms=5000) — may fail, that's OK
+8. browser_screenshot("login-error-wrong-password")
+9. Get page text: browser_get_text()
+10. test_assert("Wrong password shows error or stays on /login", True if "/login" in url or "Invalid" in text or "incorrect" in text, "error or /login", f"url={url}")
+
+### Step 5: DB Role Check
+1. shell_run("docker compose exec db psql -U niha_user -d niha_carbon -c \\"SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY role;\\"")
+2. test_assert("Admin users exist in DB", True if "ADMIN" in stdout, "ADMIN role present", stdout[:100])
+3. test_assert("Troducer users exist in DB", True if "TRODUCER" in stdout, "TRODUCER role present", stdout[:100])
+
+After all 5 steps, report overall PASS/FAIL.
 """

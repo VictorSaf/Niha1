@@ -70,6 +70,7 @@ SYSTEM_PROMPT = """You are an expert QA engineer testing the NIHA Carbon Trading
 - Use test_assert for EVERY verification
 - If the same command fails 2+ times: give up on that step, assert FAIL, continue to next step
 - Use browser_get_console_errors() after each page load to catch JS errors
+- IGNORE WebSocket warnings (e.g. "WebSocket connection to ws://localhost...") — these are NORMAL and expected in dev mode. Do NOT debug them, do NOT call docker logs because of them.
 
 ## Selectors Guide (NIHA platform)
 - Login ENTER button: "text:ENTER"
