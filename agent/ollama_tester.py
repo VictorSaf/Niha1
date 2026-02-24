@@ -235,18 +235,21 @@ def run_agent(scenario_prompt: str, headless: bool = False) -> dict:
         border_style=overall_color
     ))
 
-    from reporter.dashboard import generate_report
-    report_path = generate_report(
-        scenario=scenario_prompt[:50],
-        model=MODEL,
-        results=get_test_results(),
-        screenshots=get_all_screenshots(),
-        elapsed=elapsed,
-        iteration_count=iteration,
-    )
-    console.print(f"\n[green]Report saved:[/green] file://{report_path}")
-    import subprocess
-    subprocess.Popen(["open", report_path])  # Auto-open in browser on macOS
+    try:
+        from reporter.dashboard import generate_report
+        report_path = generate_report(
+            scenario=scenario_prompt[:50],
+            model=MODEL,
+            results=get_test_results(),
+            screenshots=get_all_screenshots(),
+            elapsed=elapsed,
+            iteration_count=iteration,
+        )
+        console.print(f"\n[green]Report saved:[/green] file://{report_path}")
+        import subprocess
+        subprocess.Popen(["open", report_path])  # Auto-open in browser on macOS
+    except Exception as e:
+        console.print(f"[yellow]Report generation failed (results still collected): {e}[/yellow]")
 
     return {**summary, "screenshots": screenshots, "elapsed": elapsed, "iterations": iteration}
 

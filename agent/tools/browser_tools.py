@@ -15,11 +15,16 @@ _context: BrowserContext | None = None
 _page: Page | None = None
 _console_errors: list[str] = []
 _screenshots: list[dict] = []  # [{label, path, url, timestamp}]
+_output_dir: str = "/tmp/niha_agent"
 
 
 def init_browser(headless: bool = False, output_dir: str = "/tmp/niha_agent") -> None:
     """Start Chromium. headless=False shows the browser window (required for demo)."""
-    global _playwright, _browser, _context, _page, _console_errors
+    global _playwright, _browser, _context, _page, _console_errors, _screenshots, _output_dir
+    # Reset per-run state so re-init in the same process starts clean
+    _console_errors = []
+    _screenshots = []
+    _output_dir = output_dir
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     _playwright = sync_playwright().start()
     _browser = _playwright.chromium.launch(
@@ -46,6 +51,8 @@ def close_browser() -> None:
         _browser.close()
     if _playwright:
         _playwright.stop()
+    # Reset globals so _get_page() raises RuntimeError on next call before init_browser()
+    _page = _context = _browser = _playwright = None
 
 
 def _get_page() -> Page:
@@ -106,7 +113,7 @@ def browser_screenshot(label: str, full_page: bool = False) -> dict:
 
 def _take_screenshot(label: str, full_page: bool = False) -> dict:
     page = _get_page()
-    output_dir = Path("/tmp/niha_agent")
+    output_dir = Path(_output_dir)
     filename = f"{int(time.time() * 1000)}_{label[:40].replace(' ', '_')}.png"
     path = output_dir / filename
     page.screenshot(path=str(path), full_page=full_page)

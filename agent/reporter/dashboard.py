@@ -15,7 +15,7 @@ def generate_report(
 ) -> str:
     """Generate HTML report and return path."""
     template_dir = Path(__file__).parent / "templates"
-    env = Environment(loader=FileSystemLoader(str(template_dir)))
+    env = Environment(loader=FileSystemLoader(str(template_dir)), autoescape=True)
     template = env.get_template("report.html.j2")
 
     passed = sum(1 for r in results if r["status"] == "PASS")
