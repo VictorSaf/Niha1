@@ -27,6 +27,7 @@ from ...schemas.schemas import (
     ContactRequestCreate,
     ContactRequestResponse,
 )
+from ...services.document_delivery_service import get_document_bytes, get_system_user_for_document_generation
 from ...services.email_service import email_service
 from .backoffice import backoffice_ws_manager
 
@@ -512,14 +513,18 @@ async def create_introducer_nda_request(
                         "smtp_password": mail_row.smtp_password,
                         "invitation_link_base_url": mail_row.invitation_link_base_url,
                     }
-                nda_pdf_path = os.path.join(
-                    os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
-                )
+                nda_attachments = None
+                try:
+                    nda_user = get_system_user_for_document_generation()
+                    nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+                    nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+                except Exception:
+                    logger.exception("Failed to generate NDA PDF for introducer invitation")
                 await email_service.send_introducer_nda_invitation(
                     new_user.email,
                     new_user.first_name,
                     new_user.invitation_token,
-                    nda_pdf_path,
+                    nda_attachments=nda_attachments,
                     expiry_days=invitation_expiry_days,
                     mail_config=mail_cfg,
                 )
@@ -694,14 +699,18 @@ async def create_introducer_request(
                         "smtp_password": mail_row.smtp_password,
                         "invitation_link_base_url": mail_row.invitation_link_base_url,
                     }
-                nda_pdf_path = os.path.join(
-                    os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
-                )
+                nda_attachments = None
+                try:
+                    nda_user = get_system_user_for_document_generation()
+                    nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+                    nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+                except Exception:
+                    logger.exception("Failed to generate NDA PDF for introducer invitation")
                 await email_service.send_introducer_nda_invitation(
                     new_user.email,
                     new_user.first_name,
                     new_user.invitation_token,
-                    nda_pdf_path,
+                    nda_attachments=nda_attachments,
                     expiry_days=invitation_expiry_days,
                     mail_config=mail_cfg,
                 )

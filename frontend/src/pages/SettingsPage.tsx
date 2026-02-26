@@ -20,10 +20,12 @@ import {
   Pencil,
   MoreHorizontal,
   TrendingUp,
+  FileText,
 } from 'lucide-react';
 import { Button, Card, Badge, AlertBanner, NumberInput, PageLoadingState } from '../components/common';
 import { BackofficeLayout } from '../components/layout';
 import { AIAgentTab } from '../components/settings/AIAgentTab';
+import { DocumentsTab } from '../components/settings/DocumentsTab';
 import { adminApi, exchangeRatesApi } from '../services/api';
 import { getApiErrorMessage } from '../utils/errors';
 import { TREND_COLORS } from '../constants/chartColors';
@@ -265,11 +267,12 @@ const TRADING_ECONOMICS_EUA_PRESET = {
     "//a[@href='/commodity/carbon']/ancestor::tr/td[@id='p']",
 };
 
-type SettingsTab = 'scraping' | 'exchange' | 'mail' | 'ai-agent';
+type SettingsTab = 'scraping' | 'exchange' | 'mail' | 'documents' | 'ai-agent';
 const SETTINGS_TABS: { key: SettingsTab; label: string; icon: typeof Database }[] = [
   { key: 'scraping', label: 'Price Scraping', icon: Database },
   { key: 'exchange', label: 'Exchange Rate', icon: DollarSign },
   { key: 'mail', label: 'Mail Settings', icon: Mail },
+  { key: 'documents', label: 'Documents', icon: FileText },
   { key: 'ai-agent', label: 'AI Agent', icon: Bot },
 ];
 
@@ -351,8 +354,9 @@ export function SettingsPage() {
   const [testEmailLoading, setTestEmailLoading] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Email template preview
-  const [emailTemplates, setEmailTemplates] = useState<string[]>([]);
+  // Email template preview (used = sent from app code; NU = not used in any flow)
+  const [emailTemplates, setEmailTemplates] = useState<{ name: string; used: boolean }[]>([]);
+  const [emailTemplatesError, setEmailTemplatesError] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState('');
   const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
@@ -365,18 +369,25 @@ export function SettingsPage() {
     try {
       setLoading(true);
       setError(null);
-      const [sourcesData, mailData, exchangeData, templatesData] = await Promise.all([
+      setEmailTemplatesError(null);
+      const [sourcesData, mailData, exchangeData, templatesResult] = await Promise.all([
         adminApi.getScrapingSources(),
         adminApi.getMailSettings(),
         adminApi.getExchangeRateSources(),
-        adminApi.getEmailTemplates().catch(() => [] as string[]),
+        adminApi.getEmailTemplates()
+          .then((data) => ({ data, error: null as string | null }))
+          .catch((e) => ({ data: [] as { name: string; used: boolean }[], error: getApiErrorMessage(e) })),
       ]);
       setSources(sourcesData);
       setMailSettings(mailData);
       setExchangeRateSources(exchangeData);
-      setEmailTemplates(templatesData);
-      if (templatesData.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(templatesData[0]);
+      setEmailTemplates(templatesResult.data);
+      if (templatesResult.error) setEmailTemplatesError(templatesResult.error);
+      if (templatesResult.data.length > 0) {
+        const names = new Set(templatesResult.data.map((t) => t.name));
+        if (!selectedTemplate || !names.has(selectedTemplate)) {
+          setSelectedTemplate(templatesResult.data[0].name);
+        }
       }
 
       setMailForm({
@@ -1547,39 +1558,46 @@ export function SettingsPage() {
               )}
             </Card>
 
-            {/* Email Templates — separate wrapper */}
-            {emailTemplates.length > 0 && (
+            {/* Email Templates — separate wrapper; show when list has items or when load failed */}
+            {(emailTemplates.length > 0 || emailTemplatesError) && (
               <Card className="bg-navy-800/50 border-navy-700 mt-6" data-testid="mail-templates-card">
                 <h3 className="text-lg font-semibold text-white mb-2">Email Templates</h3>
+                {emailTemplatesError && (
+                  <p className="text-sm text-amber-400 mb-3" role="alert">
+                    {emailTemplatesError}
+                  </p>
+                )}
                 <p className="text-sm text-navy-400 mb-3">
                   Preview email templates with sample data
                 </p>
-                <div className="flex items-center gap-3">
-                  <select
-                    value={selectedTemplate}
-                    onChange={(e) => {
-                      setSelectedTemplate(e.target.value);
-                      setTemplatePreviewHtml('');
-                    }}
-                    className="flex-1 form-select"
-                  >
-                    {emailTemplates.map((t) => (
-                      <option key={t} value={t}>
-                        {t.replace(/_/g, ' ').replace('.html', '')}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    onClick={handlePreviewTemplate}
-                    loading={templatePreviewLoading}
-                    disabled={!selectedTemplate || templatePreviewLoading}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-1" />
-                    Preview
-                  </Button>
-                </div>
+                {emailTemplates.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={selectedTemplate}
+                      onChange={(e) => {
+                        setSelectedTemplate(e.target.value);
+                        setTemplatePreviewHtml('');
+                      }}
+                      className="flex-1 form-select"
+                    >
+                      {emailTemplates.map((t) => (
+                        <option key={t.name} value={t.name}>
+                          {t.name.replace(/_/g, ' ').replace('.html', '')}{t.used ? '' : ' (NU)'}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      onClick={handlePreviewTemplate}
+                      loading={templatePreviewLoading}
+                      disabled={!selectedTemplate || templatePreviewLoading}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Preview
+                    </Button>
+                  </div>
+                )}
                 {templatePreviewHtml && (
                   <div className="mt-4 border border-navy-600 rounded-lg overflow-hidden">
                     <iframe
@@ -1593,6 +1611,13 @@ export function SettingsPage() {
                 )}
               </Card>
             )}
+          </motion.div>}
+
+          {activeTab === 'documents' && <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <DocumentsTab />
           </motion.div>}
 
           {activeTab === 'ai-agent' && <motion.div

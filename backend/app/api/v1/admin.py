@@ -79,6 +79,12 @@ from ...schemas.schemas import (
     UserRoleUpdate,
     UserSessionResponse,
 )
+from ...services.docs_settings_service import (
+    get_document_preview_path,
+    get_preview_path,
+    list_documents_from_documents_folder,
+)
+from ...services.document_delivery_service import get_document_bytes, get_system_user_for_document_generation
 from ...services.email_service import TEMPLATE_SAMPLE_DATA, email_service
 from ...services.settlement_service import SettlementService, calculate_settlement_progress
 from ...services.ticket_service import TicketService
@@ -1114,12 +1120,16 @@ async def create_user(
                     if mail_row and mail_row.invitation_token_expiry_days is not None
                     else 14
                 )
-                nda_pdf_path = os.path.join(
-                    os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
-                )
+                nda_attachments = None
+                try:
+                    nda_user = get_system_user_for_document_generation()
+                    nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+                    nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+                except Exception:
+                    logger.exception("Failed to generate NDA PDF for introducer invitation")
                 await email_service.send_introducer_nda_invitation(
                     user.email, user.first_name, user.invitation_token,
-                    nda_pdf_path, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
+                    nda_attachments=nda_attachments, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
                 )
             else:
                 await email_service.send_invitation(
@@ -2649,8 +2659,11 @@ async def send_test_email(
 async def list_email_templates(
     admin_user: User = Depends(get_admin_user),  # noqa: B008
 ):
-    """List all available email template names. Admin only."""
-    return {"templates": email_service.list_templates()}
+    """List all available email template names with usage (used = sent from app code; NU if not). Admin only.
+
+    Returns: {"templates": [{"name": "<filename>.html", "used": true|false}, ...]}
+    """
+    return {"templates": email_service.list_templates_with_usage()}
 
 
 @router.get("/settings/mail/preview/{template_name}")
@@ -2665,6 +2678,53 @@ async def preview_email_template(
     sample_data = TEMPLATE_SAMPLE_DATA.get(template_name, {})
     html = email_service.render_template(template_name, **sample_data)
     return HTMLResponse(content=html)
+
+
+# ==================== Settings: Documents (platform docs from documents/) ====================
+
+
+@router.get("/settings/documents/list")
+async def get_settings_documents_list(
+    admin_user: User = Depends(get_admin_user),  # noqa: B008
+):
+    """
+    List platform documentation from repo documents/ (.pdf, .docx).
+    Returns path (relative to documents/), name, type, used, email_templates, and catalog fields when matched.
+    Admin only.
+    """
+    return list_documents_from_documents_folder()
+
+
+@router.get("/settings/documents/preview")
+async def get_settings_document_preview(
+    path: str = Query(..., description="Path relative to documents/"),  # noqa: B008
+    admin_user: User = Depends(get_admin_user),  # noqa: B008
+):
+    """
+    Serve document content for preview. Path must be under documents/ (no path traversal).
+    PDF: application/pdf inline; docx: binary download. Admin only.
+    """
+    full_path = get_document_preview_path(path)
+    if full_path is None:
+        raise HTTPException(status_code=400, detail="Invalid or disallowed path")
+    suffix = full_path.suffix.lower()
+    if suffix == ".pdf":
+        return Response(
+            content=full_path.read_bytes(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": "inline"},
+        )
+    if suffix == ".docx":
+        return Response(
+            content=full_path.read_bytes(),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{full_path.name}"'},
+        )
+    return Response(
+        content=full_path.read_bytes(),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{full_path.name}"'},
+    )
 
 
 # ==================== Market Overview ====================
@@ -5092,10 +5152,16 @@ async def send_introducer_nda(
                 "smtp_password": mail_row.smtp_password,
                 "invitation_link_base_url": mail_row.invitation_link_base_url,
             }
-        nda_pdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf")
+        nda_attachments = None
+        try:
+            nda_user = get_system_user_for_document_generation()
+            nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+            nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+        except Exception:
+            logger.exception("Failed to generate NDA PDF for introducer")
         await email_service.send_introducer_nda_invitation(
             user.email, user.first_name, user.invitation_token,
-            nda_pdf_path, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
+            nda_attachments=nda_attachments, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
         )
     except Exception:
         logger.exception("Failed to send NDA email for introducer %s", user.email)
@@ -5194,12 +5260,16 @@ async def send_buyer_nda(
                 "smtp_password": mail_row.smtp_password,
                 "invitation_link_base_url": mail_row.invitation_link_base_url,
             }
-        nda_pdf_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "uploads", "nda", "NDA-Niha-signed.pdf"
-        )
+        nda_attachments = None
+        try:
+            nda_user = get_system_user_for_document_generation()
+            nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+            nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+        except Exception:
+            logger.exception("Failed to generate NDA PDF for buyer invitation")
         await email_service.send_pre_nda_invitation(
             user.email, user.first_name, user.invitation_token,
-            nda_pdf_path, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
+            nda_attachments=nda_attachments, expiry_days=invitation_expiry_days, mail_config=mail_cfg,
         )
     except Exception:
         logger.exception("Failed to send NDA email for buyer %s", user.email)

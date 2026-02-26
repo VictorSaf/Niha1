@@ -1,0 +1,14 @@
+default_model: qwen3-default
+routes:
+  - when: task_type == "coding"
+    model: coder-main
+  - when: task_type in ["quick_coding", "autocomplete"]
+    model: coder-fast
+  - when: task_type in ["debug_complex", "architecture", "hard_reasoning"]
+    model: reasoner
+  - when: requires_tool_calling == true and requires_json == true
+    model: tools-strict
+fallback:
+  timeout_seconds: 45
+  confidence_threshold: 0.7
+  sensitive_levels: ["restricted", "secret"]

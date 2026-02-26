@@ -23,10 +23,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.database import get_db
 from ...core.security import get_admin_user, get_approved_user
-from ...models.models import Currency, DepositStatus, TicketStatus, User
+from ...models.models import Currency, DepositStatus, TicketStatus, User, UserRole
 from ...schemas.schemas import MessageResponse
 from ...services import deposit_service
 from ...services.deposit_service import DepositNotFoundError, InvalidDepositStateError
+from ...services.document_delivery_service import (
+    DEPOSIT_ANNOUNCED_ATTACHMENTS,
+    get_document_bytes,
+)
 from ...services.ticket_service import TicketService
 from .backoffice import backoffice_ws_manager
 from .client_ws import client_ws_manager
@@ -344,15 +348,31 @@ async def announce_deposit(
         },
     )
 
-    # Deposit announcement confirmation email (fire-and-forget)
+    # Deposit announcement confirmation email with funding docs (fire-and-forget)
     try:
         from ...services.email_service import email_service as _email_svc
+
+        attachments = []
+        for doc_id in DEPOSIT_ANNOUNCED_ATTACHMENTS:
+            try:
+                content, filename = await get_document_bytes(
+                    doc_id, current_user, db, role_override=UserRole.FUNDING
+                )
+                attachments.append({"filename": filename, "content": content})
+            except (ValueError, FileNotFoundError) as e:
+                logger.warning(
+                    "Could not attach %s to deposit_announced email for user %s: %s",
+                    doc_id,
+                    current_user.id,
+                    e,
+                )
         await _email_svc.send_deposit_announced(
             to_email=current_user.email,
             first_name=current_user.first_name or "Client",
             amount=float(request.amount),
             currency=request.currency.value,
             reference=request.source_bank or "",
+            attachments=attachments if attachments else None,
         )
     except Exception:
         logger.debug("Deposit announced email failed for user %s", current_user.id)

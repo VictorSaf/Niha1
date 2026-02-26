@@ -1364,7 +1364,7 @@ export const adminApi = {
     return data;
   },
 
-  getEmailTemplates: async (): Promise<string[]> => {
+  getEmailTemplates: async (): Promise<{ name: string; used: boolean }[]> => {
     const { data } = await api.get('/admin/settings/mail/templates');
     return data.templates;
   },
@@ -1375,6 +1375,19 @@ export const adminApi = {
       transformResponse: [(data: string) => data],
     });
     return data;
+  },
+
+  getDocumentsList: async (): Promise<import('../types').SettingsDocumentEntry[]> => {
+    const { data } = await api.get('/admin/settings/documents/list');
+    return data;
+  },
+
+  getDocumentPreview: async (path: string): Promise<Blob> => {
+    const response = await api.get('/admin/settings/documents/preview', {
+      params: { path },
+      responseType: 'blob',
+    });
+    return response.data;
   },
 
   // Get all entities for admin purposes (for fee override dropdown)

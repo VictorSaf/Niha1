@@ -5,6 +5,9 @@
 <h1>Congratulations, {{ name }}!</h1>
 <p>Your account has been verified and approved. You can now
 access the Nihao Carbon Trading Platform.</p>
+{% if documents_attached %}
+<p>Your contract documents (Master Service Agreement, Custody Agreement, Fee Schedule, Risk Disclosure Statement and Carbon Derivatives Master Agreement) are attached to this email for your records.</p>
+{% endif %}
 <div class="callout success">
     <p class="callout-title">What's next?</p>
     <p>To start trading, please fund your account. Contact

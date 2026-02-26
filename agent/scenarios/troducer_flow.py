@@ -5,100 +5,152 @@ The agent explores the platform autonomously and reports results.
 """
 
 PROMPT = """
-# E2E Test Plan: Introducer Onboarding Flow
+Test the full introducer onboarding flow on the NIHA Carbon Trading Platform.
+Execute ALL steps in order. Do not skip any step.
 
-## Platform
-- Frontend: http://localhost:5173
-- Auth is stored in sessionStorage (NOT localStorage) under key 'auth-storage'
-- To logout: browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
-- DB queries: shell_run('docker compose exec db psql -U niha_user -d niha_carbon -c "YOUR SQL"')
-- Backend logs: shell_run('docker compose logs backend --since 2m 2>&1 | tail -40')
+## AUTH RULES (read carefully)
+- Auth is in sessionStorage key 'auth-storage' (NOT localStorage)
+- Logout: browser_evaluate('() => { sessionStorage.clear(); }') then browser_navigate to http://localhost:5173/login
+- Login pattern: browser_navigate /login → click "ENTER" button → fill email → fill password → click "CONTINUE" → wait for redirect
+- DB queries: shell_run with 'docker compose exec db psql -U niha_user -d niha_carbon -c "SQL"'
+- WebSocket warnings in the console are NORMAL — do NOT debug them
 
 ## Credentials
 - Troducer: tr2@yopmail.com / Troducer123!
 - Admin: admin@nihaogroup.com / Admin123!
-- Test user to create: e2e-auto@yopmail.com
-
-## Instructions
-Explore the UI yourself. Take screenshots at every step. Read page text with browser_get_text() to find what elements exist before clicking. Do not assume selectors — discover them. Call test_assert() for every verification. At the very end, produce a structured report.
+- Test user: e2e-auto@yopmail.com
 
 ---
 
-## TC-01: Troducer Login & Referral Code
-IMPORTANT: The login page shows two buttons — "ENTER" (password login) and "NDA" (new user flow).
-You MUST click "ENTER" first to reveal the email/password fields, then fill them, then click "CONTINUE".
-1. Navigate to http://localhost:5173/login
-2. Click the button with text "ENTER" (this reveals the email/password form)
-3. Fill email field (placeholder "Email") with tr2@yopmail.com
-4. Fill password field (placeholder "Password") with Troducer123!
-5. Click the button with text "CONTINUE"
-6. Wait for redirect to /troducer
-7. Take a screenshot of the page you land on
-4. Read the page text — find the referral code displayed on screen
-5. Confirm the code in DB: SELECT referral_code FROM users WHERE email='tr2@yopmail.com'
-6. test_assert: code visible on screen matches DB value
+### Step 0: Cleanup (remove leftover test data before starting)
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "DELETE FROM users WHERE email='e2e-auto@yopmail.com'; DELETE FROM contact_requests WHERE contact_email='e2e-auto@yopmail.com';"
 
-## TC-02: New User Submits Introducer Application
-1. Logout (sessionStorage.clear() + navigate to http://localhost:5173/login)
-2. Get the referral code from DB: SELECT referral_code FROM users WHERE email='tr2@yopmail.com'
-3. Navigate to http://localhost:5173/introducer?ref=<CODE> (URL-encode special chars: $ → %24, ! → %21)
-4. Take screenshot, read page text to understand what is on screen
-5. Find and click the button that opens the introducer request form (not the login/enter button)
-6. Fill the form: Entity Name="E2E Auto Corp", Email="e2e-auto@yopmail.com", First Name="Auto", Last Name="Test", Position="QA"
-7. Submit the form
-8. Take screenshot of the result
-9. test_assert: success/confirmation message is visible
+---
 
-## TC-03: DB State — PREINTRODUCER Created
-1. Run: SELECT email, role, is_active, invitation_token IS NOT NULL as has_token FROM users WHERE email='e2e-auto@yopmail.com'
-2. test_assert: role = PREINTRODUCER
-3. test_assert: is_active = false
-4. test_assert: has_token = true
+### Step 1: Login as Troducer
+- browser_navigate to http://localhost:5173/login
+- browser_click selector="text:ENTER"   ← REQUIRED: reveals the email/password fields
+- browser_fill selector="placeholder:Email" value="tr2@yopmail.com"
+- browser_fill selector="placeholder:Password" value="Troducer123!"
+- browser_click selector="text:CONTINUE"
+- browser_wait_for url_contains="/troducer"
+- browser_screenshot label="troducer-dashboard"
 
-## TC-04: New User Sets Password via Invitation Link
-1. Get token: SELECT invitation_token FROM users WHERE email='e2e-auto@yopmail.com'
-2. Navigate to http://localhost:5173/setup-password?token=<TOKEN>
-3. Take screenshot, read page to understand the form structure
-4. Fill password fields with AutoTest123!
-5. Submit
-6. Take screenshot of result
-7. test_assert: page advances past the password step (no error shown)
+### Step 2: Find Referral Code on Screen
+- browser_get_text() to read all text on the /troducer page
+- Find the referral code shown on screen (short alphanumeric code, e.g. "Riw9MKF!")
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "SELECT referral_code FROM users WHERE email='tr2@yopmail.com';"
+- test_assert: description="TC-01: Referral code on screen matches DB", condition=True if screen code == DB code, expected=DB value, actual=screen value
 
-## TC-05: NDA Upload
-1. Still on the setup flow — find the NDA upload section
-2. Upload the file at: /Users/victorsafta/work/Niha/backend/uploads/nda/NDA-Niha-signed.pdf
-3. Submit/confirm the upload
-4. Take screenshot
-5. test_assert: success or confirmation message visible
+### Step 3: Logout Troducer
+- browser_evaluate('() => { sessionStorage.clear(); }')
+- browser_navigate to http://localhost:5173/login
+- browser_screenshot label="after-troducer-logout"
 
-## TC-06: Admin Approves NDA in Backoffice
-1. Logout (sessionStorage.clear() + navigate to login), click "ENTER", fill admin@nihaogroup.com / Admin123!, click "CONTINUE", wait for /dashboard
-2. Navigate to the backoffice introducer onboarding section (explore the nav to find it)
-3. Take screenshot of the list
-4. Find the entry for e2e-auto@yopmail.com or "E2E Auto Corp"
-5. Click the approve button for that entry
-6. Take screenshot after approval
-7. test_assert: the entry is no longer visible in the pending list
+### Step 4: Get Referral Code from DB for URL
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "SELECT referral_code FROM users WHERE email='tr2@yopmail.com';"
+- Read the code from the result
+- URL-encode it: replace $ with %24, ! with %21, # with %23, @ with %40
 
-## TC-07: Final DB Verification
-1. Run: SELECT email, role, is_active, nda_signed FROM users WHERE email='e2e-auto@yopmail.com'
-2. test_assert: role = INTRODUCER
-3. test_assert: is_active = true
-4. test_assert: nda_signed = true
+### Step 5: Navigate to Introducer Page with Referral Code
+- browser_navigate to http://localhost:5173/introducer?ref=<ENCODED_CODE>
+- browser_screenshot label="introducer-landing"
+- browser_get_text() to read all text and understand the page
 
-## Cleanup
-shell_run('docker compose exec db psql -U niha_user -d niha_carbon -c "DELETE FROM users WHERE email=\'e2e-auto@yopmail.com\'; DELETE FROM contact_requests WHERE contact_email=\'e2e-auto@yopmail.com\';"')
+### Step 6: Open Introducer Request Form
+- Find the button that opens the contact/request form (NOT the ENTER login button)
+- browser_click that button
+- browser_screenshot label="introducer-form-open"
+- browser_get_text() to see form fields
 
-## Final Report (required)
-After cleanup, output a structured summary:
+### Step 7: Fill and Submit Introducer Form
+- Fill Entity Name field with "E2E Auto Corp"
+- Fill Email field with "e2e-auto@yopmail.com"
+- Fill First Name with "Auto"
+- Fill Last Name with "Test"
+- Fill Position with "QA"
+- Click the submit button
+- browser_screenshot label="introducer-form-submitted"
+- browser_get_text() to read the result
+- test_assert: description="TC-02: Introducer form submitted successfully", condition=True if success/confirmation text is visible, expected="Success message visible", actual=page text summary
 
-TC-01: [PASS/FAIL] — <one line description>
-TC-02: [PASS/FAIL] — <one line description>
-TC-03: [PASS/FAIL] — <one line description>
-TC-04: [PASS/FAIL] — <one line description>
-TC-05: [PASS/FAIL] — <one line description>
-TC-06: [PASS/FAIL] — <one line description>
-TC-07: [PASS/FAIL] — <one line description>
+### Step 8: Verify PREINTRODUCER in DB
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "SELECT email, role, is_active, invitation_token IS NOT NULL as has_token FROM users WHERE email='e2e-auto@yopmail.com';"
+- Read the result carefully
+- test_assert: description="TC-03a: Role is PREINTRODUCER", condition=True if "PREINTRODUCER" in result, expected="PREINTRODUCER", actual=role value from DB
+- test_assert: description="TC-03b: User is not yet active", condition=True if "f" or "false" in is_active column, expected="is_active=false", actual=is_active value
+- test_assert: description="TC-03c: Invitation token exists", condition=True if "t" or "true" in has_token column, expected="has_token=true", actual=has_token value
+
+### Step 9: Get Invitation Token from DB
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "SELECT invitation_token FROM users WHERE email='e2e-auto@yopmail.com';"
+- Copy the token value from the result
+
+### Step 10: Setup Password via Invitation Link
+- browser_navigate to http://localhost:5173/setup-password?token=<TOKEN>
+- browser_screenshot label="setup-password-page"
+- browser_get_text() to read the form structure
+- Find the password input fields
+- browser_fill the password field with "AutoTest123!"
+- browser_fill the confirm password field with "AutoTest123!"
+- Click the submit/continue/save button
+- browser_screenshot label="after-password-set"
+- browser_get_text() to read the result
+- test_assert: description="TC-04: Password setup completed", condition=True if no error message visible and page advanced, expected="No error, page advanced", actual=page text summary
+
+### Step 11: Upload NDA
+- browser_get_text() to read what is on screen after password set
+- browser_screenshot label="after-password-step"
+- Look for NDA upload section or a file input
+- browser_evaluate('() => document.querySelector("input[type=file]") ? "found" : "not found"') to detect file input
+- If file input exists: browser_fill selector="input[type=file]" value="/Users/victorsafta/work/Niha/backend/uploads/nda/NDA-Niha-signed.pdf"
+- Click submit/upload button
+- browser_screenshot label="after-nda-upload"
+- browser_get_text() to read result
+- test_assert: description="TC-05: NDA uploaded", condition=True if success message visible OR no error shown, expected="Upload successful", actual=page text summary
+
+### Step 12: Logout and Login as Admin
+- browser_evaluate('() => { sessionStorage.clear(); }')
+- browser_navigate to http://localhost:5173/login
+- browser_click selector="text:ENTER"   ← REQUIRED: reveals the email/password fields
+- browser_fill selector="placeholder:Email" value="admin@nihaogroup.com"
+- browser_fill selector="placeholder:Password" value="Admin123!"
+- browser_click selector="text:CONTINUE"
+- browser_wait_for url_contains="/dashboard"
+- browser_screenshot label="admin-dashboard"
+
+### Step 13: Navigate to Onboarding/Introducer Section in Backoffice
+- browser_get_text() to read the admin dashboard navigation
+- Look for "Onboarding", "Introducers", or similar nav link
+- Click on that nav item
+- browser_screenshot label="backoffice-onboarding"
+- browser_get_text() to read the list
+
+### Step 14: Approve e2e-auto@yopmail.com NDA
+- Find the entry for "e2e-auto@yopmail.com" or "E2E Auto Corp" in the list
+- browser_get_text() to read what buttons are available (look for approve, review, etc.)
+- Click the approve button for that entry
+- browser_screenshot label="after-nda-approval"
+- browser_get_text() to read the result
+- test_assert: description="TC-06: Admin approved NDA for e2e-auto", condition=True if entry is gone from pending list or status changed to approved, expected="Approved or removed from list", actual=page text summary
+
+### Step 15: Final DB Verification
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "SELECT email, role, is_active, nda_signed FROM users WHERE email='e2e-auto@yopmail.com';"
+- test_assert: description="TC-07a: Role is INTRODUCER", condition=True if "INTRODUCER" in result and "PREINTRODUCER" not in result, expected="INTRODUCER", actual=role value
+- test_assert: description="TC-07b: User is active", condition=True if "t" in is_active column, expected="is_active=true", actual=is_active value
+- test_assert: description="TC-07c: NDA is signed", condition=True if "t" in nda_signed column, expected="nda_signed=true", actual=nda_signed value
+
+### Step 16: Cleanup
+- shell_run: docker compose exec db psql -U niha_user -d niha_carbon -c "DELETE FROM users WHERE email='e2e-auto@yopmail.com'; DELETE FROM contact_requests WHERE contact_email='e2e-auto@yopmail.com';"
+
+After completing all 16 steps and their assertions, output a summary report:
+
+TC-01: [PASS/FAIL] — Referral code visible on troducer dashboard matches DB
+TC-02: [PASS/FAIL] — Introducer request form submission
+TC-03: [PASS/FAIL] — DB shows PREINTRODUCER role with invitation token
+TC-04: [PASS/FAIL] — Password setup via invitation link
+TC-05: [PASS/FAIL] — NDA file upload
+TC-06: [PASS/FAIL] — Admin NDA approval in backoffice
+TC-07: [PASS/FAIL] — Final DB state: INTRODUCER, active, nda_signed
 
 BUGS FOUND: <list any unexpected behavior>
 OVERALL: [PASS/FAIL]

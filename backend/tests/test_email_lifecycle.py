@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.services.email_service import EmailService
+from app.services.email_service import EmailService, email_service
 
 
 @pytest.fixture
@@ -238,3 +238,26 @@ async def test_send_admin_overdue_settlement_alert(svc, mock_send):
     )
     assert result is True
     mock_send.assert_called_once()
+
+
+# ── Template usage (used vs NU) ─────────────────────────────────
+
+def test_list_templates_with_usage_deposit_cleared_not_used():
+    """deposit_cleared.html is not sent from any app flow; must be reported as not used."""
+    with_usage = email_service.list_templates_with_usage()
+    deposit_cleared = next((t for t in with_usage if t["name"] == "deposit_cleared.html"), None)
+    assert deposit_cleared is not None
+    assert deposit_cleared["used"] is False
+
+
+def test_list_templates_with_usage_every_template_classified():
+    """Every template file is either in USED or UNUSED; no drift between code and constants."""
+    used = email_service.USED_EMAIL_TEMPLATES
+    unused = email_service.UNUSED_EMAIL_TEMPLATES
+    assert used.isdisjoint(unused), "USED and UNUSED must not overlap"
+    all_names = set(email_service.list_templates())
+    for name in all_names:
+        assert name in used or name in unused, (
+            f"Template {name} must be in USED_EMAIL_TEMPLATES or UNUSED_EMAIL_TEMPLATES"
+        )
+    assert all_names == used | unused, "Every template must be classified as used or unused"

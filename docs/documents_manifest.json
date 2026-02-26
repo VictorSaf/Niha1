@@ -1,0 +1,18 @@
+{
+  "DOCUMENT_EMAIL_MAPPING.md": {
+    "role": null,
+    "email_templates": ["account_approved.html", "deposit_announced.html"]
+  },
+  "EMAIL_TEMPLATES_USAGE.md": {
+    "role": null,
+    "email_templates": []
+  },
+  "NDA_TO_EUA_WORKFLOW_SIMULATION.md": {
+    "role": null,
+    "email_templates": []
+  },
+  "TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md": {
+    "role": null,
+    "email_templates": []
+  }
+}

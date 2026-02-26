@@ -77,7 +77,6 @@ export function Header() {
       links.push({ href: '/swap', label: 'Swap', icon: null });
       links.push({ href: '/onboarding', label: 'Onboarding', icon: null });
       links.push({ href: '/introducer/dashboard', label: 'Introducer', icon: null });
-      links.push({ href: '/preintroducer', label: 'Pre-Intro', icon: null });
     } else if (role === 'PREINTRODUCER') {
       links.push({ href: '/preintroducer', label: 'Referral Code', icon: null });
     } else if (role === 'TRODUCER') {

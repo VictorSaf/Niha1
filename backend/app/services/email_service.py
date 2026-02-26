@@ -143,9 +143,9 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "rate": "0.1177",
     },
     "invitation.html": {"name": "John Doe", "setup_url": "https://app.nihaogroup.com/setup-password?token=abc123"},
-    "account_approved.html": {"name": "John Doe"},
+    "account_approved.html": {"name": "John Doe", "documents_attached": True},
     "kyc_rejected.html": {"name": "John Doe", "reason": "Documents were not legible. Please re-upload."},
-    "deposit_announced.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "reference": "NIHA-DEP-20260101"},
+    "deposit_announced.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "reference": "NIHA-DEP-20260101", "documents_attached": True},
     "deposit_on_hold.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "hold_until": "2026-02-15"},
     "deposit_cleared.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR"},
     "deposit_rejected.html": {
@@ -214,6 +214,10 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "name": "Jane Smith",
         "dashboard_url": "https://app.nihaogroup.com/introducer/dashboard",
     },
+    "troducer_welcome.html": {
+        "name": "Jane Smith",
+        "login_url": "https://app.nihaogroup.com/login",
+    },
     "referral_invitation.html": {
         "introducer_name": "Jane Smith",
         "invited_name": "John",
@@ -252,6 +256,25 @@ class EmailService:
         """Public render for admin preview endpoint."""
         return self._render_template(template_name, **kwargs)
 
+    # Template filenames that are sent from application code (auth, backoffice, deposits, etc.).
+    # Keep in sync when adding/removing send_* calls or new templates. See docs/EMAIL_TEMPLATES_USAGE.md.
+    # Excludes deposit_cleared.html: after clear we only send trading_activated (see deposits clear flow).
+    USED_EMAIL_TEMPLATES: frozenset = frozenset({
+        "account_approved.html", "account_funded.html", "admin_overdue_settlement.html",
+        "aml_review_started.html", "cea_settlement_pending.html", "contact_followup.html",
+        "deposit_announced.html", "deposit_on_hold.html", "deposit_rejected.html",
+        "eua_access_granted.html", "eua_settlement_pending.html", "introducer_approved.html",
+        "introducer_nda_invitation.html", "invitation.html", "kyc_rejected.html",
+        "magic_link.html", "pre_nda_approved.html", "pre_nda_invitation.html",
+        "referral_invitation.html", "settlement_completed.html", "settlement_created.html",
+        "settlement_failed.html", "settlement_status_update.html", "swap_access_granted.html",
+        "swap_match.html", "test_email.html", "trade_confirmation.html", "trading_activated.html",
+        "troducer_welcome.html", "welcome_activated.html", "withdrawal_approved.html",
+        "withdrawal_completed.html", "withdrawal_rejected.html", "withdrawal_requested.html",
+    })
+    # Templates that exist but are never sent from app code (NU). Every template must be in USED or UNUSED.
+    UNUSED_EMAIL_TEMPLATES: frozenset = frozenset({"deposit_cleared.html"})
+
     def list_templates(self) -> List[str]:
         """Return available template filenames (excluding _base.html)."""
         templates = []
@@ -260,6 +283,11 @@ class EmailService:
                 if f.endswith(".html") and not f.startswith("_"):
                     templates.append(f)
         return templates
+
+    def list_templates_with_usage(self) -> List[Dict[str, Any]]:
+        """Return template filenames with used flag (used = sent from app code; NU if not)."""
+        names = self.list_templates()
+        return [{"name": n, "used": n in self.USED_EMAIL_TEMPLATES} for n in names]
 
     # ── send_* methods ─────────────────────────────────────────────
 
@@ -349,11 +377,11 @@ class EmailService:
         to_email: str,
         first_name: str,
         invitation_token: str,
-        nda_pdf_path: str,
+        nda_attachments: Optional[list[Dict[str, Any]]] = None,
         expiry_days: int = 14,
         mail_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
-        """Send NDA invitation email with attached PDF to introducer."""
+        """Send NDA invitation email with attached PDF to introducer. nda_attachments: list of {filename, content} from document_delivery_service."""
         name = first_name or "there"
         raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
         base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
@@ -363,14 +391,8 @@ class EmailService:
             "introducer_nda_invitation.html",
             name=name, setup_url=setup_url, expiry_days=expiry_days,
         )
-        attachments = None
-        try:
-            with open(nda_pdf_path, "rb") as f:
-                attachments = [{"filename": "Nihao_Group_NDA.pdf", "content": f.read()}]
-        except FileNotFoundError:
-            logger.error(f"NDA PDF not found at {nda_pdf_path}")
         return await self._send_email(
-            to_email, subject, html, mail_config=mail_config, attachments=attachments,
+            to_email, subject, html, mail_config=mail_config, attachments=nda_attachments,
         )
 
     async def send_troducer_welcome(
@@ -406,11 +428,11 @@ class EmailService:
         to_email: str,
         first_name: str,
         invitation_token: str,
-        nda_pdf_path: str,
+        nda_attachments: Optional[list[Dict[str, Any]]] = None,
         expiry_days: int = 14,
         mail_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
-        """Send NDA invitation email with attached PDF to a PRE_NDA buyer."""
+        """Send NDA invitation email with attached PDF to a PRE_NDA buyer. nda_attachments: list of {filename, content} from document_delivery_service."""
         name = first_name or "there"
         raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
         base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
@@ -420,14 +442,8 @@ class EmailService:
             "pre_nda_invitation.html",
             name=name, setup_url=setup_url, expiry_days=expiry_days,
         )
-        attachments = None
-        try:
-            with open(nda_pdf_path, "rb") as f:
-                attachments = [{"filename": "Nihao_Group_NDA.pdf", "content": f.read()}]
-        except FileNotFoundError:
-            logger.error(f"NDA PDF not found at {nda_pdf_path}")
         return await self._send_email(
-            to_email, subject, html, mail_config=mail_config, attachments=attachments,
+            to_email, subject, html, mail_config=mail_config, attachments=nda_attachments,
         )
 
     async def send_pre_nda_approved(
@@ -467,12 +483,21 @@ class EmailService:
         html = self._render_template("referral_invitation.html", **context)
         return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
-    async def send_account_approved(self, to_email: str, first_name: str) -> bool:
-        """Send email when user account is approved"""
+    async def send_account_approved(
+        self,
+        to_email: str,
+        first_name: str,
+        attachments: Optional[List[Dict[str, Any]]] = None,
+    ) -> bool:
+        """Send email when user account is approved. Optional attachments (e.g. MSA, Custody, Fee Schedule, Risk Disclosure, Derivatives)."""
         name = first_name or "there"
         subject = "Your account has been verified - Nihao Group"
-        html = self._render_template("account_approved.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template(
+            "account_approved.html",
+            name=name,
+            documents_attached=bool(attachments),
+        )
+        return await self._send_email(to_email, subject, html, attachments=attachments)
 
     async def send_kyc_rejected(
         self, to_email: str, first_name: str, reason: str = ""
@@ -484,16 +509,26 @@ class EmailService:
         return await self._send_email(to_email, subject, html)
 
     async def send_deposit_announced(
-        self, to_email: str, first_name: str, amount: float, currency: str, reference: str
+        self,
+        to_email: str,
+        first_name: str,
+        amount: float,
+        currency: str,
+        reference: str,
+        attachments: Optional[List[Dict[str, Any]]] = None,
     ) -> bool:
-        """Confirm deposit announcement receipt to user."""
+        """Confirm deposit announcement receipt to user. Optional attachments (e.g. Bank Confirmation Letters, Registry Overview)."""
         name = first_name or "there"
         subject = f"Deposit Received - {currency} {_fmt(amount)} - Nihao Group"
         html = self._render_template(
             "deposit_announced.html",
-            name=name, amount=_fmt(amount), currency=currency, reference=reference,
+            name=name,
+            amount=_fmt(amount),
+            currency=currency,
+            reference=reference,
+            documents_attached=bool(attachments),
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, attachments=attachments)
 
     async def send_deposit_on_hold(
         self, to_email: str, first_name: str, amount: float, currency: str, hold_until: str

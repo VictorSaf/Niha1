@@ -254,6 +254,22 @@ export interface MailSettingsUpdate {
   authMethod?: string;
 }
 
+/** Platform document entry from Settings → Documents (repo documents/). API returns snake_case; response interceptor yields camelCase. */
+export interface SettingsDocumentEntry {
+  path: string;
+  name: string;
+  type: 'pdf' | 'docx';
+  used: boolean;
+  emailTemplates: string[];
+  /** From DOCUMENT_CATALOG when filename matches */
+  title?: string;
+  titleRo?: string;
+  phase?: string;
+  phaseName?: string;
+  category?: string;
+  minRole?: string;
+}
+
 // User Session
 export interface UserSession {
   id: string;

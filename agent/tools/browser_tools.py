@@ -130,6 +130,16 @@ def _take_screenshot(label: str, full_page: bool = False) -> dict:
     return {k: v for k, v in record.items() if k != "base64"}
 
 
+def browser_upload_file(path: str, selector: str = "input[type=file]") -> dict:
+    """Upload a file using Playwright's set_input_files (works on hidden file inputs)."""
+    page = _get_page()
+    try:
+        page.locator(selector).first.set_input_files(path)
+        return {"uploaded": True, "path": path, "selector": selector}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def browser_get_text(selector: str | None = None) -> dict:
     page = _get_page()
     try:

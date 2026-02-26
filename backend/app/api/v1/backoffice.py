@@ -42,6 +42,10 @@ from ...models.models import (
     UserSession,
 )
 from ...services.deposit_service import calculate_business_days, calculate_hold_period
+from ...services.document_delivery_service import (
+    ACCOUNT_APPROVED_ATTACHMENTS,
+    get_document_bytes,
+)
 from ...schemas.schemas import (
     AddAssetRequest,
     AssetTransactionResponse,
@@ -263,9 +267,31 @@ async def approve_user(
 
     await db.commit()
 
-    # Send approval email
+    # Send approval email with contract documents (MSA, Custody, Fee Schedule, Risk Disclosure, Derivatives)
     try:
-        await email_service.send_account_approved(user.email, user.first_name)
+        # Re-fetch user with entity for document generation
+        user_result = await db.execute(
+            select(User).options(selectinload(User.entity)).where(User.id == UUID(user_id))
+        )
+        user_with_entity = user_result.scalar_one_or_none()
+        attachments = []
+        if user_with_entity:
+            for doc_id in ACCOUNT_APPROVED_ATTACHMENTS:
+                try:
+                    content, filename = await get_document_bytes(doc_id, user_with_entity, db)
+                    attachments.append({"filename": filename, "content": content})
+                except (ValueError, FileNotFoundError) as e:
+                    logger.warning(
+                        "Could not attach %s to account_approved email for user %s: %s",
+                        doc_id,
+                        user_id,
+                        e,
+                    )
+        await email_service.send_account_approved(
+            user.email,
+            user.first_name or "",
+            attachments=attachments if attachments else None,
+        )
     except Exception:
         pass  # Don't fail if email fails
 

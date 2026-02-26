@@ -109,6 +109,21 @@ BROWSER_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_upload_file",
+            "description": "Upload a file to a file input element (works on hidden inputs). Use this for NDA/PDF uploads.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Absolute path to the file to upload"},
+                    "selector": {"type": "string", "description": "CSS selector for the file input (default: input[type=file])"}
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_evaluate",
             "description": "Execute JavaScript in the browser and return the result",
             "parameters": {

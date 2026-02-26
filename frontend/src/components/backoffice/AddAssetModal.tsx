@@ -160,6 +160,15 @@ export function AddAssetModal({
     }
   };
 
+  const setMaxAmount = () => {
+    const current = getCurrentBalance();
+    setAmount(
+      selectedAsset === 'EUR'
+        ? current.toFixed(2)
+        : String(Math.floor(current))
+    );
+  };
+
   const getNewBalance = (operation: 'deposit' | 'withdraw'): number => {
     const current = getCurrentBalance();
     const amountNum = parseFloat(amount) || 0;
@@ -259,18 +268,29 @@ export function AddAssetModal({
                   <label className="block text-sm font-medium text-navy-300 mb-2">
                     Amount *
                   </label>
-                  <NumberInput
-                    value={amount}
-                    onChange={(v) => setAmount(v)}
-                    placeholder={selectedAsset === 'EUR' ? '0.00' : '0'}
-                    decimals={selectedAsset === 'EUR' ? 2 : 0}
-                    className={cn(
-                      isValidAmount
-                        ? `${config.borderClass} ${config.ringClass}`
-                        : 'border-navy-700 focus:ring-emerald-500'
-                    )}
-                    autoFocus
-                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <NumberInput
+                        value={amount}
+                        onChange={(v) => setAmount(v)}
+                        placeholder={selectedAsset === 'EUR' ? '0.00' : '0'}
+                        decimals={selectedAsset === 'EUR' ? 2 : 0}
+                        className={cn(
+                          isValidAmount
+                            ? `${config.borderClass} ${config.ringClass}`
+                            : 'border-navy-700 focus:ring-emerald-500'
+                        )}
+                        autoFocus
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={setMaxAmount}
+                      className="px-3 py-2 text-sm border border-navy-600 text-navy-300 rounded-xl hover:bg-navy-700 font-medium"
+                    >
+                      Max
+                    </button>
+                  </div>
                 </div>
 
                 {/* Reference (optional) */}
