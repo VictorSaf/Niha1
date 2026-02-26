@@ -163,24 +163,31 @@ async def list_tickets(
         mm = ticket.market_maker
         base["mm_name"] = mm.name if mm else None
 
-        # For TRADE_EXECUTED tickets, resolve buyer/seller MM names
+        # For TRADE_EXECUTED tickets, resolve buyer/seller MM and entity names
         if ticket.action_type == "TRADE_EXECUTED" and ticket.response_data:
-            buyer_mm_id = ticket.response_data.get("buyer_mm_id")
-            seller_mm_id = ticket.response_data.get("seller_mm_id")
-            if buyer_mm_id:
-                bmm = await db.execute(
-                    select(MarketMakerClient.name).where(
-                        MarketMakerClient.id == buyer_mm_id
+            r = ticket.response_data
+            for key, uid, name_key in [
+                ("buyer_mm_id", "buyer_mm_id", "buyer_mm_name"),
+                ("seller_mm_id", "seller_mm_id", "seller_mm_name"),
+                ("buyer_entity_id", "buyer_entity_id", "buyer_entity_name"),
+                ("seller_entity_id", "seller_entity_id", "seller_entity_name"),
+            ]:
+                raw = r.get(key)
+                if not raw:
+                    continue
+                try:
+                    u = UUID(raw) if isinstance(raw, str) else raw
+                except (TypeError, ValueError):
+                    continue
+                if "entity" in key:
+                    result = await db.execute(select(Entity.name).where(Entity.id == u))
+                else:
+                    result = await db.execute(
+                        select(MarketMakerClient.name).where(MarketMakerClient.id == u)
                     )
-                )
-                base["buyer_mm_name"] = bmm.scalar()
-            if seller_mm_id:
-                smm = await db.execute(
-                    select(MarketMakerClient.name).where(
-                        MarketMakerClient.id == seller_mm_id
-                    )
-                )
-                base["seller_mm_name"] = smm.scalar()
+                val = result.scalar()
+                if val is not None:
+                    base[name_key] = val
 
         tickets_data.append(base)
 

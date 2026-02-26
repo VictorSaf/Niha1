@@ -32,9 +32,11 @@ from ...models.models import (
     SwapStatus,
     User,
 )
+from ...models.models import TicketStatus
 from ...services.market_maker_service import MarketMakerService
 from ...services.price_scraper import price_scraper
 from ...services.settlement_service import SettlementService
+from ...services.ticket_service import TicketService
 from .client_ws import client_ws_manager
 
 logger = logging.getLogger(__name__)
@@ -785,6 +787,28 @@ async def create_swap(
     )
 
     db.add(swap)
+    await db.flush()
+
+    await TicketService.create_ticket(
+        db=db,
+        action_type="SWAP_CREATED",
+        entity_type="SwapRequest",
+        entity_id=swap.id,
+        status=TicketStatus.SUCCESS,
+        user_id=current_user.id,
+        request_payload={
+            "from_type": from_cert.value,
+            "to_type": to_cert.value,
+            "quantity": request.quantity,
+            "desired_rate": float(request.desired_rate) if request.desired_rate else None,
+            "anonymous_code": code,
+        },
+        response_data={
+            "swap_id": str(swap.id),
+            "status": SwapStatus.OPEN.value,
+        },
+        tags=["swap", "client"],
+    )
     await db.commit()
     await db.refresh(swap)
 
@@ -1030,6 +1054,30 @@ async def execute_swap(
         if user_in_session:
             user_in_session.role = UserRole.EUA_SETTLE
 
+    await TicketService.create_ticket(
+        db=db,
+        action_type="SWAP_EXECUTED",
+        entity_type="SwapRequest",
+        entity_id=swap.id,
+        status=TicketStatus.SUCCESS,
+        user_id=current_user.id,
+        request_payload={
+            "from_type": swap.from_type.value,
+            "to_type": swap.to_type.value,
+            "cea_quantity": cea_quantity,
+            "eua_output": eua_output,
+            "weighted_avg_ratio": round(weighted_avg_ratio, 4),
+            "matched_orders_count": len(matched_orders),
+        },
+        response_data={
+            "swap_id": str(swap.id),
+            "anonymous_code": swap.anonymous_code,
+            "settlement_batch_id": str(settlement.id),
+            "batch_reference": settlement.batch_reference,
+            "status": SwapStatus.COMPLETED.value,
+        },
+        tags=["swap", "client"],
+    )
     await db.commit()
 
     # Notify the user: swap completed + balance changed + role may have changed

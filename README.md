@@ -34,9 +34,9 @@ Comprehensive admin interface using the **same Layout** as the rest of the app (
 - **Market Orders** - Place orders for market makers with CEA/EUA toggle, Place BID/ASK modals, order book
 - **Liquidity** - Create liquidity
 - **Deposits** - AML/deposits management (separate from Onboarding Deposits tab). Client status (`user_role`) is shown consistently in deposit cards and tables via **ClientStatusBadge**; single source of truth (FUNDING when user announced transfer). See `app_truth.md` §8.
-- **Audit Logging** - Audit trail and action logging. Includes add-asset operations (ENTITY_ASSET_DEPOSIT, ENTITY_ASSET_WITHDRAWAL); searchable by action_type or tag `entity_asset`.
+- **Audit Logging** - Full audit trail: every significant action (auth, trading, deposits, withdrawals, swap, KYC, market maker, add-asset) writes a unique ticket to `ticket_logs`. Backoffice **Audit Logging** (`/backoffice/logging`) lists TIME, ACTOR, ACTION, DETAILS, RESULT, REF; data from **GET /api/v1/admin/logging/tickets** with WebSocket push (LIVE). For **trades**, counterparties (Buyer · Seller) are shown clearly in the Actor column and in the ticket detail modal. Action types include WITHDRAWAL_REQUESTED/APPROVED/COMPLETED/REJECTED, SWAP_CREATED/SWAP_EXECUTED, TRADE_EXECUTED (with enriched buyer/seller names). See **`app_truth.md`** §8 and **`docs/API.md`** § GET /admin/logging/tickets.
 - **Users** - User management (accessible from backoffice Subheader nav). List and user detail modal show Status as **Active** or **DISABLED** (based on `is_active`); Role column shows DISABLED badge for disabled users. From User Detail, admins can adjust entity balances via **Add Asset** (Deposit / Withdraw) for EUR, CEA, or EUA. **Deposit & Withdrawal History** (Assets tab) shows a unified list of wire deposits and add-asset transactions, sorted by date. Add-asset operations create audit tickets visible in Logging.
-- **Settings** - Platform Settings: **Price Scraping Sources** (EUA/CEA price feeds) and **Mail & Authentication** (admin-only). Mail & Auth configures mail provider (Resend or SMTP), from address, invitation email subject/body/link base URL, and token expiry; when set, invitation emails use stored config; otherwise env (`RESEND_API_KEY`, `FROM_EMAIL`) is used.
+- **Settings** - Platform Settings: **Price Scraping Sources** (EUA/CEA price feeds), **Mail & Authentication** (admin-only), **Documents** (platform docs from repo `documents/` with used/NU and preview), and **AI Agent**. Mail & Auth configures mail provider (Resend or SMTP), from address, invitation email subject/body/link base URL, and token expiry; when set, invitation emails use stored config; otherwise env (`RESEND_API_KEY`, `FROM_EMAIL`) is used.
 - **Theme** - Admin-only UI showcase at `/theme` (sample and containers subpages).
 
 ### Settlement System (v1.0.0) ✨
@@ -92,6 +92,13 @@ Day 3 (T+3): AT_CUSTODY → Certificates at custody
 
 ```
 Niha/
+├── agent-control-plane/       # Reusable local-first agent gateway (Ollama)
+│   ├── app/
+│   │   ├── api/               # /health, /v1/agents/*
+│   │   ├── providers/         # Ollama adapter
+│   │   ├── routing/           # Policy routing and fallback checks
+│   │   └── schemas/           # Request/response contracts
+│   └── tests/                 # Service tests
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/          # API endpoints
@@ -114,6 +121,26 @@ Niha/
 │   │   ├── stores/          # Zustand stores
 │   │   └── styles/          # Styles
 ```
+
+## Agent Control Plane (Local-First)
+
+The repository now includes a standalone service at `agent-control-plane/` for reusable agent orchestration across projects:
+
+- Local-first model routing (Ollama)
+- Policy testing endpoint (`POST /v1/agents/policies/test`)
+- Model registry endpoint (`GET /v1/agents/models`)
+- Agent execution endpoint (`POST /v1/agents/run`) with dry-run and fallback signaling
+
+Quick run:
+
+```bash
+cd agent-control-plane
+/opt/homebrew/bin/python3.13 -m venv .venv
+./.venv/bin/pip install -e ".[dev]"
+./.venv/bin/uvicorn app.main:app --reload --port 8010
+```
+
+See `docs/AGENT_CONTROL_PLANE.md` for API contract and configuration details.
 
 ## Documentation
 
@@ -166,6 +193,8 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 ```bash
 docker compose down && docker compose up -d
 ```
+
+**Test agent (Ollama):** `./scripts/niha-test-agent.sh` (interactive) or one-shot. **Backend agent:** `python scripts/niha_agent_backend.py`. **Frontend agent:** `python scripts/niha_agent_frontend.py`. **Runner (both):** `python scripts/niha_agent_run.py` — one REPL: login, backend get/ask, frontend goto/click/ask, dashboard. Env: `NIHA_LOGIN_EMAIL`, `NIHA_LOGIN_PASSWORD` for runner login. Install: `pip install -r scripts/requirements-agent.txt` and `playwright install chromium`. See CLAUDE.md.
 
 ## Testing
 

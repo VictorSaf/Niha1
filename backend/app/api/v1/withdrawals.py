@@ -13,12 +13,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.database import get_db
 from ...core.security import get_admin_user, get_current_user
-from ...models.models import AssetType, User, Withdrawal
+from ...models.models import AssetType, TicketStatus, User, Withdrawal
 from ...services import withdrawal_service
+from ...services.ticket_service import TicketService
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +133,31 @@ async def request_withdrawal(
             detail=result.get("error", "Failed to create withdrawal request"),
         )
 
+    def _mask_destination(s: Optional[str]) -> Optional[str]:
+        if not s or len(s) < 4:
+            return "****" if s else None
+        return s[:4] + "****"
+
+    await TicketService.create_ticket(
+        db=db,
+        action_type="WITHDRAWAL_REQUESTED",
+        entity_type="Withdrawal",
+        entity_id=UUID(result["withdrawal_id"]),
+        status=TicketStatus.SUCCESS,
+        user_id=current_user.id,
+        request_payload={
+            "asset_type": request.asset_type,
+            "amount": str(request.amount),
+            "destination_iban": _mask_destination(request.destination_iban),
+            "destination_registry": request.destination_registry,
+            "destination_account_id": _mask_destination(request.destination_account_id),
+        },
+        response_data={
+            "internal_reference": result.get("internal_reference"),
+            "status": result.get("status"),
+        },
+        tags=["withdrawal", "client"],
+    )
     await db.commit()
 
     # Withdrawal confirmation email (fire-and-forget)
@@ -217,6 +244,22 @@ async def approve_withdrawal(
             detail=result.get("error", "Failed to approve withdrawal"),
         )
 
+    w = (await db.execute(select(Withdrawal).where(Withdrawal.id == withdrawal_id))).scalar_one_or_none()
+    await TicketService.create_ticket(
+        db=db,
+        action_type="WITHDRAWAL_APPROVED",
+        entity_type="Withdrawal",
+        entity_id=withdrawal_id,
+        status=TicketStatus.SUCCESS,
+        user_id=admin_user.id,
+        request_payload={"admin_notes": request.admin_notes},
+        response_data={
+            **result,
+            "amount": str(w.amount) if w else None,
+            "asset_type": w.asset_type.value if w else None,
+        },
+        tags=["withdrawal", "admin"],
+    )
     await db.commit()
 
     # Withdrawal approved email (fire-and-forget)
@@ -260,6 +303,25 @@ async def complete_withdrawal(
             detail=result.get("error", "Failed to complete withdrawal"),
         )
 
+    w = (await db.execute(select(Withdrawal).where(Withdrawal.id == withdrawal_id))).scalar_one_or_none()
+    await TicketService.create_ticket(
+        db=db,
+        action_type="WITHDRAWAL_COMPLETED",
+        entity_type="Withdrawal",
+        entity_id=withdrawal_id,
+        status=TicketStatus.SUCCESS,
+        user_id=admin_user.id,
+        request_payload={
+            "wire_reference": request.wire_reference,
+            "admin_notes": request.admin_notes,
+        },
+        response_data={
+            **result,
+            "amount": str(w.amount) if w else None,
+            "asset_type": w.asset_type.value if w else None,
+        },
+        tags=["withdrawal", "admin"],
+    )
     await db.commit()
 
     # Withdrawal completed email (fire-and-forget)
@@ -304,6 +366,25 @@ async def reject_withdrawal(
             detail=result.get("error", "Failed to reject withdrawal"),
         )
 
+    w = (await db.execute(select(Withdrawal).where(Withdrawal.id == withdrawal_id))).scalar_one_or_none()
+    await TicketService.create_ticket(
+        db=db,
+        action_type="WITHDRAWAL_REJECTED",
+        entity_type="Withdrawal",
+        entity_id=withdrawal_id,
+        status=TicketStatus.SUCCESS,
+        user_id=admin_user.id,
+        request_payload={
+            "rejection_reason": request.rejection_reason,
+            "admin_notes": request.admin_notes,
+        },
+        response_data={
+            **result,
+            "amount": str(w.amount) if w else None,
+            "asset_type": w.asset_type.value if w else None,
+        },
+        tags=["withdrawal", "admin"],
+    )
     await db.commit()
 
     # Withdrawal rejected email (fire-and-forget)

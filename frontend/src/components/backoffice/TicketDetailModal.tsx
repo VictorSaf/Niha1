@@ -114,7 +114,13 @@ const ACTION_LABELS: Record<string, string> = {
   MM_RESET_ALL: 'All Market Makers Reset',
   MM_EUR_DEPOSIT: 'MM EUR Deposit',
   MM_EUR_WITHDRAWAL: 'MM EUR Withdrawal',
-  SWAP_CREATED: 'Swap Created',
+  SWAP_CREATED: 'Swap Request',
+  SWAP_EXECUTED: 'Swap Executed',
+  WITHDRAWAL_REQUESTED: 'Withdrawal Request',
+  WITHDRAWAL_APPROVED: 'Withdrawal Approved',
+  WITHDRAWAL_COMPLETED: 'Withdrawal Completed',
+  WITHDRAWAL_REJECTED: 'Withdrawal Rejected',
+  TRADE_EXECUTED: 'Trade Executed',
 };
 
 function getActionLabel(at: string): string {
@@ -304,15 +310,33 @@ function extractDetails(t: TicketLog): DetailRow[] {
   }
 
   // ---- Swap ----
-  if (at === 'SWAP_CREATED') {
-    if (req) {
-      if (req.from_certificate || req.fromCertificate)
-        rows.push({ label: 'From', value: String(req.from_certificate || req.fromCertificate) });
-      if (req.to_certificate || req.toCertificate)
-        rows.push({ label: 'To', value: String(req.to_certificate || req.toCertificate) });
-      if (req.amount) rows.push({ label: 'Amount', value: fmtNum(req.amount as number, 0), mono: true, highlight: true });
-      if (req.ratio) rows.push({ label: 'Ratio', value: fmtNum(req.ratio as number, 4), mono: true });
-    }
+  if (at === 'SWAP_CREATED' && req) {
+    if (req.from_type || req.fromType) rows.push({ label: 'From', value: String(req.from_type || req.fromType) });
+    if (req.to_type || req.toType) rows.push({ label: 'To', value: String(req.to_type || req.toType) });
+    if (req.quantity != null) rows.push({ label: 'Quantity', value: fmtNum(req.quantity as number, 0), mono: true, highlight: true });
+    if (req.desired_rate != null || req.desiredRate != null) rows.push({ label: 'Desired rate', value: fmtNum((req.desired_rate ?? req.desiredRate) as number, 4), mono: true });
+    if (req.anonymous_code || req.anonymousCode) rows.push({ label: 'Code', value: String(req.anonymous_code || req.anonymousCode), mono: true });
+  }
+  if (at === 'SWAP_EXECUTED' && req) {
+    if (req.cea_quantity != null || req.ceaQuantity != null) rows.push({ label: 'CEA', value: fmtNum((req.cea_quantity ?? req.ceaQuantity) as number, 0), mono: true, highlight: true });
+    if (req.eua_output != null || req.euaOutput != null) rows.push({ label: 'EUA', value: fmtNum((req.eua_output ?? req.euaOutput) as number, 0), mono: true, highlight: true });
+    if (req.weighted_avg_ratio != null || req.weightedAvgRatio != null) rows.push({ label: 'Avg ratio', value: fmtNum((req.weighted_avg_ratio ?? req.weightedAvgRatio) as number, 4), mono: true });
+    if (req.matched_orders_count != null || req.matchedOrdersCount != null) rows.push({ label: 'Matched orders', value: String(req.matched_orders_count ?? req.matchedOrdersCount) });
+  }
+
+  // ---- Withdrawal ----
+  if ((at === 'WITHDRAWAL_REQUESTED' || at === 'WITHDRAWAL_APPROVED' || at === 'WITHDRAWAL_COMPLETED' || at === 'WITHDRAWAL_REJECTED') && (req || res)) {
+    const src = req || res;
+    if (src?.amount != null && src?.asset_type != null) rows.push({ label: 'Amount', value: `${fmtNum(src.amount as number)} ${String(src.asset_type)}`, icon: 'money', mono: true, highlight: true });
+    if (src?.internal_reference || src?.internalReference) rows.push({ label: 'Reference', value: String(src.internal_reference ?? src.internalReference), mono: true });
+    if (at === 'WITHDRAWAL_REJECTED' && req?.rejection_reason) rows.push({ label: 'Reason', value: String(req.rejection_reason), highlight: true });
+  }
+
+  // ---- Trade executed (counterparties in dedicated section below) ----
+  if (at === 'TRADE_EXECUTED' && res) {
+    rows.push({ label: 'Certificate', value: String(res.certificate_type || res.certificateType || 'CEA') });
+    rows.push({ label: 'Quantity', value: fmtNum(res.quantity as number, 0), mono: true, highlight: true });
+    rows.push({ label: 'Price', value: `€${fmtNum(res.price as number)}`, mono: true });
   }
 
   return rows;
@@ -433,6 +457,36 @@ export function TicketDetailModal({ ticket, isOpen, onClose }: TicketDetailModal
                 </div>
               )}
             </div>
+
+            {/* ── Counterparties (trades only) ── */}
+            {ticket.actionType === 'TRADE_EXECUTED' && (
+              <div className="rounded-xl border-2 border-navy-600 bg-navy-900/50 p-4">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-navy-400 mb-3">
+                  Counterparties
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-emerald-900/20 border border-emerald-700/40 p-3">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-500/90 mb-1">Buyer</div>
+                    <div className="text-sm font-semibold text-emerald-400 truncate" title={String((ticket as Record<string, unknown>).buyerMmName ?? (ticket as Record<string, unknown>).buyer_mm_name ?? (ticket as Record<string, unknown>).buyerEntityName ?? (ticket as Record<string, unknown>).buyer_entity_name ?? ticket.responseData?.buyer_mm_id ?? '—')}>
+                      {String((ticket as Record<string, unknown>).buyerMmName ?? (ticket as Record<string, unknown>).buyer_mm_name ?? (ticket as Record<string, unknown>).buyerEntityName ?? (ticket as Record<string, unknown>).buyer_entity_name ?? '—').replace(/^Market Maker\s+/i, '')}
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-amber-900/20 border border-amber-700/40 p-3">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-amber-500/90 mb-1">Seller</div>
+                    <div className="text-sm font-semibold text-amber-400 truncate" title={String((ticket as Record<string, unknown>).sellerMmName ?? (ticket as Record<string, unknown>).seller_mm_name ?? (ticket as Record<string, unknown>).sellerEntityName ?? (ticket as Record<string, unknown>).seller_entity_name ?? ticket.responseData?.seller_mm_id ?? '—')}>
+                      {String((ticket as Record<string, unknown>).sellerMmName ?? (ticket as Record<string, unknown>).seller_mm_name ?? (ticket as Record<string, unknown>).sellerEntityName ?? (ticket as Record<string, unknown>).seller_entity_name ?? '—').replace(/^Market Maker\s+/i, '')}
+                    </div>
+                  </div>
+                </div>
+                {Boolean(ticket.requestPayload?.aggressor_side || ticket.requestPayload?.aggressorSide) && (
+                  <div className="mt-2 text-[10px] text-navy-500">
+                    Aggressor: <span className="font-medium text-navy-400">
+                      {String(ticket.requestPayload?.aggressor_side ?? ticket.requestPayload?.aggressorSide ?? '').toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Action Details ── */}
             {details.length > 0 && (

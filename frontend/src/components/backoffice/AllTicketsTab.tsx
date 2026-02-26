@@ -63,14 +63,19 @@ const ACTION_MAP: Record<string, ActionMeta> = {
   DEPOSIT_CLEARED:           { label: 'Clear Deposit',      category: 'admin' },
   KYC_DOCUMENT_UPLOADED:     { label: 'KYC Upload',         category: 'kyc' },
   KYC_SUBMITTED:             { label: 'KYC Submit',         category: 'kyc' },
-  MM_CREATED:                { label: 'Create MM',          category: 'mm' },
-  MM_UPDATED:                { label: 'Update MM',          category: 'mm' },
-  MM_DELETED:                { label: 'Delete MM',          category: 'mm' },
+  MM_CREATED:                { label: 'Create MM',         category: 'mm' },
+  MM_UPDATED:                { label: 'Update MM',         category: 'mm' },
+  MM_DELETED:                { label: 'Delete MM',         category: 'mm' },
   MM_RESET_ALL:              { label: 'Reset All MM',       category: 'mm' },
   MM_EUR_DEPOSIT:            { label: 'MM Deposit',         category: 'mm' },
   MM_EUR_WITHDRAWAL:         { label: 'MM Withdrawal',      category: 'mm' },
-  SWAP_CREATED:              { label: 'Swap',               category: 'swap' },
+  SWAP_CREATED:              { label: 'Swap Request',       category: 'swap' },
+  SWAP_EXECUTED:             { label: 'Swap Executed',      category: 'swap' },
   TRADE_EXECUTED:            { label: 'Trade',              category: 'trading' },
+  WITHDRAWAL_REQUESTED:      { label: 'Withdrawal Request', category: 'withdrawal' },
+  WITHDRAWAL_APPROVED:       { label: 'Withdrawal Approved', category: 'admin' },
+  WITHDRAWAL_COMPLETED:      { label: 'Withdrawal Completed', category: 'admin' },
+  WITHDRAWAL_REJECTED:       { label: 'Withdrawal Rejected', category: 'admin' },
 };
 
 function getActionMeta(actionType: string, tags: string[]): ActionMeta {
@@ -199,6 +204,22 @@ function extractAmount(ticket: TicketLog): { text: string; isLarge?: boolean } |
   if (at === 'MM_CREATED' && req && req.initial_eur_balance) return { text: `\u20AC${fmtNum(req.initial_eur_balance as number)}` };
   if (at === 'ORDER_MODIFIED' && res) return { text: `\u20AC${fmtNum(res.old_price as number)} \u2192 \u20AC${fmtNum(res.new_price as number)}` };
   if (at === 'KYC_DOCUMENT_UPLOADED' && req && req.file_name) return { text: String(req.file_name) };
+  if (at === 'WITHDRAWAL_REQUESTED' || at === 'WITHDRAWAL_APPROVED' || at === 'WITHDRAWAL_COMPLETED' || at === 'WITHDRAWAL_REJECTED') {
+    const src = req || ticket.responseData;
+    if (src?.amount != null && src?.asset_type != null) return { text: `${fmtNum(src.amount as number)} ${String(src.asset_type)}` };
+    if (src?.amount != null) return { text: `${fmtNum(src.amount as number)}` };
+  }
+  if (at === 'SWAP_CREATED' && req) {
+    const qty = fmtNum(req.quantity as number, 0);
+    const from = String(req.from_type || 'CEA');
+    const to = String(req.to_type || 'EUA');
+    return { text: `${qty} ${from} \u2192 ${to}` };
+  }
+  if (at === 'SWAP_EXECUTED' && req) {
+    const cea = fmtNum(req.cea_quantity as number, 0);
+    const eua = fmtNum(req.eua_output as number, 0);
+    return { text: `${cea} CEA \u2192 ${eua} EUA` };
+  }
   return null;
 }
 
@@ -226,6 +247,12 @@ function extractResult(ticket: TicketLog): { text: string; variant: 'success' | 
   if (at === 'MM_EUR_WITHDRAWAL') return { text: 'Withdrawn', variant: 'muted' };
   if (at === 'ENTITY_ASSET_DEPOSIT') return { text: 'Deposited', variant: 'success' };
   if (at === 'ENTITY_ASSET_WITHDRAWAL') return { text: 'Withdrawn', variant: 'muted' };
+  if (at === 'WITHDRAWAL_REQUESTED') return { text: 'Requested', variant: 'info' };
+  if (at === 'WITHDRAWAL_APPROVED') return { text: 'Approved', variant: 'success' };
+  if (at === 'WITHDRAWAL_COMPLETED') return { text: 'Completed', variant: 'success' };
+  if (at === 'WITHDRAWAL_REJECTED') return { text: 'Rejected', variant: 'warning' };
+  if (at === 'SWAP_CREATED') return { text: 'Created', variant: 'info' };
+  if (at === 'SWAP_EXECUTED') return { text: 'Executed', variant: 'success' };
   return null;
 }
 
@@ -460,34 +487,38 @@ export function AllTicketsTab() {
       header: 'Actor',
       width: '200px',
       render: (_value, row) => {
-        // TRADE_EXECUTED → show buyer vs seller
+        // TRADE_EXECUTED → împerechere clară Cumpărător / Vânzător (două rânduri)
         if (row.actionType === 'TRADE_EXECUTED') {
           const req = row.requestPayload;
           const res = row.responseData;
           const aggressorSide = String(req?.aggressor_side || req?.aggressorSide || '').toUpperCase();
-          const buyerName = (row as Record<string, unknown>).buyerMmName || (row as Record<string, unknown>).buyer_mm_name;
-          const sellerName = (row as Record<string, unknown>).sellerMmName || (row as Record<string, unknown>).seller_mm_name;
+          const buyerName = (row as Record<string, unknown>).buyerMmName ?? (row as Record<string, unknown>).buyer_mm_name ?? (row as Record<string, unknown>).buyerEntityName ?? (row as Record<string, unknown>).buyer_entity_name ?? res?.buyer_mm_id ?? '—';
+          const sellerName = (row as Record<string, unknown>).sellerMmName ?? (row as Record<string, unknown>).seller_mm_name ?? (row as Record<string, unknown>).sellerEntityName ?? (row as Record<string, unknown>).seller_entity_name ?? res?.seller_mm_id ?? '—';
           const matchType = String(req?.match_type || req?.matchType || '');
           const isInternal = matchType === 'internal_trade';
           const dir = getTradeDirection(row);
+          const buyerLabel = String(buyerName).replace(/^Market Maker\s+/i, '');
+          const sellerLabel = String(sellerName).replace(/^Market Maker\s+/i, '');
 
           return (
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className={`flex-shrink-0 px-1 py-px rounded text-[9px] font-semibold leading-tight tracking-wide ${
+            <div className="flex flex-col gap-0.5 min-w-0 rounded-lg border border-navy-700/60 bg-navy-800/40 px-2 py-1.5" title={aggressorSide ? `Aggressor: ${aggressorSide}` : undefined}>
+              <span className={`flex-shrink-0 self-start px-1 py-px rounded text-[9px] font-semibold ${
                 isInternal ? 'bg-violet-900/30 text-violet-400' :
                 dir === 'ask' ? 'bg-emerald-900/30 text-emerald-400' :
                 dir === 'bid' ? 'bg-red-900/30 text-red-400' :
                 'bg-amber-900/30 text-amber-400'
               }`}>
-                {isInternal ? 'INT' : 'FILL'}
+                {isInternal ? 'Internal' : 'Trade'}
               </span>
-              <span className="text-[11px] text-navy-300 truncate" title={
-                `Buyer: ${buyerName || res?.buyer_mm_id || '?'}\nSeller: ${sellerName || res?.seller_mm_id || '?'}${aggressorSide ? `\nAggressor: ${aggressorSide}` : ''}`
-              }>
-                {buyerName ? String(buyerName).replace('Market Maker ', '') : 'Buyer'}
-                <span className="text-navy-600 mx-0.5">/</span>
-                {sellerName ? String(sellerName).replace('Market Maker ', '') : 'Seller'}
-              </span>
+              <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[10px]">
+                <span className="text-navy-500 font-medium uppercase tracking-wider">Buyer</span>
+                <span className="text-emerald-400/90 font-medium truncate" title={String(buyerLabel)}>{buyerLabel}</span>
+                <span className="text-navy-500 font-medium uppercase tracking-wider">Seller</span>
+                <span className="text-amber-400/90 font-medium truncate" title={String(sellerLabel)}>{sellerLabel}</span>
+              </div>
+              {aggressorSide && (
+                <span className="text-[9px] text-navy-500 mt-0.5">Aggressor: {aggressorSide}</span>
+              )}
             </div>
           );
         }

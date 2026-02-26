@@ -28,6 +28,10 @@ docker compose exec backend alembic upgrade head
 | Migrations | `docker compose exec backend alembic upgrade head` |
 | Lint backend | `cd backend && ruff check .` |
 | Format backend | `cd backend && ruff format` |
+| Test agent (Ollama) | `./scripts/niha-test-agent.sh` = interactiv; `./scripts/niha-test-agent.sh "întrebare"` = one-shot. Opțional: `OLLAMA_MODEL`, `OLLAMA_HOST`, `FRONTEND_URL`, `BACKEND_URL` |
+| Agent backend (API) | `python scripts/niha_agent_backend.py` — login, get, post, ask. Necesită: `pip install -r scripts/requirements-agent.txt` |
+| Agent frontend (browser) | `python scripts/niha_agent_frontend.py` — goto, click, fill, snapshot, ask. Necesită: `pip install -r scripts/requirements-agent.txt` și `playwright install chromium` |
+| Runner (backend + frontend) | `python scripts/niha_agent_run.py` — un singur REPL: login, backend get/ask, frontend goto/click/ask, dashboard. Opțional: NIHA_LOGIN_EMAIL, NIHA_LOGIN_PASSWORD |
 
 ## Key Documentation
 
@@ -35,6 +39,11 @@ docker compose exec backend alembic upgrade head
 |----------|---------|
 | `app_truth.md` | **SSOT** - roles, routes, ports, business rules |
 | `docs/ROLE_TRANSITIONS.md` | User role flow (NDA → KYC → ... → EUA) |
+| `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` | Troducer → INTRODUCER workflow, client journey, email templates (confirmations/links), yopmail simulations |
+| `docs/NDA_TO_EUA_WORKFLOW_SIMULATION.md` | Simulare și verificare workflow NDA → EUA (backoffice aprobă tot), email templates per tranziție, referințe cod |
+| `docs/EMAIL_TEMPLATES_USAGE.md` | Which email templates are used in code vs NU; Settings dropdown and API; user journey coverage |
+| `docs/DOCUMENT_EMAIL_MAPPING.md` | Email template → role → attached documents (account_approved, deposit_announced, etc.) |
+| `docs/API.md` | Request/response examples for Contact, Introducer, Admin; **Settings → Documents** (list/preview); **GET /admin/logging/tickets** (audit trail, action types, counterparty enrichment) |
 | `docs/ADMIN_SCRAPING.md` | Price scraping (EUA/CEA), carboncredits.com single fetch, 429 backoff, admin API |
 | `frontend/docs/DESIGN_SYSTEM.md` | UI components, tokens, patterns |
 | `project-goals.md` | Current sprint goals and priorities |

@@ -685,6 +685,8 @@ import { NumberInput } from '../common';
 />
 ```
 
+**Amount + Max button:** In modals where the amount is bounded by a current balance (e.g. **Add Asset**, **Withdrawal Request**), place a **Max** button next to the amount input. Clicking Max sets the value to the current balance (EUR: 2 decimals; CEA/EUA: integer). Use `flex gap-2` with the input in a `flex-1` wrapper and the button with `px-3 py-2 text-sm border border-navy-600 text-navy-300 rounded-xl hover:bg-navy-700`. Reference: `AddAssetModal.tsx`, `WithdrawalRequestModal.tsx`.
+
 #### Admin config inputs (SettingsInput pattern)
 
 For **admin configuration panels** (e.g. Auto Trade settings) where numeric values use thousands-separator formatting and optional recommended-value hints:
@@ -777,6 +779,10 @@ Unified list of wire deposits and add-asset transactions. Use design tokens cons
 - **Add-asset withdrawals**: `Minus` icon (red-500), Badge `variant="danger"`, amount with minus prefix (e.g. `-€1,000.00`). Follows "Red = sell/negative" trading semantics.
 
 Merge and sort via `buildDepositAndWithdrawalHistory` (`utils/depositHistory.ts`); cap at 50 items.
+
+#### Audit Logging (Backoffice)
+
+**All Tickets** (`/backoffice/logging`, `AllTicketsTab`): Table with columns TIME, ACTOR, ACTION, DETAILS, RESULT, REF. Use design tokens only (navy, emerald, amber). For **TRADE_EXECUTED** rows, the Actor cell shows counterparties in a compact one-line format: badge (TR/INT) + **Buyer** (emerald) · **Seller** (amber); full Buyer/Seller names and Aggressor are in the cell `title` (tooltip). Row tint follows trade direction (emerald for ask, red for bid). **Ticket detail modal** (`TicketDetailModal`): For trades, a dedicated **Counterparties** section shows Buyer and Seller in two blocks (emerald/amber borders). No hard-coded colors; use `text-emerald-400/90`, `text-amber-400/90`, `border-emerald-700/40`, `border-amber-700/40`.
 
 ---
 

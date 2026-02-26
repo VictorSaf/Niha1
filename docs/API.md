@@ -1,6 +1,6 @@
 # API Reference
 
-This document extends the API information in `app_truth.md` with request/response examples for Contact, Introducer, and Admin onboarding. For price scraping see **`docs/ADMIN_SCRAPING.md`**. For auto-trade market settings see **`app_truth.md`** § Auto Trade & Liquidity Engine.
+This document extends the API information in `app_truth.md` with request/response examples for Contact, Introducer, Admin onboarding, and Admin Settings (Documents). For price scraping see **`docs/ADMIN_SCRAPING.md`**. For auto-trade market settings see **`app_truth.md`** § Auto Trade & Liquidity Engine.
 
 Base URL: `/api/v1`. All admin endpoints require authentication (e.g. `Cookie: access_token=...` or `Authorization: Bearer <token>`).
 
@@ -253,6 +253,102 @@ After a limit order matches, the backend broadcasts to all clients connected to 
 | `data.executed_at`| string | ISO 8601 datetime          |
 
 The frontend normalizes to camelCase (`executedAt`) and dispatches `nihao:tradeExecuted`; `useCashMarket` prepends to `recentTrades` (cap 20). Ticker and ACTIVITY on Cash Market Pro use this same state. The **CEA Price chart** on the same page fetches `GET /cash-market/trades/CEA?limit=100` on mount and subscribes to `nihao:tradeExecuted`, applying only CEA trades to the series.
+
+---
+
+## Admin — Settings: Documents
+
+Platform documentation from the repo **`documents/`** folder is listed and previewed in **Settings → Documents** (admin-only). Only `.pdf` and `.docx` files are listed; path is restricted to `documents/` (no traversal). Each entry includes **used** (true if the file is in DOCUMENT_CATALOG or attached to an email template) and **email_templates** (where it is attached). Entries not used are shown as **(NU)** in the UI. When the filename matches a catalog entry, **title**, **phase**, **category**, etc. are included.
+
+### GET /admin/settings/documents/list
+
+List all platform document entries under `documents/` (and up to 2 directory levels). Admin only.
+
+**Request**
+
+```http
+GET /api/v1/admin/settings/documents/list
+Cookie: access_token=...
+```
+
+**Response (200)** — Array of objects:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `path` | string | Path relative to `documents/` (e.g. `NIHA_Bank_Confirmation_Letters.pdf`) |
+| `name` | string | File name |
+| `type` | string | `pdf` or `docx` |
+| `used` | boolean | True if in DOCUMENT_CATALOG or attached to account_approved/deposit_announced |
+| `email_templates` | string[] | Template names where attached (e.g. `deposit_announced.html`) |
+| `title` | string | From catalog when filename matches (optional) |
+| `title_ro` | string | Romanian title from catalog (optional) |
+| `phase` | string | Phase code from catalog (optional) |
+| `phase_name` | string | Phase name from catalog (optional) |
+| `category` | string | Category from catalog (optional) |
+| `min_role` | string | Min role from catalog (optional) |
+
+**Example**
+
+```json
+[
+  {
+    "path": "NIHA_Bank_Confirmation_Letters.pdf",
+    "name": "NIHA_Bank_Confirmation_Letters.pdf",
+    "type": "pdf",
+    "used": true,
+    "email_templates": ["deposit_announced.html"],
+    "title": "Bank Confirmation Letters",
+    "phase": "F4",
+    "phase_name": "Funding / CEA",
+    "category": "operational"
+  },
+  {
+    "path": "other.pdf",
+    "name": "other.pdf",
+    "type": "pdf",
+    "used": false,
+    "email_templates": []
+  }
+]
+```
+
+---
+
+### GET /admin/settings/documents/preview
+
+Return document content for preview. Path must be under `documents/` (no `..`, no leading `/`). Admin only.
+
+**Query parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `path` | string | Yes | Path relative to `documents/` (e.g. `NIHA_Registry_Account_Overview.pdf` or `sub/file.docx`) |
+
+**Request**
+
+```http
+GET /api/v1/admin/settings/documents/preview?path=NIHA_Registry_Account_Overview.pdf
+Cookie: access_token=...
+```
+
+**Response**
+
+- **PDF** (`.pdf`): `Content-Type: application/pdf`, `Content-Disposition: inline`, body = file bytes.
+- **DOCX** (`.docx`): `Content-Type: application/vnd.openxmlformats-...`, `Content-Disposition: attachment`, body = file bytes.
+
+**Errors:** 400 if path is invalid or outside `documents/`.
+
+---
+
+### GET /admin/logging/tickets
+
+List audit tickets (Backoffice **Audit Logging**). Admin only. Supports filters and pagination; new tickets are pushed in real time via WebSocket `GET /api/v1/backoffice/ws` (message type `new_ticket`).
+
+**Query:** `page`, `per_page`, `start_date`, `end_date`, `action_type`, `entity_type`, `entity_id`, `user_id`, `market_maker_id`, `status` (SUCCESS/FAILED), `search` (ticket_id, action_type, entity_type), `tags` (comma-separated).
+
+**Response:** `{ "tickets": [...], "total": N, "page", "per_page", "total_pages" }`. Each ticket includes backend-enriched fields when applicable: **TRADE_EXECUTED** tickets include `buyer_mm_name`, `seller_mm_name`, `buyer_entity_name`, `seller_entity_name` (resolved from `response_data` IDs).
+
+**Action types (audit):** auth (`USER_LOGIN`, `USER_LOGIN_MAGIC_LINK`), trading (`ORDER_PLACED`, `ORDER_CANCELLED`, `ORDER_MODIFIED`, `TRADE_EXECUTED`), deposits (`DEPOSIT_ANNOUNCED`, `DEPOSIT_CONFIRMED`, `DEPOSIT_CLEARED`), withdrawals (`WITHDRAWAL_REQUESTED`, `WITHDRAWAL_APPROVED`, `WITHDRAWAL_COMPLETED`, `WITHDRAWAL_REJECTED`), swap (`SWAP_CREATED`, `SWAP_EXECUTED`), KYC, market maker (`MM_*`), backoffice add-asset (`ENTITY_ASSET_DEPOSIT`, `ENTITY_ASSET_WITHDRAWAL`). Each ticket has a unique `ticket_id` (e.g. `TKT-2026-000001`) and optional `related_ticket_ids`.
 
 ---
 
