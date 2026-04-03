@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -188,48 +188,6 @@ function ProfessionalOrderBook({
         </div>
       </div>
     </>
-  );
-}
-
-// =============================================================================
-// MACRO INDICATORS BAR (replaces ticker — 24h stats strip)
-// =============================================================================
-
-interface MacroIndicatorsBarProps {
-  lastPrice: number | null;
-  change24h: number;
-  high24h: number | null;
-  low24h: number | null;
-  volume24h: number;
-}
-
-function MacroIndicatorsBar({ lastPrice, change24h, high24h, low24h, volume24h }: MacroIndicatorsBarProps) {
-  const changeCls = change24h >= 0 ? 'text-emerald-400' : 'text-red-400';
-  const changePrefix = change24h >= 0 ? '+' : '';
-
-  return (
-    <div className="flex items-center divide-x divide-navy-700/50 text-xs font-mono overflow-x-auto">
-      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-        <span className="text-navy-500">Last</span>
-        <span className="text-white font-medium tabular-nums">€{lastPrice?.toFixed(2) ?? '—'}</span>
-      </div>
-      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-        <span className="text-navy-500">24h Chg</span>
-        <span className={`font-medium tabular-nums ${changeCls}`}>{changePrefix}{change24h.toFixed(2)}%</span>
-      </div>
-      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-        <span className="text-navy-500">H</span>
-        <span className="text-white tabular-nums">€{high24h?.toFixed(2) ?? '—'}</span>
-      </div>
-      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-        <span className="text-navy-500">L</span>
-        <span className="text-white tabular-nums">€{low24h?.toFixed(2) ?? '—'}</span>
-      </div>
-      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-        <span className="text-navy-500">Vol 24h</span>
-        <span className="text-white tabular-nums">{volume24h.toLocaleString()} CEA</span>
-      </div>
-    </div>
   );
 }
 
@@ -520,14 +478,16 @@ export function CashMarketProPage() {
 
       {/* News Ticker — sticky just below the subheader */}
       {!loading && orderBook && newsHeadlines.length > 0 && (
-        <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 -mt-[3px] overflow-hidden">
+        <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 overflow-hidden">
           <div className="flex items-center min-w-max ticker-scroll">
             {[...newsHeadlines, ...newsHeadlines].map((h, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-1.5 shrink-0">
-                <span className="text-yellow-400/70 text-[12px] font-normal uppercase tracking-wide shrink-0">{h.source}</span>
-                <span className="text-yellow-300 text-[13px] font-bold">{h.title}</span>
-                <span className="text-navy-500 text-[11px] px-4">◆</span>
-              </div>
+              <React.Fragment key={i}>
+                <div className="flex items-center gap-2 px-4 py-2 shrink-0">
+                  <span className="text-navy-700 text-[11px] uppercase tracking-wide shrink-0">{h.source}:</span>
+                  <span className="text-yellow-500 text-[13px] font-normal">{h.title}</span>
+                </div>
+                <span className="text-navy-600 text-[10px] shrink-0 px-2">◆</span>
+              </React.Fragment>
             ))}
           </div>
         </div>
