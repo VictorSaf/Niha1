@@ -150,7 +150,7 @@
 
   /* One-line ticker: scrolls right-to-left, seamless loop (use with duplicated content) */
   .ticker-scroll {
-    animation: ticker-scroll 25s linear infinite;
+    animation: ticker-scroll 50s linear infinite;
   }
 
   .table-row {

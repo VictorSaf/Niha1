@@ -1,4 +1,5 @@
-import React, { Component, lazy, Suspense, useEffect } from 'react';
+import React, { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { Monitor } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout, ThemeLayout } from './components/layout';
 import { AutoOrdersService } from './components/admin';
@@ -326,6 +327,38 @@ function CatchAllRedirect() {
   return <Navigate to={target} replace />;
 }
 
+/**
+ * Blocks access on viewports narrower than 1024px — the platform is desktop-only.
+ */
+function DesktopOnlyGate({ children }: { children: React.ReactNode }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-navy-950 flex items-center justify-center p-8">
+        <div className="text-center max-w-xs">
+          <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center rounded-2xl bg-navy-800 border border-navy-700">
+            <Monitor className="w-8 h-8 text-navy-500" />
+          </div>
+          <h1 className="text-xl font-bold text-white mb-3">Desktop Required</h1>
+          <p className="text-navy-400 text-sm leading-relaxed">
+            Nihao Group Trading Platform is designed exclusively for desktop browsers.
+            Please access from a computer with a screen width of at least 1024px.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 /** Scrolls window to top when the route pathname changes so every new page opens at top. */
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -338,6 +371,7 @@ function ScrollToTop() {
 function App() {
   return (
     <AppErrorBoundary>
+      <DesktopOnlyGate>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <ThemeTokenOverridesStyle />
@@ -724,6 +758,7 @@ function App() {
         <CommandPalette />
         </Suspense>
       </Router>
+      </DesktopOnlyGate>
     </AppErrorBoundary>
   );
 }

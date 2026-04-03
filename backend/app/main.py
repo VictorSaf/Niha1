@@ -21,6 +21,7 @@ from .api.v1 import (
     exchange_rates,
     introducer,
     market_maker,
+    market_news,
     marketplace,
     onboarding,
     prices,
@@ -36,6 +37,7 @@ from .core.security import RedisManager
 from .services import deposit_service
 from .services.auto_trade_executor import AutoTradeExecutor, update_executor_status
 from .services.settlement_monitoring import SettlementMonitoring
+from .services.news_scraper import news_scraper
 from .services.settlement_processor import SettlementProcessor
 
 # Configure logging
@@ -584,12 +586,23 @@ async def lifespan(app: FastAPI):
     exchange_rate_task = asyncio.create_task(exchange_rate_scraping_scheduler_loop())
     auto_trade_task = asyncio.create_task(auto_trade_executor_loop())
     retention_task = asyncio.create_task(exchange_rate_retention_loop())
+
+    async def news_scraper_loop():
+        await asyncio.sleep(20)  # short startup delay
+        while True:
+            try:
+                await news_scraper.refresh()
+            except Exception as exc:
+                logger.error(f"News scraper loop error: {exc}", exc_info=True)
+            await asyncio.sleep(1200)  # refresh every 20 minutes
+
+    news_task = asyncio.create_task(news_scraper_loop())
     _background_tasks.extend(
-        [processor_task, monitoring_task, deposit_task, scraping_task, exchange_rate_task, auto_trade_task, retention_task]
+        [processor_task, monitoring_task, deposit_task, scraping_task, exchange_rate_task, auto_trade_task, retention_task, news_task]
     )
     logger.info(
         "Settlement processor, monitoring, deposit hold processor, price scraping, "
-        "exchange rate scraping, auto-trade, and retention schedulers started"
+        "exchange rate scraping, auto-trade, retention schedulers, and news scraper started"
     )
 
     # Register ticket broadcast to backoffice WebSocket
@@ -788,6 +801,7 @@ app.include_router(withdrawals.router, prefix="/api/v1")
 app.include_router(introducer.router, prefix="/api/v1")
 app.include_router(ai_agent.router, prefix="/api/v1")
 app.include_router(exchange_rates.router, prefix="/api/v1")
+app.include_router(market_news.router, prefix="/api/v1")
 app.include_router(system_health.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
 

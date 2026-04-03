@@ -2799,4 +2799,15 @@ export const documentLibraryApi = {
   },
 };
 
+// =============================================================================
+// Market News Ticker API
+// =============================================================================
+
+export const marketNewsApi = {
+  getNewsTicker: async (): Promise<{ headlines: { title: string; source: string }[]; count: number }> => {
+    const { data } = await api.get('/market/news');
+    return data;
+  },
+};
+
 export default api;

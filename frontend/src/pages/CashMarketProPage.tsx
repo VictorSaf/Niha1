@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -13,7 +13,7 @@ import { Subheader, Modal, Skeleton, KeyboardShortcutsHelp } from '../components
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type { Shortcut } from '../hooks/useKeyboardShortcuts';
 import { useCashMarket } from '../hooks/useCashMarket';
-import { cashMarketApi, usersApi } from '../services/api';
+import { cashMarketApi, usersApi, marketNewsApi } from '../services/api';
 import { useAuthStore } from '../stores/useStore';
 import { formatCertificateQuantity } from '../utils';
 import { InlineOrderForm, calcMarketBuy } from '../components/cash-market/InlineOrderForm';
@@ -192,14 +192,52 @@ function ProfessionalOrderBook({
 }
 
 // =============================================================================
-// RECENT TRADES TICKER (horizontal strip below grid, last 20 trades)
+// MACRO INDICATORS BAR (replaces ticker — 24h stats strip)
 // =============================================================================
 
-interface RecentTradesTickerProps {
-  trades: CashMarketTrade[];
+interface MacroIndicatorsBarProps {
+  lastPrice: number | null;
+  change24h: number;
+  high24h: number | null;
+  low24h: number | null;
+  volume24h: number;
 }
 
-function formatTickerTime(dateStr: string): string {
+function MacroIndicatorsBar({ lastPrice, change24h, high24h, low24h, volume24h }: MacroIndicatorsBarProps) {
+  const changeCls = change24h >= 0 ? 'text-emerald-400' : 'text-red-400';
+  const changePrefix = change24h >= 0 ? '+' : '';
+
+  return (
+    <div className="flex items-center divide-x divide-navy-700/50 text-xs font-mono overflow-x-auto">
+      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+        <span className="text-navy-500">Last</span>
+        <span className="text-white font-medium tabular-nums">€{lastPrice?.toFixed(2) ?? '—'}</span>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+        <span className="text-navy-500">24h Chg</span>
+        <span className={`font-medium tabular-nums ${changeCls}`}>{changePrefix}{change24h.toFixed(2)}%</span>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+        <span className="text-navy-500">H</span>
+        <span className="text-white tabular-nums">€{high24h?.toFixed(2) ?? '—'}</span>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+        <span className="text-navy-500">L</span>
+        <span className="text-white tabular-nums">€{low24h?.toFixed(2) ?? '—'}</span>
+      </div>
+      <div className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+        <span className="text-navy-500">Vol 24h</span>
+        <span className="text-white tabular-nums">{volume24h.toLocaleString()} CEA</span>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// RECENT TRADES TABLE (vertical panel — right of order book)
+// =============================================================================
+
+function formatTradeTime(dateStr: string): string {
   if (!dateStr) return '-';
   try {
     const utcDateStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
@@ -213,14 +251,9 @@ function formatTickerTime(dateStr: string): string {
   }
 }
 
-function RecentTradesTicker({ trades }: RecentTradesTickerProps) {
-  // Color = uptick/downtick vs previous trade price (standard market convention).
-  // trades[0] = newest, trades[i+1] = the trade that happened before trades[i].
-  // up   → green  (price higher than previous)
-  // down → red    (price lower than previous)
-  // flat → neutral gray (same price as previous, or first trade in list)
+function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
   const items = useMemo(
-    () => trades.map((t, i) => {
+    () => trades.slice(0, 60).map((t, i) => {
       const prev = trades[i + 1];
       const direction: 'up' | 'down' | 'flat' =
         !prev ? 'flat'
@@ -232,47 +265,36 @@ function RecentTradesTicker({ trades }: RecentTradesTickerProps) {
     [trades],
   );
 
-  if (items.length === 0) {
-    return (
-      <div className="overflow-hidden">
-        <div className="py-2 px-4 text-xs text-navy-500">No recent trades</div>
-      </div>
-    );
-  }
-
-  const renderCopy = (keySuffix: string) =>
-    items.map((item) => {
-      const bgCls = item.direction === 'up' ? 'bg-emerald-500/[0.075]'
-        : item.direction === 'down' ? 'bg-red-500/[0.05]'
-        : 'bg-white/[0.03]';
-      const priceCls = item.direction === 'up' ? 'text-emerald-400'
-        : item.direction === 'down' ? 'text-red-400'
-        : 'text-navy-400';
-      return (
-        <div
-          key={`${item.id}${keySuffix}`}
-          className={`flex items-center gap-3 px-3 py-1 rounded shrink-0 ${bgCls}`}
-        >
-          <span className={`font-mono font-medium text-xs tabular-nums ${priceCls}`}>
-            €{item.price.toFixed(2)}
-          </span>
-          <span className="text-xs font-mono text-white tabular-nums">
-            {Math.round(item.quantity).toLocaleString()}
-          </span>
-          <span className="text-xs text-navy-500 tabular-nums">
-            {item.executedAt ? formatTickerTime(item.executedAt) : '-'}
-          </span>
-        </div>
-      );
-    });
-
   return (
-    <div className="overflow-hidden">
-      {/* ticker-scroll animates this div. React only reconciles children —
-          it never removes/re-adds this element, so the CSS animation is stable. */}
-      <div className="flex items-center min-w-max py-1.5 ticker-scroll">
-        <div className="flex items-center gap-x-2 shrink-0 px-2">{renderCopy('')}</div>
-        <div className="flex items-center gap-x-2 shrink-0 px-2">{renderCopy('-dup')}</div>
+    <div className="flex flex-col">
+      {/* Header — aligned with summary row + column headers of order book */}
+      <div className="px-3 py-1 text-[10px] text-navy-500 border-b border-navy-700 flex whitespace-nowrap">
+        <span className="flex-1">Time</span>
+        <span className="flex-1 text-right">Price</span>
+        <span className="flex-1 text-right pr-3">Vol</span>
+      </div>
+      {/* Rows */}
+      <div>
+        {items.length === 0 ? (
+          <div className="px-3 py-2 text-xs text-navy-600">No trades yet</div>
+        ) : items.map((item, idx) => {
+          const isEven = idx % 2 === 0;
+          const priceCls = item.direction === 'up' ? 'text-emerald-400'
+            : item.direction === 'down' ? 'text-red-400'
+            : 'text-navy-400';
+          const baseBg = item.direction === 'up'
+            ? (isEven ? 'bg-emerald-500/[0.10]' : 'bg-emerald-500/[0.06]')
+            : item.direction === 'down'
+            ? (isEven ? 'bg-red-500/[0.08]' : 'bg-red-500/[0.04]')
+            : (isEven ? 'bg-white/[0.02]' : '');
+          return (
+            <div key={item.id} className={`flex px-3 py-1 text-[11px] font-mono tabular-nums whitespace-nowrap ${baseBg}`}>
+              <span className="flex-1 text-navy-500">{formatTradeTime(item.executedAt ?? '')}</span>
+              <span className={`flex-1 text-right font-medium ${priceCls}`}>€{item.price.toFixed(2)}</span>
+              <span className="flex-1 text-right text-white/80 pr-3">{Math.round(item.quantity).toLocaleString()}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -380,6 +402,53 @@ export function CashMarketProPage() {
     low24h: orderBook?.low24h ?? null,
   };
 
+  // News ticker headlines — fetched on mount, retried every 30s until data arrives, then every 10 min
+  const [newsHeadlines, setNewsHeadlines] = useState<{ title: string; source: string }[]>([]);
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+    const fetchNews = async () => {
+      try {
+        const { headlines } = await marketNewsApi.getNewsTicker();
+        if (headlines.length > 0) {
+          setNewsHeadlines(headlines);
+          // Switch to slow refresh once we have data
+          clearInterval(intervalId);
+          intervalId = setInterval(fetchNews, 600_000);
+        }
+      } catch { /* silent — news is non-critical */ }
+    };
+    fetchNews();
+    // Poll every 30s until headlines arrive
+    intervalId = setInterval(fetchNews, 30_000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Resizable split between order book and recent trades (62–82%, default 72%)
+  const [splitPct, setSplitPct] = useState(78);
+  const [isDraggingUI, setIsDraggingUI] = useState(false);
+  const isDragging = useRef(false);
+  const splitContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isDragging.current || !splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPct(Math.min(85, Math.max(62, pct)));
+    };
+    const onUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      setIsDraggingUI(false);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
   // Track form expanded state + local orderbook calculation for highlighting
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const handleExpandChange = useCallback((expanded: boolean) => setIsFormExpanded(expanded), []);
@@ -449,12 +518,18 @@ export function CashMarketProPage() {
         <span className="hidden sm:inline text-[10px] text-navy-600 border border-navy-700 rounded px-1.5 py-0.5 font-mono cursor-default" title="Press ? for keyboard shortcuts">?</span>
       </Subheader>
 
-      {/* Ticker — sticky just below the subheader */}
-      {!loading && orderBook && (
-        <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 -mt-[3px]">
-          <RecentTradesTicker
-            trades={recentTrades}
-          />
+      {/* News Ticker — sticky just below the subheader */}
+      {!loading && orderBook && newsHeadlines.length > 0 && (
+        <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 -mt-[3px] overflow-hidden">
+          <div className="flex items-center min-w-max ticker-scroll">
+            {[...newsHeadlines, ...newsHeadlines].map((h, i) => (
+              <div key={i} className="flex items-center gap-2 px-4 py-1.5 shrink-0">
+                <span className="text-yellow-400/70 text-[12px] font-normal uppercase tracking-wide shrink-0">{h.source}</span>
+                <span className="text-yellow-300 text-[13px] font-bold">{h.title}</span>
+                <span className="text-navy-500 text-[11px] px-4">◆</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -493,16 +568,51 @@ export function CashMarketProPage() {
             </div>
           ) : (
             <>
-              {/* 1 — Order Book — full-width breakout from page-container padding */}
+              {/* 1 — Order Book + Recent Trades (side by side, full-width breakout) */}
               <div className="-mx-4 sm:-mx-6 lg:-mx-8 bg-navy-950/60 overflow-hidden">
-                <ProfessionalOrderBook
-                  bids={safeOrderBook.bids}
-                  asks={safeOrderBook.asks}
-                  spread={safeOrderBook.spread}
-                  bestBid={safeOrderBook.bestBid}
-                  bestAsk={safeOrderBook.bestAsk}
-                  highlightAskCount={highlightAskCount}
-                />
+                <div ref={splitContainerRef} className="flex select-none">
+                  {/* Order book panel */}
+                  <div className="relative min-w-0 shrink-0 overflow-hidden" style={{ width: `${splitPct}%` }}>
+                    <ProfessionalOrderBook
+                      bids={safeOrderBook.bids}
+                      asks={safeOrderBook.asks}
+                      spread={safeOrderBook.spread}
+                      bestBid={safeOrderBook.bestBid}
+                      bestAsk={safeOrderBook.bestAsk}
+                      highlightAskCount={highlightAskCount}
+                    />
+                    {isDraggingUI && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-navy-950/60 z-20 pointer-events-none">
+                        <span className="text-7xl font-black text-white tabular-nums tracking-tight" style={{ textShadow: '0 0 40px rgba(0,0,0,0.9)' }}>
+                          {Math.round(splitPct)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Draggable divider */}
+                  <div
+                    onMouseDown={() => { isDragging.current = true; setIsDraggingUI(true); }}
+                    className="w-1 shrink-0 bg-navy-700/60 hover:bg-emerald-500/40 active:bg-emerald-500/60 cursor-col-resize transition-colors relative group"
+                    title="Drag to resize"
+                  >
+                    <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-[3px] pointer-events-none">
+                      {[0,1,2,3,4].map(i => (
+                        <div key={i} className="w-[3px] h-[3px] rounded-full bg-navy-500 group-hover:bg-emerald-400 transition-colors" />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Recent trades panel */}
+                  <div className="relative min-w-0 flex-1 overflow-hidden">
+                    <RecentTradesTable trades={recentTrades} />
+                    {isDraggingUI && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-navy-950/60 z-20 pointer-events-none">
+                        <span className="text-7xl font-black text-white tabular-nums tracking-tight" style={{ textShadow: '0 0 40px rgba(0,0,0,0.9)' }}>
+                          {Math.round(100 - splitPct)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* 2 — Line Chart */}
