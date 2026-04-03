@@ -227,6 +227,7 @@ function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
 
   // Flash detection — persists seen IDs across renders without triggering re-renders
   const seenIdsRef = useRef<Set<string>>(new Set());
+  const flashTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [flashingIds, setFlashingIds] = useState<Map<string, 'up' | 'down' | 'flat'>>(new Map());
 
   useEffect(() => {
@@ -245,17 +246,26 @@ function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
       return next;
     });
 
-    const ids = newOnes.map(([id]) => id);
-    const timer = setTimeout(() => {
-      setFlashingIds((prev) => {
-        const next = new Map(prev);
-        ids.forEach((id) => next.delete(id));
-        return next;
-      });
-    }, 1800);
-
-    return () => clearTimeout(timer);
+    // Per-ID timers stored in a ref so React's effect cleanup (on re-runs)
+    // does NOT cancel them — only the unmount cleanup below does.
+    newOnes.forEach(([id]) => {
+      if (flashTimersRef.current.has(id)) clearTimeout(flashTimersRef.current.get(id));
+      const timer = setTimeout(() => {
+        setFlashingIds((prev) => {
+          const next = new Map(prev);
+          next.delete(id);
+          return next;
+        });
+        flashTimersRef.current.delete(id);
+      }, 1800);
+      flashTimersRef.current.set(id, timer);
+    });
   }, [items]);
+
+  // Cleanup all pending timers only on unmount
+  useEffect(() => {
+    return () => { flashTimersRef.current.forEach((t) => clearTimeout(t)); };
+  }, []);
 
   return (
     <div className="flex flex-col">
