@@ -7,7 +7,6 @@ import { useAuthStore } from '../stores/useStore';
 import { isValidEmail, sanitizeEmail, sanitizeString } from '../utils';
 import { logger } from '../utils/logger';
 import {
-  CO2Molecule,
   DiffuseLogo,
   FloatingPrices,
   GrowingTree,
@@ -49,7 +48,7 @@ export function LoginPage() {
   const [ndaFile, setNdaFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [referralCode, setReferralCode] = useState('');
-  const [codeType, setCodeType] = useState<'preintroducer' | 'troducer' | 'introducer' | null>(null);
+  const [codeType, setCodeType] = useState<'preintroducer' | 'introducer' | null>(null);
   const [codeError, setCodeError] = useState('');
   const [validatingCode, setValidatingCode] = useState(false);
 
@@ -251,7 +250,7 @@ export function LoginPage() {
         return;
       }
       setCodeType(result.type);
-      if (result.type === 'preintroducer' || result.type === 'troducer') {
+      if (result.type === 'preintroducer') {
         setMode('introducer-form');
       } else {
         setMode('buyer-form');
@@ -301,8 +300,10 @@ export function LoginPage() {
         nda_file: ndaFile || undefined,
       });
       setRequestSent(true);
-    } catch {
-      setError('Unable to process request. Please try again.');
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { detail?: string } } };
+      const detail = ax.response?.status === 409 ? ax.response?.data?.detail : null;
+      setError(detail || 'Unable to process request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -400,20 +401,15 @@ export function LoginPage() {
   return (
     <main
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto"
     >
       {/* Background Elements */}
       <DiffuseLogo />
       <ParticleField />
       <FloatingPrices />
 
-      {/* CO2 Molecule - positioned top right */}
-      <div className="absolute top-[10%] right-[5%] hidden lg:block">
-        <CO2Molecule />
-      </div>
-
-      {/* Growing Tree - positioned bottom left */}
-      <div className="absolute bottom-0 left-[5%] hidden lg:block">
+      {/* Tree: wrapper needs explicit width so inner centering + crown aren’t clipped */}
+      <div className="absolute bottom-0 left-[max(0.25rem,1.5vw)] z-[1] hidden w-[min(400px,44vw)] overflow-visible lg:block">
         <GrowingTree />
       </div>
 
@@ -579,7 +575,7 @@ export function LoginPage() {
                 onChange={(e) => { setReferralCode(e.target.value); setCodeError(''); }}
                 placeholder="e.g. Nx7k$mP2"
                 className="w-full py-4 px-4 bg-white/5 border border-white/10 rounded-lg text-white/90 text-center text-lg font-mono tracking-[0.15em] placeholder-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                maxLength={16}
+                maxLength={8}
               />
               {codeError && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400/70 text-sm text-center">

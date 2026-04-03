@@ -84,12 +84,11 @@ export interface SwapCalculation {
 }
 
 // User Types
-/** Full onboarding flow: NDA → KYC → … → EUA. MM = Market Maker (admin-created only). INTRODUCER = Introducer flow (no entity). TRODUCER = intermediate introducer (NDA pending). */
+/** Full onboarding flow: NDA → KYC → … → EUA. MM = Market Maker (admin-created only). INTRODUCER = Introducer flow (no entity). */
 export type UserRole =
   | 'ADMIN'
   | 'MM'
   | 'PREINTRODUCER'
-  | 'TRODUCER'
   | 'PRE_NDA'
   | 'INTRODUCER'
   | 'NDA'
@@ -229,6 +228,7 @@ export interface MailSettings {
   invitationSubject: string | null;
   invitationBodyHtml: string | null;
   invitationLinkBaseUrl: string | null;
+  appBaseUrl: string | null;
   invitationTokenExpiryDays: number;
   verificationMethod: string | null;
   authMethod: string | null;
@@ -249,6 +249,7 @@ export interface MailSettingsUpdate {
   invitationSubject?: string;
   invitationBodyHtml?: string;
   invitationLinkBaseUrl?: string;
+  appBaseUrl?: string;
   invitationTokenExpiryDays?: number;
   verificationMethod?: string;
   authMethod?: string;
@@ -334,6 +335,47 @@ export interface ContactRequestResponse {
 export interface ContactRequestUpdate {
   userRole?: string;
   notes?: string;
+}
+
+// KYC form (onboarding wizard) – persisted per user when backend supports GET/PUT /onboarding/form
+export interface PEPDeclarationItem {
+  name: string;
+  role: string;
+  is_pep: boolean;
+}
+
+export interface KYCFormDataResponse {
+  current_step?: number;
+  /** Current wizard step (1-based); may be returned as current_step by API. */
+  currentStep?: number;
+  pepDeclarations?: PEPDeclarationItem[];
+  hasCarbonExperience?: boolean | null;
+  carbonExperienceYears?: string;
+  carbonCreditsTraded?: string[];
+  investmentObjectives?: string[];
+  riskAppetite?: string;
+  sourceOfFunds?: string[];
+  expectedAnnualVolume?: string;
+  intendedUseDescription?: string;
+  taxResidencyCountry?: string;
+  subjectToCrs?: boolean | null;
+  declarationsAccepted?: string[];
+}
+
+export interface KYCFormDataUpdate {
+  current_step?: number;
+  pep_declarations?: PEPDeclarationItem[];
+  has_carbon_experience?: boolean;
+  carbon_experience_years?: string;
+  carbon_credits_traded?: string[];
+  investment_objectives?: string[];
+  risk_appetite?: string;
+  source_of_funds?: string[];
+  expected_annual_volume?: string;
+  intended_use_description?: string;
+  tax_residency_country?: string;
+  subject_to_crs?: boolean;
+  declarations_accepted?: string[];
 }
 
 // IP Lookup Result

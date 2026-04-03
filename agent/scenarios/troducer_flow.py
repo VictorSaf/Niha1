@@ -1,3 +1,4 @@
+# [STALE: 2026-04-03] Rolul TRODUCER eliminat în feature 0072. Înlocuitor: agent/scenarios/introducer_flow.py (de creat). Vezi docs/STALE_CONTENT.md.
 # agent/scenarios/troducer_flow.py
 """
 E2E Test Plan: TRODUCER → PREINTRODUCER → INTRODUCER onboarding flow.

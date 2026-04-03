@@ -38,11 +38,10 @@ class KYCStatus(str, enum.Enum):
 
 
 class UserRole(str, enum.Enum):
-    """Unified with ContactStatus; full onboarding flow NDA → EUA. MM = Market Maker (admin-created only). INTRODUCER = Introducer flow (no entity). TRODUCER = intermediate introducer (NDA pending)."""
+    """Unified with ContactStatus; full onboarding flow NDA → EUA. MM = Market Maker (admin-created only). INTRODUCER = Introducer flow (no entity)."""
     ADMIN = "ADMIN"
     MM = "MM"  # Market Maker; created and managed only by admin, no contact requests
     INTRODUCER = "INTRODUCER"  # Introducer flow; approved, NDA signed, full access
-    TRODUCER = "TRODUCER"  # Intermediate introducer; NDA sent but not yet approved
     PRE_NDA = "PRE_NDA"  # Pre-NDA buyer; registered without NDA, must upload signed NDA
     PREINTRODUCER = "PREINTRODUCER"  # Pre-introducer; registered via referral code, limited access
     NDA = "NDA"
@@ -1560,6 +1559,7 @@ class MailConfig(Base):
     invitation_subject = Column(String(255), nullable=True)
     invitation_body_html = Column(Text, nullable=True)
     invitation_link_base_url = Column(String(500), nullable=True)
+    app_base_url = Column(String(500), nullable=True)
     invitation_token_expiry_days = Column(Integer, default=7)
     # Placeholder: magic_link, password_only
     verification_method = Column(String(50), nullable=True)

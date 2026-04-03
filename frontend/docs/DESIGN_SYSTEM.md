@@ -468,6 +468,8 @@ Special shadows for interactive elements and brand colors.
 
 **Transaction confirmation modals** (e.g. CEA Cash order success): use `Modal` from `components/common`, a single primary CTA (e.g. "Inapoi la Dashboard"), and disable close on backdrop/escape so the user must click the CTA; data comes from the API response only. See CashMarketProPage order success modal.
 
+**Custom overlay dialogs (Backoffice forms):** When the dialog is not the shared `Modal` component (e.g. inline `motion.div` + overlay), set **`role="dialog"`**, **`aria-modal="true"`**, and **`aria-labelledby`** pointing to the visible title element’s **`id`** (e.g. `id="create-user-modal-title"` on the `<h2>`). Surface API failures with **`showToast`** from `components/common` and **`getApiErrorMessage`** from `utils/errors` where appropriate. Reference: **`CreateUserModal.tsx`**, **`UsersPage.tsx`** (create user).
+
 ---
 
 ## Component Library
@@ -493,13 +495,14 @@ Special shadows for interactive elements and brand colors.
 | `.subheader-bar-spacer` | Spacer div rendered by `Subheader` so content starts below the fixed bar |
 | `.subsubheader-bar` | Applied by `SubSubHeader` component |
 | `.page-section-header-sticky` | Optional sticky wrapper for Subheader + SubSubHeader (e.g. BackofficeLayout) |
+| `.subheader-subsubheader-block` | Wrapper for spacer + SubSubHeader when both are used; use in layout so the two bars sit flush |
 
 **Nav buttons (inside Subheader / SubSubHeader):** see [Subheader nav buttons](#subheader-nav-buttons-subpage-navigation) and [SubSubHeader nav buttons](#subsubheader-nav-buttons-child-level-under-subheader) below.
 
 #### Fixed subheader bar
 
-- The subheader bar (`.subheader-bar`) is **fixed** below the main header on all pages: `position: fixed; top: 4rem` (mobile) / `top: 5rem` (desktop); `Subheader` renders a spacer (`.subheader-bar-spacer`) so content is not hidden under the bar.
-- **Subheader + SubSubHeader:** BackofficeLayout wraps both in `page-section-header-sticky` so the sub-subheader can stay with the subheader when needed.
+- The subheader bar (`.subheader-bar`) is **fixed** below the main header on all pages: `position: fixed; top: 4rem` (mobile) / `top: 5rem` (desktop); it uses `min-height: var(--subheader-bar-min-height)` so it aligns with the spacer. By default `Subheader` renders a spacer (`.subheader-bar-spacer`) so content starts below the bar; when a SubSubHeader follows, the layout can pass `renderSpacer={false}` and render the spacer before the SubSubHeader so the two bars sit flush with no gap.
+- **Subheader + SubSubHeader:** BackofficeLayout wraps both in `page-section-header-sticky`; it passes `renderSpacer={!showSubSub}` and, when SubSubHeader is shown, renders the spacer then SubSubHeader so there is no spacing between the two bars.
 
 #### Usage across the app
 
@@ -513,12 +516,17 @@ Special shadows for interactive elements and brand colors.
 #### Example
 
 ```tsx
-// Layout with Subheader + optional SubSubHeader (BackofficeLayout)
+// Layout with Subheader + optional SubSubHeader (BackofficeLayout) — no gap between bars
 <div className="page-section-header-sticky">
-  <Subheader icon={...} title="Backoffice" description={...}>
+  <Subheader icon={...} title="Backoffice" description={...} renderSpacer={!showSubSub}>
     <nav>...</nav>
   </Subheader>
-  {showSubSub && <SubSubHeader left={...}>{actions}</SubSubHeader>}
+  {showSubSub && (
+    <div className="subheader-subsubheader-block">
+      <div className="subheader-bar-spacer" aria-hidden="true" />
+      <SubSubHeader left={...}>{actions}</SubSubHeader>
+    </div>
+  )}
 </div>
 
 // Single Subheader (fixed bar is applied automatically)
@@ -1171,7 +1179,20 @@ Breakpoints:
 </button>
 ```
 
-### 3. Performance
+### 3. Navigation & scroll
+
+✅ **DO**: Rely on app-wide scroll-to-top on route change  
+The app scrolls the window to top whenever the route pathname changes (`ScrollToTop` in `App.tsx`). No need to call `window.scrollTo` in individual pages for normal navigation.
+
+### 4. Charts & SVG colors
+
+✅ **DO**: Use design-token CSS variables in chart/SVG components  
+For Recharts, lightweight-charts, or inline SVG, use `var(--color-primary)`, `var(--color-text-muted)`, `var(--color-border)`, `var(--color-surface)` (and similar tokens from `design-tokens.css`) for stroke, fill, and grid. This keeps charts on-theme and satisfies the no-hardcoded-hex rule. Example: `stroke="var(--color-primary)"`, `fill="var(--color-text-muted)"`. Introducer charts (MiniDonut, MiniBarChart, MiniScale, MiniTimeline, MiniFlow, TimingSection, MarketSection, etc.) use `var(--color-eua)`, `var(--color-cea)`, `var(--color-success)`, `var(--color-ask)`, `var(--color-error)`, `var(--color-text-muted)` for segment and bar colors.
+
+❌ **DON'T**: Use hex or rgb in chart components  
+Avoid `#34d399`, `rgb(52, 211, 153)`, or `rgba(...)` in chart/SVG code; use tokens instead.
+
+### 5. Performance
 
 ✅ **DO**: Use CSS transitions for simple animations
 ```tsx
@@ -1190,7 +1211,7 @@ Breakpoints:
 </motion.div>
 ```
 
-### 4. Reusability
+### 6. Reusability
 
 ✅ **DO**: Use the standard `.card_back` class or `<Card />` for section/card wrappers
 ```tsx
@@ -1200,7 +1221,7 @@ Breakpoints:
 <div className="card_back">{children}</div>
 ```
 
-### 5. Semantic HTML
+### 7. Semantic HTML
 
 ✅ **DO**: Use appropriate HTML elements
 ```tsx
@@ -1230,6 +1251,10 @@ Breakpoints:
 ---
 
 ## Changelog
+
+### Version 2.0.1 (2026-03-01)
+- **Scroll on navigation:** Documented app-wide scroll-to-top on route change (`ScrollToTop` in `App.tsx`). See Best Practices §3.
+- **Charts & SVG:** Best Practices §4 added: chart/SVG components must use design-token CSS variables (`var(--color-*)`) instead of hex/rgb; CEALineChart and similar components updated to use tokens.
 
 ### Version 2.0.0 (2026-02-14)
 - **Surface hierarchy**: formalized 5-level depth system (navy-950 → navy-600)

@@ -15,7 +15,7 @@ from ...core.security import (
     verify_password,
     verify_token,
 )
-from ...models.models import AuthenticationAttempt, AuthMethod, TicketStatus, User
+from ...models.models import AuthenticationAttempt, AuthMethod, TicketStatus, User, UserRole
 from ...schemas.schemas import (
     MagicLinkRequest,
     MagicLinkVerify,
@@ -287,6 +287,14 @@ async def password_login(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is disabled"
         )
 
+    # PREINTRODUCER with NDA not yet approved cannot log in (must use setup-password session until admin approves)
+    if user.role == UserRole.PREINTRODUCER and not user.nda_signed:
+        await log_auth_attempt(user.id, False, "preintroducer_nda_pending")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your NDA is pending approval. You cannot log in until an administrator approves your NDA.",
+        )
+
     # Log successful authentication
     await log_auth_attempt(user.id, True)
 
@@ -382,6 +390,7 @@ async def validate_invitation_token(token: str, db: AsyncSession = Depends(get_d
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
+        "role": user.role.value if user.role else None,
     }
 
 

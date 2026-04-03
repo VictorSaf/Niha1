@@ -1,8 +1,26 @@
 """Tests for the HTML + WeasyPrint PDF renderer."""
 import pytest
-from app.services.pdf_generator.renderer import render_pdf
+
+_has_weasyprint = False
+try:
+    import weasyprint  # noqa: F401
+    _has_weasyprint = True
+except (ImportError, OSError):
+    # OSError when weasyprint loads but system libs (e.g. libgobject) are missing
+    pass
+
+_skip_weasyprint = pytest.mark.skipif(not _has_weasyprint, reason="WeasyPrint not installed")
+
+# Defer imports so collection succeeds when weasyprint fails to load (e.g. missing libgobject)
+if _has_weasyprint:
+    from app.services.pdf_generator.renderer import render_pdf  # noqa: E402
+    from app.services.pdf_generator.nda_generator import generate_nda_pdf  # noqa: E402
+else:
+    render_pdf = None
+    generate_nda_pdf = None
 
 
+@_skip_weasyprint
 def test_render_pdf_returns_valid_pdf():
     """render_pdf should return bytes starting with PDF magic number."""
     result = render_pdf("board_resolution", {})
@@ -11,6 +29,7 @@ def test_render_pdf_returns_valid_pdf():
     assert len(result) > 5_000, f"PDF too small ({len(result)} bytes) — likely empty or broken"
 
 
+@_skip_weasyprint
 def test_render_pdf_with_doc_ref():
     """doc_ref context variable is accepted without errors."""
     result = render_pdf("board_resolution", {"doc_ref": "NIHA-BR-2026-001"})
@@ -18,6 +37,7 @@ def test_render_pdf_with_doc_ref():
     assert len(result) > 5_000
 
 
+@_skip_weasyprint
 def test_render_pdf_with_explicit_doc_date():
     """Explicit doc_date overrides the default today() value without errors."""
     result = render_pdf("board_resolution", {"doc_date": "01 January 2026"})
@@ -25,9 +45,7 @@ def test_render_pdf_with_explicit_doc_date():
     assert len(result) > 5_000
 
 
-from app.services.pdf_generator.nda_generator import generate_nda_pdf
-
-
+@_skip_weasyprint
 def test_nda_generator_returns_pdf():
     """NDA generator produces a valid PDF."""
     result = generate_nda_pdf(
@@ -39,6 +57,7 @@ def test_nda_generator_returns_pdf():
     assert len(result) > 10_000
 
 
+@_skip_weasyprint
 def test_nda_generator_with_all_params():
     """NDA generator accepts all optional parameters."""
     from datetime import date
@@ -55,6 +74,7 @@ def test_nda_generator_with_all_params():
     assert len(result) > 10_000
 
 
+@_skip_weasyprint
 def test_nda_generator_signature_preserved():
     """Function signature must remain identical for API compatibility."""
     import inspect

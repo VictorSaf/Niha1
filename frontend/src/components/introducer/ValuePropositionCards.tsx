@@ -43,34 +43,34 @@ export function ValuePropositionCards() {
             )}
             {showExtended && prop.title === '8–12% Cost Savings' && (
               <MiniScale
-                left={{ label: 'Direct', value: '€81/t', numericValue: 81, color: 'rgb(248, 113, 113)' }}
-                right={{ label: 'NIHA', value: '€71-74/t', numericValue: 72.5, color: 'rgb(52, 211, 153)' }}
+                left={{ label: 'Direct', value: '€81/t', numericValue: 81, color: 'var(--color-ask)' }}
+                right={{ label: 'NIHA', value: '€71-74/t', numericValue: 72.5, color: 'var(--color-success)' }}
               />
             )}
             {showExtended && prop.title === 'Zero Market Impact' && (
               <MiniBarChart
                 title="Order Visibility"
                 bars={[
-                  { label: 'Exchange', value: 100, displayValue: 'Visible on orderbook', color: 'rgb(248, 113, 113)' },
-                  { label: 'NIHA OTC', value: 0, displayValue: 'Zero visibility', color: 'rgb(52, 211, 153)' },
+                  { label: 'Exchange', value: 100, displayValue: 'Visible on orderbook', color: 'var(--color-ask)' },
+                  { label: 'NIHA OTC', value: 0, displayValue: 'Zero visibility', color: 'var(--color-success)' },
                 ]}
                 maxValue={100}
               />
             )}
             {showExtended && prop.title === 'Faster Settlement' && (
               <MiniScale
-                left={{ label: 'Multi-leg exchange', value: '5-10 days', numericValue: 10, color: 'rgb(248, 113, 113)' }}
-                right={{ label: 'NIHA bilateral', value: 'T+2–T+5', numericValue: 3.5, color: 'rgb(52, 211, 153)' }}
+                left={{ label: 'Multi-leg exchange', value: '5-10 days', numericValue: 10, color: 'var(--color-ask)' }}
+                right={{ label: 'NIHA bilateral', value: 'T+2–T+5', numericValue: 3.5, color: 'var(--color-success)' }}
               />
             )}
             {showExtended && prop.title === 'Regulatory Moat' && (
               <MiniBarChart
                 title="Barrier Layers"
                 bars={[
-                  { label: 'Regulatory', value: 95, color: 'rgb(52, 211, 153)' },
-                  { label: 'Geographic', value: 90, color: 'rgb(52, 211, 153)' },
-                  { label: 'Network', value: 80, color: 'rgb(251, 191, 36)' },
-                  { label: 'First-mover', value: 75, color: 'rgb(96, 165, 250)' },
+                  { label: 'Regulatory', value: 95, color: 'var(--color-success)' },
+                  { label: 'Geographic', value: 90, color: 'var(--color-success)' },
+                  { label: 'Network', value: 80, color: 'var(--color-cea)' },
+                  { label: 'First-mover', value: 75, color: 'var(--color-eua)' },
                 ]}
                 maxValue={100}
               />

@@ -639,6 +639,7 @@
   right: 0;
   top: 4rem; /* h-16 = 64px (header height on mobile) */
   z-index: var(--z-fixed);
+  min-height: var(--subheader-bar-min-height);
   background-color: var(--color-subheader-bg);
   border-bottom: 1px solid var(--color-subheader-border);
   padding: var(--subheader-padding-y) var(--subheader-padding-x);
@@ -663,6 +664,11 @@
   border-bottom: 1px solid var(--color-subsubheader-border);
   padding: var(--subsubheader-padding-y) var(--subsubheader-padding-x);
   min-height: var(--subsubheader-min-height);
+}
+
+/* Wrapper for spacer + SubSubHeader when both are used (e.g. BackofficeLayout); extend with layout/gap rules if needed */
+.subheader-subsubheader-block {
+  /* no extra spacing: spacer and SubSubHeader sit flush under Subheader bar */
 }
 
 /* Sticky wrapper for Subheader + optional SubSubHeader (use in layouts for fixed headers on scroll) */

@@ -127,11 +127,8 @@ export function ROICalculator() {
                 </div>
               </div>
               <div
-                className="relative h-10 rounded-lg overflow-hidden border border-emerald-500/30"
-                style={{
-                  width: `${Math.max(nihaBarWidth, 20)}%`,
-                  background: 'linear-gradient(to right, rgba(16,185,129,0.15), rgba(16,185,129,0.3))',
-                }}
+                className="relative h-10 rounded-lg overflow-hidden border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 to-emerald-500/30"
+                style={{ width: `${Math.max(nihaBarWidth, 20)}%` }}
               >
                 <div className="absolute inset-0 flex items-center px-3">
                   <span className="text-xs text-emerald-300 whitespace-nowrap">Via NIHA — {formatEUR(nihaCost)}</span>

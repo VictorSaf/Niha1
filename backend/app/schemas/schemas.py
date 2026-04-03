@@ -55,7 +55,6 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
     MM = "MM"  # Market Maker; created and managed only by admin, no contact requests
     INTRODUCER = "INTRODUCER"  # Introducer flow; no entity, simplified dashboard
-    TRODUCER = "TRODUCER"  # Intermediate introducer; NDA sent but not yet approved
     PREINTRODUCER = "PREINTRODUCER"  # Pre-introducer; registered via referral code
     NDA = "NDA"
     REJECTED = "REJECTED"
@@ -611,19 +610,20 @@ class MailConfigUpdate(BaseModel):
     smtp_password: Optional[str] = Field(None, max_length=500, description="SMTP authentication password")
     invitation_subject: Optional[str] = Field(None, max_length=255, description="Email subject for invitation emails")
     invitation_body_html: Optional[str] = None
-    invitation_link_base_url: Optional[str] = Field(None, max_length=500, description="Base URL for invitation links")
+    invitation_link_base_url: Optional[str] = Field(None, max_length=500, description="Base URL for invitation links (legacy; prefer app_base_url)")
+    app_base_url: Optional[str] = Field(None, max_length=500, description="Application base URL used in all generated links (emails, QR codes, etc.)")
     invitation_token_expiry_days: Optional[int] = Field(None, ge=1, le=365, description="Days before invitation token expires")
     verification_method: Optional[str] = Field(None, max_length=50, description="Email verification method")
     auth_method: Optional[str] = Field(None, max_length=50, description="Email authentication method")
 
-    @field_validator("invitation_link_base_url")
+    @field_validator("invitation_link_base_url", "app_base_url")
     @classmethod
     def url_format(cls, v: Optional[str]) -> Optional[str]:
         if v is None or v == "":
             return v
         v = v.rstrip("/")
         if not (v.startswith("http://") or v.startswith("https://")):
-            raise ValueError("invitation_link_base_url must start with http:// or https://")
+            raise ValueError("URL must start with http:// or https://")
         return v
 
 

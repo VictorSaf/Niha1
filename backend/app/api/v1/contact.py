@@ -370,6 +370,26 @@ async def create_introducer_nda_request(
 
         referred_by_user_id = await consume_referral_code(db, referral_code.strip())
 
+    # Prevent duplicate introducer flow: if this email already has an introducer user, do not create a second ContactRequest
+    if (
+        request_flow == "introducer"
+        and not nda_file_name
+        and referred_by_user_id
+    ):
+        existing_user = await db.execute(
+            select(User).where(
+                User.email == contact_email.lower(),
+                User.role.in_(
+                    (UserRole.PREINTRODUCER, UserRole.INTRODUCER)
+                ),
+            )
+        )
+        if existing_user.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An introducer request for this email already exists. Check your email for the setup link or contact support.",
+            )
+
     # Determine user_role based on whether NDA was uploaded
     if request_flow == "buyer" and not nda_file_name and referred_by_user_id:
         contact_user_role = ContactStatus.PRE_NDA
@@ -446,7 +466,7 @@ async def create_introducer_nda_request(
     except Exception:
         pass
 
-    # Auto-create TRODUCER user + send NDA email when introducer flow with no NDA
+    # Auto-create INTRODUCER user + send NDA email when introducer flow with no NDA (PREINTRODUCER/INTRODUCER referral code)
     if (
         request_flow in ("introducer",)
         and not nda_file_name
@@ -469,31 +489,25 @@ async def create_introducer_nda_request(
                     else 14
                 )
 
-                invitation_token = secrets.token_urlsafe(32)
-                referral_code_new = await get_unique_referral_code(db)
+                # Generate NDA PDF before creating user so we never create a user without sending the setup email
+                nda_attachments = None
+                try:
+                    nda_user = get_system_user_for_document_generation()
+                    nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
+                    nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
+                except Exception:
+                    logger.exception("Failed to generate NDA PDF for introducer invitation")
 
-                new_user = User(
-                    email=contact_email.lower(),
-                    first_name=contact_first_name,
-                    last_name=contact_last_name,
-                    role=UserRole.PREINTRODUCER,
-                    referral_code=referral_code_new,
-                    nda_signed=False,
-                    invitation_token=invitation_token,
-                    invitation_sent_at=datetime.now(timezone.utc).replace(tzinfo=None),
-                    invitation_expires_at=(
-                        datetime.now(timezone.utc).replace(tzinfo=None)
-                        + timedelta(days=invitation_expiry_days)
-                    ),
-                    must_change_password=True,
-                    is_active=False,
-                    creation_method="invitation",
-                )
-                db.add(new_user)
-                await db.commit()
-                await db.refresh(new_user)
+                if not nda_attachments:
+                    logger.error(
+                        "Cannot create INTRODUCER user for %s: NDA PDF could not be generated; user not created",
+                        contact_email,
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Unable to prepare invitation. Please try again later.",
+                    )
 
-                # Send NDA invitation email
                 mail_cfg = None
                 if mail_row:
                     mail_cfg = {
@@ -513,13 +527,31 @@ async def create_introducer_nda_request(
                         "smtp_password": mail_row.smtp_password,
                         "invitation_link_base_url": mail_row.invitation_link_base_url,
                     }
-                nda_attachments = None
-                try:
-                    nda_user = get_system_user_for_document_generation()
-                    nda_bytes, nda_filename = await get_document_bytes("nda", nda_user, db)
-                    nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
-                except Exception:
-                    logger.exception("Failed to generate NDA PDF for introducer invitation")
+
+                invitation_token = secrets.token_urlsafe(32)
+                referral_code_new = await get_unique_referral_code(db)
+
+                new_user = User(
+                    email=contact_email.lower(),
+                    first_name=contact_first_name,
+                    last_name=contact_last_name,
+                    role=UserRole.INTRODUCER,
+                    referral_code=referral_code_new,
+                    nda_signed=True,
+                    invitation_token=invitation_token,
+                    invitation_sent_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                    invitation_expires_at=(
+                        datetime.now(timezone.utc).replace(tzinfo=None)
+                        + timedelta(days=invitation_expiry_days)
+                    ),
+                    must_change_password=True,
+                    is_active=False,
+                    creation_method="invitation",
+                )
+                db.add(new_user)
+                await db.commit()
+                await db.refresh(new_user)
+
                 await email_service.send_introducer_nda_invitation(
                     new_user.email,
                     new_user.first_name,
@@ -528,7 +560,6 @@ async def create_introducer_nda_request(
                     expiry_days=invitation_expiry_days,
                     mail_config=mail_cfg,
                 )
-
                 asyncio.create_task(
                     backoffice_ws_manager.broadcast("request_updated", {
                         "id": str(contact.id),
@@ -537,9 +568,11 @@ async def create_introducer_nda_request(
                     })
                 )
                 logger.info(
-                    "Auto-created PREINTRODUCER user and sent NDA for %s (referred by %s)",
+                    "Auto-created INTRODUCER user and sent NDA for %s (referred by %s)",
                     contact_email, referred_by_user_id,
                 )
+        except HTTPException:
+            raise
         except Exception:
             logger.exception(
                 "Failed to auto-create user/send NDA for %s (non-blocking)",
@@ -569,7 +602,7 @@ async def create_introducer_request(
         raise HTTPException(status_code=400, detail="Invalid email format")
 
     code_info = await validate_referral_code(db, referral_code.strip())
-    if not code_info or code_info["type"] not in ("preintroducer", "troducer"):
+    if not code_info or code_info["type"] != "preintroducer":
         raise HTTPException(status_code=400, detail="Invalid or expired referral code")
 
     nda_file_name = None
@@ -706,26 +739,31 @@ async def create_introducer_request(
                     nda_attachments = [{"filename": nda_filename, "content": nda_bytes}]
                 except Exception:
                     logger.exception("Failed to generate NDA PDF for introducer invitation")
-                await email_service.send_introducer_nda_invitation(
-                    new_user.email,
-                    new_user.first_name,
-                    new_user.invitation_token,
-                    nda_attachments=nda_attachments,
-                    expiry_days=invitation_expiry_days,
-                    mail_config=mail_cfg,
-                )
-
-                asyncio.create_task(
-                    backoffice_ws_manager.broadcast("request_updated", {
-                        "id": str(contact.id),
-                        "introducer_nda_status": "sent",
-                        "introducer_user_id": str(new_user.id),
-                    })
-                )
-                logger.info(
-                    "Auto-created PREINTRODUCER user and sent NDA for %s (referred by %s)",
-                    contact_email, referred_by_user_id,
-                )
+                if nda_attachments:
+                    await email_service.send_introducer_nda_invitation(
+                        new_user.email,
+                        new_user.first_name,
+                        new_user.invitation_token,
+                        nda_attachments=nda_attachments,
+                        expiry_days=invitation_expiry_days,
+                        mail_config=mail_cfg,
+                    )
+                    asyncio.create_task(
+                        backoffice_ws_manager.broadcast("request_updated", {
+                            "id": str(contact.id),
+                            "introducer_nda_status": "sent",
+                            "introducer_user_id": str(new_user.id),
+                        })
+                    )
+                    logger.info(
+                        "Auto-created PREINTRODUCER user and sent NDA for %s (referred by %s)",
+                        contact_email, referred_by_user_id,
+                    )
+                else:
+                    logger.error(
+                        "Skipped introducer NDA invitation email for %s: NDA PDF could not be generated",
+                        contact_email,
+                    )
         except Exception:
             logger.exception(
                 "Failed to auto-create user/send NDA for %s (non-blocking)",
@@ -741,9 +779,9 @@ async def upload_introducer_nda(
     current_user: User = Depends(get_current_user),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
-    """Authenticated: TRODUCER, INTRODUCER, or PRE_NDA with nda_signed=false uploads their signed NDA."""
-    if current_user.role not in (UserRole.TRODUCER, UserRole.INTRODUCER, UserRole.PRE_NDA, UserRole.PREINTRODUCER):
-        raise HTTPException(status_code=403, detail="Only TRODUCER/PREINTRODUCER/INTRODUCER/PRE_NDA users can upload NDA")
+    """Authenticated: INTRODUCER, PREINTRODUCER, or PRE_NDA with nda_signed=false uploads their signed NDA."""
+    if current_user.role not in (UserRole.INTRODUCER, UserRole.PRE_NDA, UserRole.PREINTRODUCER):
+        raise HTTPException(status_code=403, detail="Only PREINTRODUCER/INTRODUCER/PRE_NDA users can upload NDA")
     if current_user.nda_signed:
         raise HTTPException(status_code=400, detail="NDA already signed")
 

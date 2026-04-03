@@ -1,4 +1,4 @@
-import React, { Component, lazy, Suspense } from 'react';
+import React, { Component, lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout, ThemeLayout } from './components/layout';
 import { AutoOrdersService } from './components/admin';
@@ -95,7 +95,6 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m
 const IntroducerPage = lazy(() => import('./pages/IntroducerPage').then(m => ({ default: m.IntroducerPage })));
 const IntroducerDashboardPage = lazy(() => import('./pages/IntroducerDashboardPage').then(m => ({ default: m.IntroducerDashboardPage })));
 const PreintroducerPage = lazy(() => import('./pages/PreintroducerPage').then(m => ({ default: m.PreintroducerPage })));
-const TroducerPage = lazy(() => import('./pages/TroducerPage').then(m => ({ default: m.TroducerPage })));
 const IntroducerSignNDAPage = lazy(() => import('./pages/IntroducerSignNDAPage').then(m => ({ default: m.IntroducerSignNDAPage })));
 const PreNdaPage = lazy(() => import('./pages/PreNdaPage').then(m => ({ default: m.PreNdaPage })));
 const CashMarketProPage = lazy(() => import('./pages/CashMarketProPage').then(m => ({ default: m.CashMarketProPage })));
@@ -263,7 +262,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** INTRODUCER dashboard: INTRODUCER and ADMIN only (TRODUCER uses /troducer). */
+/** INTRODUCER dashboard: INTRODUCER and ADMIN only. */
 function IntroducerDashboardRoute({ children }: { children: React.ReactNode }) {
   return (
     <RoleProtectedRoute allowedRoles={['INTRODUCER', 'ADMIN']}>
@@ -327,10 +326,20 @@ function CatchAllRedirect() {
   return <Navigate to={target} replace />;
 }
 
+/** Scrolls window to top when the route pathname changes so every new page opens at top. */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   return (
     <AppErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ScrollToTop />
         <ThemeTokenOverridesStyle />
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -475,14 +484,6 @@ function App() {
               }
             />
             <Route
-              path="/troducer"
-              element={
-                <RoleProtectedRoute allowedRoles={['TRODUCER', 'ADMIN']}>
-                  <TroducerPage />
-                </RoleProtectedRoute>
-              }
-            />
-            <Route
               path="/pre-nda"
               element={
                 <RoleProtectedRoute allowedRoles={['PRE_NDA', 'ADMIN']}>
@@ -493,7 +494,7 @@ function App() {
             <Route
               path="/introducer/sign-nda"
               element={
-                <RoleProtectedRoute allowedRoles={['TRODUCER', 'PREINTRODUCER', 'INTRODUCER', 'ADMIN']}>
+                <RoleProtectedRoute allowedRoles={['PREINTRODUCER', 'INTRODUCER', 'ADMIN']}>
                   <IntroducerSignNDAPage />
                 </RoleProtectedRoute>
               }

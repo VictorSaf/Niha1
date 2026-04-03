@@ -31,8 +31,8 @@ describe('getPostLoginRedirect', () => {
     expect(getPostLoginRedirect(makeUser({ role: 'REJECTED' }))).toBe('/login');
   });
 
-  it('sends TRODUCER users to /troducer', () => {
-    expect(getPostLoginRedirect(makeUser({ role: 'TRODUCER' }))).toBe('/troducer');
+  it('sends PREINTRODUCER users to /preintroducer', () => {
+    expect(getPostLoginRedirect(makeUser({ role: 'PREINTRODUCER' }))).toBe('/preintroducer');
   });
 
   it('sends INTRODUCER users to /introducer/dashboard', () => {

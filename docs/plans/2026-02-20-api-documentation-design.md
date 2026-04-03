@@ -1,3 +1,5 @@
+<!-- [STALE: 2026-04-03] Design doc/plan din sprint Feb 2026, implementat. Vezi docs/STALE_CONTENT.md. -->
+
 # API Documentation Polish - Design
 
 **Audience:** Internal team

@@ -9,7 +9,7 @@ Generates a branded PDF with:
   - Counterparts clause for wet-ink execution
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Optional
 
 from reportlab.platypus import Spacer, PageBreak, Paragraph
@@ -17,7 +17,6 @@ from reportlab.lib.units import mm
 
 from .styles import (
     build_niha_pdf,
-    create_niha_styles,
     gold_separator,
     thin_separator,
     filled,
@@ -27,9 +26,8 @@ from .styles import (
     key_terms_table,
     NihaFonts,
     NihaColors,
-    NihaDocTemplate,
 )
-from reportlab.platypus import Table, TableStyle, KeepTogether
+from reportlab.platypus import Table, TableStyle
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -769,8 +767,8 @@ def generate_msa_pdf(
         fee_table = _data_table(styles,
             headers=["Service", "Fee Rate", "Currency / Basis"],
             rows=[
-                [f"CEA Cash Purchase Commission", filled("1.5%"), "of transaction value (EUR)"],
-                [f"Swap (Conversion) Fee", filled("2.0%"), "of source CC volume (e.g. CEA), rounded up"],
+                ["CEA Cash Purchase Commission", filled("1.5%"), "of transaction value (EUR)"],
+                ["Swap (Conversion) Fee", filled("2.0%"), "of source CC volume (e.g. CEA), rounded up"],
                 ["Custody Fee", "As per Custody Agreement", "See Custody Agreement"],
                 ["Platform Access", filled("Included"), "No separate charge"],
                 ["Market Intelligence Reports", filled("Included"), "Quarterly"],

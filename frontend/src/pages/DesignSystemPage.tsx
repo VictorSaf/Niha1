@@ -157,10 +157,10 @@ function ContentSections({ mode, activeSection }: { mode: 'light' | 'dark'; acti
           <ColorGroup
             title="Background Colors"
             colors={[
-              { name: 'Background', var: '--color-background', class: isDark ? 'bg-[#0f172a]' : 'bg-[#f8fafc]' },
-              { name: 'Surface', var: '--color-surface', class: isDark ? 'bg-[#1e293b]' : 'bg-white' },
-              { name: 'Surface Elevated', var: '--color-surface-elevated', class: isDark ? 'bg-[#334155]' : 'bg-[#f1f5f9]' },
-              { name: 'Surface Muted', var: '--color-surface-muted', class: isDark ? 'bg-[#475569]' : 'bg-[#e2e8f0]' },
+              { name: 'Background', var: '--color-background', class: isDark ? 'bg-navy-900' : 'bg-navy-50' },
+              { name: 'Surface', var: '--color-surface', class: isDark ? 'bg-navy-800' : 'bg-white' },
+              { name: 'Surface Elevated', var: '--color-surface-elevated', class: isDark ? 'bg-navy-700' : 'bg-navy-100' },
+              { name: 'Surface Muted', var: '--color-surface-muted', class: isDark ? 'bg-navy-600' : 'bg-navy-200' },
             ]}
             isDark={isDark}
           />
@@ -169,9 +169,9 @@ function ContentSections({ mode, activeSection }: { mode: 'light' | 'dark'; acti
           <ColorGroup
             title="Text Colors"
             colors={[
-              { name: 'Primary', var: '--color-text-primary', class: isDark ? 'bg-white' : 'bg-[#0f172a]' },
-              { name: 'Secondary', var: '--color-text-secondary', class: isDark ? 'bg-[#cbd5e1]' : 'bg-[#475569]' },
-              { name: 'Muted', var: '--color-text-muted', class: isDark ? 'bg-[#94a3b8]' : 'bg-[#64748b]' },
+              { name: 'Primary', var: '--color-text-primary', class: isDark ? 'bg-white' : 'bg-navy-900' },
+              { name: 'Secondary', var: '--color-text-secondary', class: isDark ? 'bg-navy-300' : 'bg-navy-600' },
+              { name: 'Muted', var: '--color-text-muted', class: isDark ? 'bg-navy-400' : 'bg-navy-500' },
             ]}
             isDark={isDark}
           />
@@ -446,19 +446,19 @@ function ContentSections({ mode, activeSection }: { mode: 'light' | 'dark'; acti
                 Glow Effects
               </h4>
               <div className="grid grid-cols-3 gap-4">
-                <div className={`rounded-xl p-6 shadow-[0_0_30px_rgba(52,211,153,0.4)] ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
+                <div className={`rounded-xl p-6 shadow-lg shadow-emerald-500/40 ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
                   <div className="h-16 rounded-lg bg-emerald-500" />
                   <p className={`mt-2 text-center text-xs ${isDark ? 'text-navy-400' : 'text-navy-600'}`}>
                     Emerald Glow
                   </p>
                 </div>
-                <div className={`rounded-xl p-6 shadow-[0_0_30px_rgba(96,165,250,0.4)] ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
+                <div className={`rounded-xl p-6 shadow-lg shadow-blue-500/40 ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
                   <div className="h-16 rounded-lg bg-blue-500" />
                   <p className={`mt-2 text-center text-xs ${isDark ? 'text-navy-400' : 'text-navy-600'}`}>
                     Blue Glow
                   </p>
                 </div>
-                <div className={`rounded-xl p-6 shadow-[0_0_30px_rgba(251,191,36,0.4)] ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
+                <div className={`rounded-xl p-6 shadow-lg shadow-amber-500/40 ${isDark ? 'bg-navy-800' : 'bg-white'}`}>
                   <div className="h-16 rounded-lg bg-amber-500" />
                   <p className={`mt-2 text-center text-xs ${isDark ? 'text-navy-400' : 'text-navy-600'}`}>
                     Amber Glow

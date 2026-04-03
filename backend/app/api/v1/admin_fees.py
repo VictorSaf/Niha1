@@ -344,7 +344,7 @@ async def get_introducer_overrides(
 
     result = await db.execute(
         select(User)
-        .where(User.role.in_([UserRole.INTRODUCER, UserRole.PREINTRODUCER, UserRole.TRODUCER]))
+        .where(User.role.in_([UserRole.INTRODUCER, UserRole.PREINTRODUCER]))
         .where(User.commission_rate.isnot(None))
         .where(User.is_active.is_(True))
         .order_by(User.email)
@@ -386,7 +386,7 @@ async def search_clients(
     # Search introducer users by email or name
     user_result = await db.execute(
         select(User)
-        .where(User.role.in_([UserRole.INTRODUCER, UserRole.PREINTRODUCER, UserRole.TRODUCER]))
+        .where(User.role.in_([UserRole.INTRODUCER, UserRole.PREINTRODUCER]))
         .where(User.is_active.is_(True))
         .where(
             (User.email.ilike(term))

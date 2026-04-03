@@ -22,6 +22,17 @@ def _strip_path(url: str) -> str:
     return urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
 
 
+def _resolve_base_url(mail_config: Optional[Dict[str, Any]]) -> str:
+    """Return the application base URL from mail_config.
+
+    Prefers app_base_url (new field) over invitation_link_base_url (legacy),
+    falling back to localhost for local dev.
+    """
+    cfg = mail_config or {}
+    raw = (cfg.get("app_base_url") or cfg.get("invitation_link_base_url") or "").strip()
+    return _strip_path(raw) if raw else "http://localhost:5173"
+
+
 def _inline_css(html: str) -> str:
     """Inline <style> block CSS into element style= attributes for email client compatibility.
 
@@ -141,12 +152,14 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "quantity": "1,000",
         "to_quantity": "118",
         "rate": "0.1177",
+        "app_url": "https://app.nihaogroup.com",
     },
     "invitation.html": {"name": "John Doe", "setup_url": "https://app.nihaogroup.com/setup-password?token=abc123"},
-    "account_approved.html": {"name": "John Doe", "documents_attached": True},
+    "account_approved.html": {"name": "John Doe", "documents_attached": True, "app_url": "https://app.nihaogroup.com"},
     "kyc_rejected.html": {"name": "John Doe", "reason": "Documents were not legible. Please re-upload."},
     "deposit_announced.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "reference": "NIHA-DEP-20260101", "documents_attached": True},
     "deposit_on_hold.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "hold_until": "2026-02-15"},
+    "deposit_cleared.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "app_url": "https://app.nihaogroup.com"},
     "deposit_cleared.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR"},
     "deposit_rejected.html": {
         "name": "John Doe",
@@ -154,7 +167,7 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "currency": "EUR",
         "reason": "Wire transfer not received within expected timeframe",
     },
-    "account_funded.html": {"name": "John Doe"},
+    "account_funded.html": {"name": "John Doe", "app_url": "https://app.nihaogroup.com"},
     "contact_followup.html": {"entity_name": "Acme Corp"},
     "settlement_created.html": {
         "name": "John Doe",
@@ -180,6 +193,7 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "certificate_type": "CEA",
         "quantity": "2,000.00",
         "new_balance": "5,000.00",
+        "app_url": "https://app.nihaogroup.com",
     },
     "settlement_failed.html": {
         "name": "John Doe",
@@ -196,6 +210,7 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "expected_date": "2026-01-28",
         "days_overdue": 5,
         "current_status": "In Transit",
+        "app_url": "https://app.nihaogroup.com",
     },
     "withdrawal_requested.html": {"name": "John Doe", "amount": "10,000.00", "currency": "EUR"},
     "withdrawal_approved.html": {"name": "John Doe", "amount": "10,000.00", "currency": "EUR"},
@@ -203,7 +218,11 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
     "withdrawal_rejected.html": {"name": "John Doe", "amount": "10,000.00", "currency": "EUR", "reason": "Insufficient verified funds"},
     "welcome_activated.html": {"name": "John Doe"},
     "aml_review_started.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR"},
-    "trading_activated.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR"},
+    "trading_activated.html": {"name": "John Doe", "amount": "50,000.00", "currency": "EUR", "app_url": "https://app.nihaogroup.com"},
+    "cea_settlement_pending.html": {"name": "John Doe", "app_url": "https://app.nihaogroup.com"},
+    "swap_access_granted.html": {"name": "John Doe", "app_url": "https://app.nihaogroup.com"},
+    "eua_settlement_pending.html": {"name": "John Doe", "app_url": "https://app.nihaogroup.com"},
+    "eua_access_granted.html": {"name": "John Doe", "app_url": "https://app.nihaogroup.com"},
     "test_email.html": {"provider": "SMTP"},
     "introducer_nda_invitation.html": {
         "name": "Jane Smith",
@@ -214,15 +233,12 @@ TEMPLATE_SAMPLE_DATA: Dict[str, Dict[str, Any]] = {
         "name": "Jane Smith",
         "dashboard_url": "https://app.nihaogroup.com/introducer/dashboard",
     },
-    "troducer_welcome.html": {
-        "name": "Jane Smith",
-        "login_url": "https://app.nihaogroup.com/login",
-    },
     "referral_invitation.html": {
         "introducer_name": "Jane Smith",
         "invited_name": "John",
         "personal_note": "I think NIHA would be a great fit for your carbon compliance needs.",
-        "invitation_url": "https://app.nihaogroup.com/contact?invite=abc123&ref=REF-JANE",
+        "invitation_url": "https://app.nihaogroup.com/introducer?invite=abc123&ref=REF-JANE",
+        "nda_download_url": "https://app.nihaogroup.com/api/v1/contact/nda-template",
         "expiry_days": 7,
     },
 }
@@ -269,7 +285,7 @@ class EmailService:
         "referral_invitation.html", "settlement_completed.html", "settlement_created.html",
         "settlement_failed.html", "settlement_status_update.html", "swap_access_granted.html",
         "swap_match.html", "test_email.html", "trade_confirmation.html", "trading_activated.html",
-        "troducer_welcome.html", "welcome_activated.html", "withdrawal_approved.html",
+        "welcome_activated.html", "withdrawal_approved.html",
         "withdrawal_completed.html", "withdrawal_rejected.html", "withdrawal_requested.html",
     })
     # Templates that exist but are never sent from app code (NU). Every template must be in USED or UNUSED.
@@ -323,6 +339,8 @@ class EmailService:
         self, to_email: str, from_type: str, to_type: str, quantity: float, rate: float
     ) -> bool:
         """Send swap match notification"""
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = f"Swap Match Found - {from_type} to {to_type}"
         html = self._render_template(
             "swap_match.html",
@@ -331,8 +349,9 @@ class EmailService:
             quantity=f"{quantity:,.0f}",
             to_quantity=f"{quantity * rate:,.0f}",
             rate=f"{rate:.2f}",
+            app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_invitation(
         self,
@@ -348,8 +367,7 @@ class EmailService:
         """
         name = first_name or "there"
         if mail_config:
-            raw = (mail_config.get("invitation_link_base_url") or "").strip()
-            base_url = _strip_path(raw) if raw else "http://localhost:5173"
+            base_url = _resolve_base_url(mail_config)
             setup_url = f"{base_url}/setup-password?token={invitation_token}"
             subject = (
                 mail_config.get("invitation_subject")
@@ -383,8 +401,7 @@ class EmailService:
     ) -> bool:
         """Send NDA invitation email with attached PDF to introducer. nda_attachments: list of {filename, content} from document_delivery_service."""
         name = first_name or "there"
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        base_url = _resolve_base_url(mail_config)
         setup_url = f"{base_url}/setup-password?token={invitation_token}"
         subject = "Introducer Programme - NDA & Account Setup - Nihao Group"
         html = self._render_template(
@@ -395,27 +412,13 @@ class EmailService:
             to_email, subject, html, mail_config=mail_config, attachments=nda_attachments,
         )
 
-    async def send_troducer_welcome(
-        self, to_email: str, first_name: str = "",
-        mail_config: Optional[Dict[str, Any]] = None,
-    ) -> bool:
-        """Send welcome email when a TRODUCER account is created by admin with a password."""
-        name = first_name or "there"
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
-        login_url = f"{base_url}/login"
-        subject = "Your Troducer Account is Ready - Nihao Group"
-        html = self._render_template("troducer_welcome.html", name=name, login_url=login_url)
-        return await self._send_email(to_email, subject, html, mail_config=mail_config)
-
     async def send_introducer_approved(
         self, to_email: str, first_name: str = "",
         mail_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """Send confirmation email when introducer NDA is approved."""
         name = first_name or "there"
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        base_url = _resolve_base_url(mail_config)
         dashboard_url = f"{base_url}/introducer/dashboard"
         subject = "NDA Approved - Welcome to the Introducer Programme - Nihao Group"
         html = self._render_template(
@@ -434,8 +437,7 @@ class EmailService:
     ) -> bool:
         """Send NDA invitation email with attached PDF to a PRE_NDA buyer. nda_attachments: list of {filename, content} from document_delivery_service."""
         name = first_name or "there"
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        base_url = _resolve_base_url(mail_config)
         setup_url = f"{base_url}/setup-password?token={invitation_token}"
         subject = "Complete Your Registration - NDA Required - Nihao Group"
         html = self._render_template(
@@ -452,8 +454,7 @@ class EmailService:
     ) -> bool:
         """Send confirmation email when a PRE_NDA buyer's NDA is approved."""
         name = first_name or "there"
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
+        base_url = _resolve_base_url(mail_config)
         login_url = f"{base_url}/login"
         subject = "NDA Approved - Welcome to Nihao Group"
         html = self._render_template(
@@ -468,15 +469,18 @@ class EmailService:
         invited_first_name: str | None,
         personal_note: str | None,
         invitation_url: str,
+        nda_download_url: str | None = None,
         expiry_days: int = 7,
         mail_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
-        """Send referral invitation email from an introducer to a potential client."""
+        """Send referral invitation email from an introducer to a potential client.
+        nda_download_url: link to platform-served NDA PDF (GET /api/v1/contact/nda-template)."""
         context = {
             "introducer_name": introducer_name,
             "invited_name": invited_first_name or "there",
             "personal_note": personal_note,
             "invitation_url": invitation_url,
+            "nda_download_url": nda_download_url,
             "expiry_days": expiry_days,
         }
         subject = f"{introducer_name} invited you to NIHA — Carbon Credit Trading Platform"
@@ -488,16 +492,21 @@ class EmailService:
         to_email: str,
         first_name: str,
         attachments: Optional[List[Dict[str, Any]]] = None,
+        mail_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """Send email when user account is approved. Optional attachments (e.g. MSA, Custody, Fee Schedule, Risk Disclosure, Derivatives)."""
         name = first_name or "there"
+        if mail_config is None:
+            mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "Your account has been verified - Nihao Group"
         html = self._render_template(
             "account_approved.html",
             name=name,
             documents_attached=bool(attachments),
+            app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html, attachments=attachments)
+        return await self._send_email(to_email, subject, html, attachments=attachments, mail_config=mail_config)
 
     async def send_kyc_rejected(
         self, to_email: str, first_name: str, reason: str = ""
@@ -547,11 +556,13 @@ class EmailService:
     ) -> bool:
         """Notify user their deposit cleared AML and funds are available."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = f"Funds Available - {currency} {_fmt(amount)} Cleared - Nihao Group"
         html = self._render_template(
-            "deposit_cleared.html", name=name, amount=_fmt(amount), currency=currency,
+            "deposit_cleared.html", name=name, amount=_fmt(amount), currency=currency, app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_deposit_rejected(
         self, to_email: str, first_name: str, amount: float, currency: str, reason: str
@@ -578,9 +589,11 @@ class EmailService:
     async def send_account_funded(self, to_email: str, first_name: str) -> bool:
         """Send email when user account is funded and ready for trading"""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "Your account is now active - Start Trading!"
-        html = self._render_template("account_funded.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template("account_funded.html", name=name, app_url=app_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_contact_followup(self, to_email: str, entity_name: str) -> bool:
         """Send follow-up email after contact request"""
@@ -655,14 +668,16 @@ class EmailService:
     ) -> bool:
         """Send settlement completion email"""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = f"Settlement Complete - {_fmt(quantity)} {certificate_type} Delivered"
         html = self._render_template(
             "settlement_completed.html",
             name=name, batch_reference=batch_reference,
             certificate_type=certificate_type, quantity=_fmt(quantity),
-            new_balance=_fmt(new_balance),
+            new_balance=_fmt(new_balance), app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_settlement_failed(
         self,
@@ -696,6 +711,8 @@ class EmailService:
         current_status: str,
     ) -> bool:
         """Send admin alert for overdue settlement"""
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = f"\u26A0\uFE0F ALERT: Settlement {batch_reference} is {days_overdue} days overdue"
         html = self._render_template(
             "admin_overdue_settlement.html",
@@ -703,8 +720,9 @@ class EmailService:
             certificate_type=certificate_type, quantity=_fmt(quantity),
             expected_date=expected_date, days_overdue=days_overdue,
             current_status=current_status.replace("_", " ").title(),
+            app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_withdrawal_requested(
         self, to_email: str, first_name: str, amount: float, currency: str = "EUR"
@@ -761,10 +779,11 @@ class EmailService:
         name = first_name or "there"
         subject = "Welcome to Nihao Group - Account Activated"
         mail_config = await self._get_db_mail_config()
-        raw = (mail_config or {}).get("invitation_link_base_url", "") or ""
-        base_url = _strip_path(raw.strip()) if raw.strip() else "http://localhost:5173"
-        if role in ("INTRODUCER", "PREINTRODUCER", "TRODUCER"):
+        base_url = _resolve_base_url(mail_config)
+        if role == "INTRODUCER":
             dashboard_url = f"{base_url}/introducer/dashboard"
+        elif role == "PREINTRODUCER":
+            dashboard_url = f"{base_url}/preintroducer"
         else:
             dashboard_url = f"{base_url}/dashboard"
         html = self._render_template("welcome_activated.html", name=name, dashboard_url=dashboard_url)
@@ -786,39 +805,49 @@ class EmailService:
     ) -> bool:
         """Notify user that AML cleared and they can now trade on CEA market (AML -> CEA)."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "Account Activated for Trading - Nihao Group"
         html = self._render_template(
-            "trading_activated.html", name=name, amount=_fmt(amount), currency=currency,
+            "trading_activated.html", name=name, amount=_fmt(amount), currency=currency, app_url=app_url,
         )
-        return await self._send_email(to_email, subject, html)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_cea_settlement_pending(self, to_email: str, first_name: str = "") -> bool:
         """Notify user that CEA settlement is in progress (CEA -> CEA_SETTLE)."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "CEA Settlement in Progress - Nihao Group"
-        html = self._render_template("cea_settlement_pending.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template("cea_settlement_pending.html", name=name, app_url=app_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_swap_access_granted(self, to_email: str, first_name: str = "") -> bool:
         """Notify user that swap market is unlocked (CEA_SETTLE -> SWAP)."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "Swap Market Unlocked - Nihao Group"
-        html = self._render_template("swap_access_granted.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template("swap_access_granted.html", name=name, app_url=app_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_eua_settlement_pending(self, to_email: str, first_name: str = "") -> bool:
         """Notify user that EUA settlement is in progress (SWAP -> EUA_SETTLE)."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "EUA Settlement in Progress - Nihao Group"
-        html = self._render_template("eua_settlement_pending.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template("eua_settlement_pending.html", name=name, app_url=app_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_eua_access_granted(self, to_email: str, first_name: str = "") -> bool:
         """Notify user that full access is activated (EUA_SETTLE -> EUA)."""
         name = first_name or "there"
+        mail_config = await self._get_db_mail_config()
+        app_url = _resolve_base_url(mail_config)
         subject = "Full Access Activated - Nihao Group"
-        html = self._render_template("eua_access_granted.html", name=name)
-        return await self._send_email(to_email, subject, html)
+        html = self._render_template("eua_access_granted.html", name=name, app_url=app_url)
+        return await self._send_email(to_email, subject, html, mail_config=mail_config)
 
     async def send_test_email(
         self, to_email: str, mail_config: Optional[Dict[str, Any]] = None

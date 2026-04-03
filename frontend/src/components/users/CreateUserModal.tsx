@@ -36,12 +36,17 @@ export function CreateUserModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-user-modal-title"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="bg-navy-800 rounded-2xl shadow-2xl w-full max-w-md mx-4"
       >
         <div className="flex items-center justify-between p-6 border-b border-navy-700">
-          <h2 className="text-xl font-bold text-white">Create New User</h2>
+          <h2 id="create-user-modal-title" className="text-xl font-bold text-white">
+            Create New User
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-navy-700 rounded-lg"
@@ -86,18 +91,12 @@ export function CreateUserModal({
               value={newUser.role}
               onChange={(e) => {
                 const role = e.target.value as UserRole;
-                const updates: Partial<typeof newUser> = { role };
-                if (role === 'PREINTRODUCER') {
-                  updates.position = 'Pre-Introducer';
-                  setUseInvitation(false);
-                }
-                setNewUser({ ...newUser, ...updates });
+                setNewUser({ ...newUser, role });
               }}
               className="w-full form-select"
             >
               <option value="MM">MM (Market Maker)</option>
               <option value="PREINTRODUCER">Pre-Introducer</option>
-              <option value="TRODUCER">Troducer</option>
               <option value="INTRODUCER">Introducer</option>
               <option value="NDA">NDA</option>
               <option value="REJECTED">Rejected</option>
@@ -131,7 +130,7 @@ export function CreateUserModal({
               </div>
             )}
 
-            {(!useInvitation || newUser.role === 'PREINTRODUCER') && (
+            {newUser.role !== 'PREINTRODUCER' && !useInvitation && (
               <Input
                 label="Password"
                 type="password"
@@ -143,7 +142,7 @@ export function CreateUserModal({
 
             <p className="text-xs text-navy-400">
               {newUser.role === 'PREINTRODUCER'
-                ? 'Admin sets the password. No invitation email will be sent.'
+                ? 'The user receives an email with the NDA PDF and a link to set their password and upload the signed NDA. A pending row appears under Onboarding → Introducer.'
                 : useInvitation
                   ? 'An invitation email will be sent to the user to set up their password.'
                   : 'The user will be able to login immediately with this password.'}
@@ -158,9 +157,19 @@ export function CreateUserModal({
             variant="primary"
             onClick={onSubmit}
             loading={saving}
-            disabled={!newUser.email || !newUser.firstName || !newUser.lastName || ((!useInvitation || newUser.role === 'PREINTRODUCER') && newUser.password.length < 8)}
+            disabled={
+              !newUser.email ||
+              !newUser.firstName ||
+              !newUser.lastName ||
+              (newUser.role !== 'PREINTRODUCER' && !useInvitation && newUser.password.length < 8)
+            }
           >
-            {useInvitation ? (
+            {newUser.role === 'PREINTRODUCER' ? (
+              <>
+                <Mail className="w-4 h-4" />
+                Send NDA invitation
+              </>
+            ) : useInvitation ? (
               <>
                 <Mail className="w-4 h-4" />
                 Send Invitation

@@ -8,12 +8,11 @@ and payment terms pre-filled with NIHA's standard rates.
 from datetime import date
 from typing import Optional
 
-from reportlab.platypus import Spacer, PageBreak, Paragraph
+from reportlab.platypus import Spacer, Paragraph
 from reportlab.lib.units import mm
 
 from .styles import (
     build_niha_pdf, gold_separator, thin_separator, filled,
-    niha_party_block, client_party_block,
     NihaFonts, NihaColors,
 )
 from .msa_generator import _data_table

@@ -79,8 +79,6 @@ export function Header() {
       links.push({ href: '/introducer/dashboard', label: 'Introducer', icon: null });
     } else if (role === 'PREINTRODUCER') {
       links.push({ href: '/preintroducer', label: 'Referral Code', icon: null });
-    } else if (role === 'TRODUCER') {
-      links.push({ href: '/troducer', label: 'Troducer Code', icon: null });
     } else if (role === 'INTRODUCER') {
       links.push({ href: '/introducer/dashboard', label: 'Introducer Portal', icon: null });
       links.push({ href: '/introducer/dashboard', label: 'Referrals', icon: UserPlus, highlight: true });
@@ -98,11 +96,6 @@ export function Header() {
       if (canCashMarket) links.push({ href: '/cash-market', label: 'CEA Cash', icon: null });
       if (canSwap) links.push({ href: '/swap', label: 'Swap', icon: null });
       if (canOnboarding) links.push({ href: '/onboarding', label: 'Onboarding', icon: null });
-    }
-
-    // Hide Dashboard when on cash-market (trading terminal uses full viewport)
-    if (location.pathname === '/cash-market') {
-      return links.filter(l => l.href !== '/dashboard');
     }
 
     return links;
@@ -126,8 +119,8 @@ export function Header() {
             <Logo variant={isLandingPage || isDark ? 'light' : 'dark'} />
           </Link>
 
-          {/* Price Ticker (Desktop) */}
-          {!isLandingPage && (
+          {/* Price Ticker (Desktop) — admin only */}
+          {!isLandingPage && isRealAdmin && (
             <div className="hidden lg:block">
               <PriceTicker prices={prices} variant="compact" />
             </div>

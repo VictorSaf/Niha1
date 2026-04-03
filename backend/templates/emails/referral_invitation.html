@@ -29,6 +29,16 @@
   </div>
 </div>
 
+{% if nda_download_url %}
+<div class="callout info" style="margin-top: 20px;">
+  <p class="callout-title">Next steps</p>
+  <p><strong>1.</strong> Download the NDA template (already signed by Nihao Group):<br>
+  <a href="{{ nda_download_url }}" style="color: #34d399; text-decoration: underline;">Download NDA (PDF)</a><br>
+  <strong>2.</strong> Review and countersign the document<br>
+  <strong>3.</strong> Click the button below to create your account and upload the signed NDA</p>
+</div>
+{% endif %}
+
 <a href="{{ invitation_url }}" class="btn btn-primary">Create Your Account</a>
 
 <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">

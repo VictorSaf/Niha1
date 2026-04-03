@@ -43,7 +43,7 @@ describe('getEffectiveRole', () => {
 describe('USER_ROLES', () => {
   it('includes all expected platform roles', () => {
     const expected = [
-      'ADMIN', 'MM', 'PREINTRODUCER', 'TRODUCER', 'PRE_NDA', 'INTRODUCER',
+      'ADMIN', 'MM', 'PREINTRODUCER', 'PRE_NDA', 'INTRODUCER',
       'NDA', 'REJECTED', 'KYC', 'APPROVED', 'FUNDING',
       'AML', 'CEA', 'CEA_SETTLE', 'SWAP', 'EUA_SETTLE', 'EUA',
     ];

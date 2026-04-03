@@ -24,6 +24,7 @@ export function SetupPasswordPage() {
     email: string;
     firstName: string;
     lastName: string;
+    role?: string;
   } | null>(null);
   const [error, setError] = useState('');
 
@@ -78,11 +79,9 @@ export function SetupPasswordPage() {
 
     try {
       logger.debug('[SetupPasswordPage] Setting up password for token');
-      const { access_token, user } = await authApi.setupPassword(
-        token,
-        password,
-        confirmPassword
-      );
+      const res = await authApi.setupPassword(token, password, confirmPassword);
+      const tokenValue = res.accessToken ?? res.access_token ?? '';
+      const user = res.user;
 
       logger.debug('[SetupPasswordPage] Password setup successful, setting auth for user:', {
         email: user.email,
@@ -91,10 +90,10 @@ export function SetupPasswordPage() {
       });
 
       // Store auth (user is now logged in)
-      setAuth(user, access_token);
+      setAuth(user, tokenValue);
 
-      // TRODUCER or form-submitted PREINTRODUCER (nda_signed=false) → show NDA upload step
-      if (user.role === 'TRODUCER' || (user.role === 'PREINTRODUCER' && !user.ndaSigned)) {
+      // PREINTRODUCER with NDA pending → show NDA upload step
+      if (user.role === 'PREINTRODUCER' && !user.ndaSigned) {
         setStep('nda');
         return;
       }
@@ -118,7 +117,7 @@ export function SetupPasswordPage() {
     setError('');
     try {
       await contactApi.uploadIntroducerNDA(ndaFile);
-      // Clear auth state — TRODUCER cannot login until admin approves
+      // Clear auth state — PREINTRODUCER cannot login until admin approves NDA
       useAuthStore.getState().logout();
       setStep('done');
     } catch (err: unknown) {
@@ -321,6 +320,25 @@ export function SetupPasswordPage() {
             Set up your password to activate your account
           </p>
         </div>
+
+        {/* Step indicator for PREINTRODUCER */}
+        {userInfo?.role === 'PREINTRODUCER' && (
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center">
+                <span className="text-xs font-bold text-white">1</span>
+              </div>
+              <span className="text-sm text-emerald-400 font-medium">Set Password</span>
+            </div>
+            <div className="flex-1 h-px bg-navy-600" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-navy-600 flex items-center justify-center">
+                <span className="text-xs font-bold text-navy-400">2</span>
+              </div>
+              <span className="text-sm text-navy-400">Upload NDA</span>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email (readonly) */}

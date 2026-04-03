@@ -9,7 +9,7 @@ interface Props {
   title?: string;
 }
 
-const DEFAULT_COLOR = 'rgb(52, 211, 153)';
+const DEFAULT_COLOR = 'var(--color-success)';
 
 export function MiniFlow({ steps, title }: Props) {
   return (

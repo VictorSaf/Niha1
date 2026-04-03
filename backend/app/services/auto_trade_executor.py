@@ -170,6 +170,15 @@ class AutoTradeExecutor:
                     avg_order_value = settings.target_liquidity / Decimal(str(settings.avg_order_count))
                     min_quantity = max(Decimal("1"), avg_order_value / Decimal("70"))
 
+                # Spread: CEA cash uses avg_spread (target e.g. 0.1 EUR); SWAP uses price_deviation_pct
+                if market_key in ("CEA_BID", "CEA_ASK"):
+                    target_spread = settings.avg_spread if settings.avg_spread is not None else Decimal("0.1")
+                    spread_min = target_spread
+                    spread_max = target_spread * Decimal("1.5")
+                else:
+                    spread_min = settings.price_deviation_pct or Decimal("0.01")
+                    spread_max = (settings.price_deviation_pct or Decimal("0.01")) * Decimal("3")
+
                 rule = AutoTradeRule(
                     market_maker_id=mm.id,
                     name=f"{prefix} - {mm.name}",
@@ -177,8 +186,8 @@ class AutoTradeExecutor:
                     side=side,
                     order_type="LIMIT",
                     price_mode=AutoTradePriceMode.RANDOM_SPREAD,
-                    spread_min=settings.price_deviation_pct or Decimal("0.01"),
-                    spread_max=(settings.price_deviation_pct or Decimal("0.01")) * Decimal("3"),
+                    spread_min=spread_min,
+                    spread_max=spread_max,
                     max_price_deviation=settings.price_deviation_pct,
                     quantity_mode=AutoTradeQuantityMode.RANDOM_RANGE,
                     min_quantity=min_quantity,
@@ -234,6 +243,7 @@ class AutoTradeExecutor:
     def calculate_next_execution_time(
         rule: AutoTradeRule,
         interval_variation_pct: Optional[Decimal] = None,
+        override_interval_factor: Optional[float] = None,
     ) -> datetime:
         """
         Calculate the next execution time based on interval mode.
@@ -242,6 +252,9 @@ class AutoTradeExecutor:
 
         If interval_variation_pct is provided (from market settings), applies
         ±pct% random variation to the calculated interval.
+
+        If override_interval_factor is provided (e.g. 0.25 for spread narrowing),
+        multiplies the base interval by this factor for faster execution.
         """
         # Naive UTC for TIMESTAMP WITHOUT TIME ZONE (asyncpg)
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -269,6 +282,10 @@ class AutoTradeExecutor:
             pct = float(interval_variation_pct)
             factor = 1.0 + random.uniform(-pct / 100, pct / 100)
             interval_secs = max(1, int(interval_secs * factor))
+
+        # Apply override for spread narrowing (shorter interval when spread >> target)
+        if override_interval_factor is not None and 0 < override_interval_factor < 1:
+            interval_secs = max(1, int(interval_secs * override_interval_factor))
 
         return now + timedelta(seconds=interval_secs)
 
@@ -665,8 +682,11 @@ class AutoTradeExecutor:
         is_swap: bool = False,
     ) -> Tuple[Optional[Decimal], str]:
         """
-        Run the 4-priority chain and return (price, reason).
+        Run the 5-priority chain and return (price, reason).
 
+        When MM introduces a new order, first priority is to achieve target spread (0.1 EUR for cash).
+
+        Priority 0: Spread narrowing — if spread > target, place order to narrow it
         Priority 1: Gap filling
         Priority 2: Price alignment toward scraped price
         Priority 3: Level rebalancing near best
@@ -677,6 +697,23 @@ class AutoTradeExecutor:
         tick = max(raw_tick, Decimal("0.0001"))  # guard against zero/negative
         best_price = best_bid if side == OrderSide.BUY else best_ask
         max_per_level = (market_settings.max_orders_per_price_level if market_settings else 3) or 3
+
+        # Target spread when settings.avg_spread is NULL: 0.1 EUR for cash, 0.0050 ratio for swap (matches EUA_SWAP typical avg_spread)
+        default_target_spread = Decimal("0.0050") if is_swap else Decimal("0.1")
+        target_spread = (
+            Decimal(str(market_settings.avg_spread))
+            if market_settings and market_settings.avg_spread is not None
+            else default_target_spread
+        )
+
+        # Priority 0 — spread narrowing (first when MM introduces order)
+        if best_bid is not None and best_ask is not None:
+            spread = best_ask - best_bid
+            if spread > target_spread:
+                if side == OrderSide.BUY and best_bid + tick < best_ask:
+                    return best_bid + tick, "priority0_spread_narrow"
+                if side == OrderSide.SELL and best_ask - tick > best_bid:
+                    return best_ask - tick, "priority0_spread_narrow"
 
         # Priority 1 — gap filling
         gaps = await AutoTradeExecutor.find_price_gaps(
@@ -694,7 +731,13 @@ class AutoTradeExecutor:
                 threshold=tick * 2,  # align when > 2 ticks away
             )
             if align_price is not None:
-                return align_price, "priority2_price_alignment"
+                # Guard: BUY must not cross above best_ask; SELL must not cross below best_bid
+                if side == OrderSide.BUY and best_ask is not None and align_price >= best_ask:
+                    align_price = best_ask - tick
+                elif side == OrderSide.SELL and best_bid is not None and align_price <= best_bid:
+                    align_price = best_bid + tick
+                if align_price > Decimal("0"):
+                    return align_price, "priority2_price_alignment"
 
         # Priority 3 — level rebalancing
         if best_price and market_settings:
@@ -1358,6 +1401,8 @@ class AutoTradeExecutor:
         price: Optional[Decimal],
         quantity: Decimal,
         admin_user_id: uuid.UUID,
+        interval_variation_pct: Optional[Decimal] = None,
+        override_interval_factor: Optional[float] = None,
     ) -> Tuple[Optional[Order], str]:
         """
         Place an order for the market maker.
@@ -1428,7 +1473,11 @@ class AutoTradeExecutor:
 
             # Update rule execution tracking (naive UTC for asyncpg)
             rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-            rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule)
+            rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                rule,
+                interval_variation_pct=interval_variation_pct,
+                override_interval_factor=override_interval_factor,
+            )
             rule.execution_count = (rule.execution_count or 0) + 1
 
             await db.commit()
@@ -1641,9 +1690,12 @@ class AutoTradeExecutor:
 
         Behavior based on liquidity status:
         - below_target: Place new orders to refill liquidity
-        - at_target: Skip execution (maintain current level)
-        - above_target: Execute internal trades to consume excess
+        - at_target: Skip execution (maintain current level), unless spread > target
+        - above_target: Execute internal trades to consume excess, unless spread > target
         - no_target: Place orders normally (no liquidity management)
+
+        Priority 0 (spread narrowing) overrides at_target and above_target: if spread > avg_spread,
+        the executor places a spread-narrowing order even when liquidity is at or above target.
 
         Returns a dict with execution result details.
         """
@@ -1741,73 +1793,111 @@ class AutoTradeExecutor:
                 return result
 
             if status == "at_target":
-                # Liquidity is at target level — try periodic internal trade if interval allows
-                if (
-                    market_settings
-                    and market_settings.internal_trade_interval
-                    and market_settings.internal_trade_volume_min is not None
-                ):
+                # Priority 0: spread narrowing can exceed liquidity level — check first
+                best_bid, best_ask = await AutoTradeExecutor.get_best_prices(db, certificate_type)
+                target_spread = (
+                    Decimal(str(market_settings.avg_spread))
+                    if market_settings and market_settings.avg_spread is not None
+                    else (Decimal("0.0050") if market_type == MarketType.SWAP else Decimal("0.1"))
+                )
+                spread_needs_narrowing = (
+                    best_bid is not None
+                    and best_ask is not None
+                    and (best_ask - best_bid) > target_spread
+                )
+                if spread_needs_narrowing:
+                    # Fall through to order placement — priority 0 overrides at_target
+                    status = "below_target"  # treat as place-order path
+                    result["action"] = "place_order_spread_priority"
+                    logger.info(
+                        f"Rule {rule.name}: At target but spread > {target_spread} — "
+                        "placing spread-narrowing order (priority 0 exceeds liquidity level)"
+                    )
+                else:
+                    # Liquidity is at target and spread OK — try periodic internal trade if interval allows
+                    if (
+                        market_settings
+                        and market_settings.internal_trade_interval
+                        and market_settings.internal_trade_volume_min is not None
+                    ):
+                        internal_result = await AutoTradeExecutor.execute_internal_trade(
+                            db, certificate_type, admin_user_id,
+                            market_settings=market_settings,
+                            market_key=market_key,
+                        )
+                        if internal_result["success"]:
+                            logger.info(
+                                f"Rule {rule.name}: At-target periodic internal trade: "
+                                f"{internal_result['quantity']} @ {internal_result['price']}"
+                            )
+                            result["success"] = True
+                            result["action"] = "internal_trade_periodic"
+                            result["internal_trade"] = internal_result
+                        else:
+                            result["reason"] = f"at_target_internal_skipped: {internal_result['reason']}"
+                            result["action"] = "skipped"
+                    else:
+                        result["reason"] = "liquidity_at_target"
+                        result["action"] = "skipped"
+
+                    rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                    rule.execution_count = (rule.execution_count or 0) + 1
+                    await db.commit()
+                    return result
+
+            if status == "above_target":
+                # Priority 0: spread narrowing can exceed liquidity — if spread > target, place order instead
+                best_bid_at, best_ask_at = await AutoTradeExecutor.get_best_prices(db, certificate_type)
+                target_spread_at = (
+                    Decimal(str(market_settings.avg_spread))
+                    if market_settings and market_settings.avg_spread is not None
+                    else (Decimal("0.0050") if market_type == MarketType.SWAP else Decimal("0.1"))
+                )
+                spread_needs_narrowing_at = (
+                    best_bid_at is not None
+                    and best_ask_at is not None
+                    and (best_ask_at - best_bid_at) > target_spread_at
+                )
+                if spread_needs_narrowing_at:
+                    status = "below_target"
+                    result["action"] = "place_order_spread_priority"
+                    logger.info(
+                        f"Rule {rule.name}: Above target but spread > {target_spread_at} — "
+                        "placing spread-narrowing order (priority 0 exceeds liquidity level)"
+                    )
+                else:
+                    # Liquidity exceeds target - consume via internal trade
+                    logger.info(
+                        f"Rule {rule.name}: Liquidity above target ({current_liq}/{target_liq} EUR) - "
+                        f"executing internal trade to consume excess"
+                    )
+
                     internal_result = await AutoTradeExecutor.execute_internal_trade(
                         db, certificate_type, admin_user_id,
                         market_settings=market_settings,
                         market_key=market_key,
                     )
+
+                    rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                    rule.execution_count = (rule.execution_count or 0) + 1
+                    await db.commit()
+
+                    result["success"] = internal_result["success"]
+                    result["action"] = "internal_trade"
+                    result["internal_trade"] = internal_result
+
                     if internal_result["success"]:
                         logger.info(
-                            f"Rule {rule.name}: At-target periodic internal trade: "
+                            f"Rule {rule.name} executed internal trade: "
                             f"{internal_result['quantity']} @ {internal_result['price']}"
                         )
-                        result["success"] = True
-                        result["action"] = "internal_trade_periodic"
-                        result["internal_trade"] = internal_result
                     else:
-                        # Cooldown or no matching orders — just skip
-                        result["reason"] = f"at_target_internal_skipped: {internal_result['reason']}"
-                        result["action"] = "skipped"
-                else:
-                    result["reason"] = "liquidity_at_target"
-                    result["action"] = "skipped"
+                        result["reason"] = f"internal_trade_failed: {internal_result['reason']}"
+                        logger.warning(f"Rule {rule.name} internal trade failed: {internal_result['reason']}")
 
-                # Schedule next execution
-                rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
-                rule.execution_count = (rule.execution_count or 0) + 1
-                await db.commit()
-                return result
-
-            if status == "above_target":
-                # Liquidity exceeds target - consume via internal trade
-                logger.info(
-                    f"Rule {rule.name}: Liquidity above target ({current_liq}/{target_liq} EUR) - "
-                    f"executing internal trade to consume excess"
-                )
-
-                internal_result = await AutoTradeExecutor.execute_internal_trade(
-                    db, certificate_type, admin_user_id,
-                    market_settings=market_settings,
-                    market_key=market_key,
-                )
-
-                # Update rule execution tracking
-                rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
-                rule.execution_count = (rule.execution_count or 0) + 1
-                await db.commit()
-
-                result["success"] = internal_result["success"]
-                result["action"] = "internal_trade"
-                result["internal_trade"] = internal_result
-
-                if internal_result["success"]:
-                    logger.info(
-                        f"Rule {rule.name} executed internal trade: "
-                        f"{internal_result['quantity']} @ {internal_result['price']}"
-                    )
-                else:
-                    result["reason"] = f"internal_trade_failed: {internal_result['reason']}"
-                    logger.warning(f"Rule {rule.name} internal trade failed: {internal_result['reason']}")
-
-                return result
+                    return result
 
             # status == "below_target" or "no_target" - place new orders
             if status == "below_target":
@@ -1834,8 +1924,20 @@ class AutoTradeExecutor:
             # Get best prices for price calculation
             best_bid, best_ask = await AutoTradeExecutor.get_best_prices(db, certificate_type)
 
-            # --- 4-PRIORITY ORDER PLACEMENT CHAIN ---
-            # Try priorities 1-3 before falling back to normal (priority 4)
+            # Detect spread-priority large-spread: use smaller volume to look natural
+            target_spread_placement = (
+                Decimal(str(market_settings.avg_spread))
+                if market_settings and market_settings.avg_spread is not None
+                else (Decimal("0.0050") if market_type == MarketType.SWAP else Decimal("0.1"))
+            )
+            current_spread = (best_ask - best_bid) if (best_bid and best_ask) else Decimal("0")
+            spread_priority_large_spread = (
+                result["action"] == "place_order_spread_priority"
+                and current_spread > target_spread_placement * Decimal("2")
+            )
+
+            # --- 5-PRIORITY ORDER PLACEMENT CHAIN ---
+            # Try priorities 0-3 before falling back to normal (priority 4)
             priority_price, priority_reason = await AutoTradeExecutor.determine_priority_price(
                 db, certificate_type, rule.side, market_settings,
                 scraped_price=market_price,
@@ -1844,7 +1946,7 @@ class AutoTradeExecutor:
             )
 
             if priority_price is not None:
-                # Priorities 1-3 provided a price — use it directly
+                # Priorities 0-3 provided a price — use it directly
                 price = priority_price
                 price_reason = priority_reason
                 logger.info(f"Rule {rule.name}: {priority_reason} → price={price}")
@@ -1881,7 +1983,11 @@ class AutoTradeExecutor:
             if price is None and rule.order_type == "LIMIT":
                 result["reason"] = f"price_calculation_failed: {price_reason}"
                 # Schedule next execution anyway
-                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                    rule,
+                    interval_variation_pct=_interval_var,
+                    override_interval_factor=None,
+                )
                 await db.commit()
                 return result
 
@@ -1960,7 +2066,11 @@ class AutoTradeExecutor:
                                 market_key=market_key,
                             )
                             rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                            rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                            rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                                rule,
+                                interval_variation_pct=_interval_var,
+                                override_interval_factor=None,
+                            )
                             rule.execution_count = (rule.execution_count or 0) + 1
                             await db.commit()
 
@@ -1978,7 +2088,11 @@ class AutoTradeExecutor:
                             return result
 
                         result["reason"] = "all_price_levels_at_max_capacity"
-                        rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                        rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                            rule,
+                            interval_variation_pct=_interval_var,
+                            override_interval_factor=None,
+                        )
                         await db.commit()
                         return result
 
@@ -1994,6 +2108,10 @@ class AutoTradeExecutor:
                     variation_pct=market_settings.min_order_value_variation_pct,
                     max_volume_eur=market_settings.max_order_volume_eur,
                 )
+                # When spread >> target, use smaller volume to avoid exceeding target liquidity
+                if spread_priority_large_spread:
+                    volume_eur = (volume_eur * Decimal("0.4")).quantize(Decimal("0.01"))
+                    volume_eur = max(volume_eur, market_settings.min_order_volume_eur or Decimal("1"))
                 # Convert EUR volume to quantity (certificates)
                 # IMPORTANT: For SWAP market, price is ratio (CEA/EUA), not EUR price!
                 # We need to use the actual EUA EUR price to calculate quantity
@@ -2017,7 +2135,11 @@ class AutoTradeExecutor:
 
             if quantity is None or quantity <= 0:
                 result["reason"] = f"quantity_calculation_failed: {qty_reason}"
-                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                    rule,
+                    interval_variation_pct=_interval_var,
+                    override_interval_factor=None,
+                )
                 await db.commit()
                 return result
 
@@ -2029,14 +2151,20 @@ class AutoTradeExecutor:
 
             if not is_valid:
                 result["reason"] = f"validation_failed: {validation_reason}"
-                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(rule, _interval_var)
+                rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                    rule,
+                    interval_variation_pct=_interval_var,
+                    override_interval_factor=None,
+                )
                 await db.commit()
                 return result
 
             # Place the order
             order, ticket_id = await AutoTradeExecutor.place_order(
                 db, rule, market_maker, certificate_type, market_type,
-                price, quantity, admin_user_id
+                price, quantity, admin_user_id,
+                interval_variation_pct=_interval_var,
+                override_interval_factor=None,
             )
 
             if order:

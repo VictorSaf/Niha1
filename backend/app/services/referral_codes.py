@@ -44,13 +44,13 @@ async def validate_referral_code(
 ) -> dict | None:
     """
     Validate a referral code.
-    Returns { user_id, type: 'preintroducer' | 'troducer' | 'introducer' } or None if invalid.
+    Returns { user_id, type: 'preintroducer' | 'introducer' } or None if invalid.
     """
     result = await db.execute(
         select(User).where(
             User.referral_code == code,
             User.is_active.is_(True),
-            User.role.in_([UserRole.PREINTRODUCER, UserRole.TRODUCER, UserRole.INTRODUCER]),
+            User.role.in_([UserRole.PREINTRODUCER, UserRole.INTRODUCER]),
         )
     )
     user = result.scalar_one_or_none()
@@ -59,7 +59,6 @@ async def validate_referral_code(
 
     role_to_type = {
         UserRole.PREINTRODUCER: "preintroducer",
-        UserRole.TRODUCER: "troducer",
         UserRole.INTRODUCER: "introducer",
     }
     return {"user_id": user.id, "type": role_to_type[user.role]}
@@ -76,7 +75,7 @@ async def consume_referral_code(db: AsyncSession, code: str) -> UUID | None:
         .where(
             User.referral_code == code,
             User.is_active.is_(True),
-            User.role.in_([UserRole.PREINTRODUCER, UserRole.TRODUCER, UserRole.INTRODUCER]),
+            User.role.in_([UserRole.PREINTRODUCER, UserRole.INTRODUCER]),
         )
         .with_for_update()
     )

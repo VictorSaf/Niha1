@@ -59,12 +59,12 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <MiniBarChart
             title="Barrier Strength (qualitative)"
             bars={[
-              { label: 'Regulatory auth.', value: 95, color: 'rgb(248,113,113)' },
-              { label: 'Bilateral relationships', value: 90, color: 'rgb(248,113,113)' },
-              { label: 'Cross-border expertise', value: 80, color: 'rgb(251,191,36)' },
-              { label: 'Execution infrastructure', value: 75, color: 'rgb(251,191,36)' },
-              { label: 'Network effects', value: 85, color: 'rgb(248,113,113)' },
-              { label: 'GBA jurisdiction', value: 95, color: 'rgb(248,113,113)' },
+              { label: 'Regulatory auth.', value: 95, color: 'var(--color-ask)' },
+              { label: 'Bilateral relationships', value: 90, color: 'var(--color-ask)' },
+              { label: 'Cross-border expertise', value: 80, color: 'var(--color-cea)' },
+              { label: 'Execution infrastructure', value: 75, color: 'var(--color-cea)' },
+              { label: 'Network effects', value: 85, color: 'var(--color-ask)' },
+              { label: 'GBA jurisdiction', value: 95, color: 'var(--color-ask)' },
             ]}
             maxValue={100}
           />
@@ -77,9 +77,9 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <MiniBarChart
             title="Annual Savings by Path"
             bars={[
-              { label: 'Path A (Steel)', value: 1620, displayValue: '€1.62M/yr', color: 'rgb(52,211,153)' },
-              { label: 'Path B (Power)', value: 500, displayValue: '¥3M + EUR', color: 'rgb(251,191,36)' },
-              { label: 'Path C (Trader)', value: 200, displayValue: '~3-5% improvement', color: 'rgb(96,165,250)' },
+              { label: 'Path A (Steel)', value: 1620, displayValue: '€1.62M/yr', color: 'var(--color-success)' },
+              { label: 'Path B (Power)', value: 500, displayValue: '¥3M + EUR', color: 'var(--color-cea)' },
+              { label: 'Path C (Trader)', value: 200, displayValue: '~3-5% improvement', color: 'var(--color-eua)' },
             ]}
           />
         </>
@@ -90,8 +90,8 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <RichText text={answer} />
           <MiniScale
             title="Price Comparison"
-            left={{ label: 'Direct', value: '€81/t', numericValue: 81, color: 'rgb(248,113,113)' }}
-            right={{ label: 'Via NIHA', value: '€71-74/t', numericValue: 72.5, color: 'rgb(52,211,153)' }}
+            left={{ label: 'Direct', value: '€81/t', numericValue: 81, color: 'var(--color-ask)' }}
+            right={{ label: 'Via NIHA', value: '€71-74/t', numericValue: 72.5, color: 'var(--color-success)' }}
             ratio="8-12% savings"
           />
         </>
@@ -103,11 +103,11 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <MiniBarChart
             title="Five Moat Layers"
             bars={[
-              { label: 'Geographic', value: 95, color: 'rgb(52,211,153)' },
-              { label: 'Regulatory', value: 90, color: 'rgb(52,211,153)' },
-              { label: 'Relationship', value: 85, color: 'rgb(251,191,36)' },
-              { label: 'Network', value: 80, color: 'rgb(251,191,36)' },
-              { label: 'First-mover', value: 75, color: 'rgb(96,165,250)' },
+              { label: 'Geographic', value: 95, color: 'var(--color-success)' },
+              { label: 'Regulatory', value: 90, color: 'var(--color-success)' },
+              { label: 'Relationship', value: 85, color: 'var(--color-cea)' },
+              { label: 'Network', value: 80, color: 'var(--color-cea)' },
+              { label: 'First-mover', value: 75, color: 'var(--color-eua)' },
             ]}
             maxValue={100}
           />
@@ -120,9 +120,9 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <MiniBarChart
             title="Client Segments by Priority"
             bars={[
-              { label: 'EU Compliance (EUA buyers)', value: 70, displayValue: 'Primary', color: 'rgb(52,211,153)' },
-              { label: 'CN Surplus (CEA sellers)', value: 50, displayValue: 'Secondary', color: 'rgb(251,191,36)' },
-              { label: 'Non-EU Swaps (portfolio)', value: 30, displayValue: 'Tertiary', color: 'rgb(96,165,250)' },
+              { label: 'EU Compliance (EUA buyers)', value: 70, displayValue: 'Primary', color: 'var(--color-success)' },
+              { label: 'CN Surplus (CEA sellers)', value: 50, displayValue: 'Secondary', color: 'var(--color-cea)' },
+              { label: 'Non-EU Swaps (portfolio)', value: 30, displayValue: 'Tertiary', color: 'var(--color-eua)' },
             ]}
             maxValue={100}
           />
@@ -178,8 +178,8 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <RichText text={answer} />
           <MiniScale
             title="500,000 Tonne Order Comparison"
-            left={{ label: 'Direct exchange', value: '€40.5M', numericValue: 40.5, color: 'rgb(248,113,113)' }}
-            right={{ label: 'Via NIHA', value: '€36-37M', numericValue: 36.5, color: 'rgb(52,211,153)' }}
+            left={{ label: 'Direct exchange', value: '€40.5M', numericValue: 40.5, color: 'var(--color-ask)' }}
+            right={{ label: 'Via NIHA', value: '€36-37M', numericValue: 36.5, color: 'var(--color-success)' }}
             ratio="€4-5M saved"
           />
         </>
@@ -190,8 +190,8 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <RichText text={answer} />
           <MiniScale
             title="CEA Sale: Domestic vs NIHA"
-            left={{ label: 'Domestic exchange', value: '¥97-99/t', numericValue: 98, color: 'rgb(248,113,113)' }}
-            right={{ label: 'Via NIHA', value: '¥103-106/t', numericValue: 104, color: 'rgb(52,211,153)' }}
+            left={{ label: 'Domestic exchange', value: '¥97-99/t', numericValue: 98, color: 'var(--color-ask)' }}
+            right={{ label: 'Via NIHA', value: '¥103-106/t', numericValue: 104, color: 'var(--color-success)' }}
             ratio="5-8% better + EUR"
           />
         </>
@@ -249,10 +249,10 @@ function FAQAccordionContent({ id, answer }: { id: string; answer: string }) {
           <MiniBarChart
             title="Barriers to EU Entity Holding CEA"
             bars={[
-              { label: 'No registry access', value: 95, color: 'rgb(248,113,113)' },
-              { label: 'Settlement requirement', value: 90, color: 'rgb(248,113,113)' },
-              { label: 'MRV compliance burden', value: 70, color: 'rgb(251,191,36)' },
-              { label: 'No precedent exists', value: 95, color: 'rgb(248,113,113)' },
+              { label: 'No registry access', value: 95, color: 'var(--color-ask)' },
+              { label: 'Settlement requirement', value: 90, color: 'var(--color-ask)' },
+              { label: 'MRV compliance burden', value: 70, color: 'var(--color-cea)' },
+              { label: 'No precedent exists', value: 95, color: 'var(--color-ask)' },
             ]}
             maxValue={100}
           />

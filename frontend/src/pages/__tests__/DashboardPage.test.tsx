@@ -66,6 +66,14 @@ vi.mock('../../services/api', async (importOriginal) => {
       ...actual.settlementApi,
       getPendingSettlements: vi.fn().mockResolvedValue({ data: [], count: 0 }),
     },
+    backofficeApi: {
+      ...actual.backofficeApi,
+      getMyDepositsAML: vi.fn().mockResolvedValue({
+        deposits: [],
+        total: 0,
+        hasMore: false,
+      }),
+    },
   };
 });
 
@@ -83,6 +91,8 @@ describe('DashboardPage – AML Cash (EUR) card', () => {
   beforeEach(() => {
     vi.mocked(useAuthStore).mockReturnValue({
       user: mockAmlUser,
+      simulatedRole: null,
+      setSimulatedRole: vi.fn(),
       token: 'token',
       isAuthenticated: true,
       setAuth: vi.fn(),
@@ -91,23 +101,14 @@ describe('DashboardPage – AML Cash (EUR) card', () => {
     });
   });
 
-  it('shows UNDER AML APPROVAL in Cash (EUR) card when user role is AML', async () => {
+  it('shows Under AML Approval in AML modal when user role is AML', async () => {
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('UNDER AML APPROVAL')).toBeInTheDocument();
+      expect(screen.getByText(/under aml approval/i)).toBeInTheDocument();
     });
-  });
-
-  it('applies amber background to Cash (EUR) card when user role is AML', async () => {
-    const { container } = renderDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('UNDER AML APPROVAL')).toBeInTheDocument();
-    });
-
-    const cashCard = container.querySelector('.dashboard-summary-card.bg-amber-500\\/50');
-    expect(cashCard).toBeInTheDocument();
+    // Modal wrapper uses aria-hidden; use text match instead of getByRole('heading').
+    expect(screen.getByText('AML Review')).toBeInTheDocument();
   });
 });
 
@@ -115,6 +116,8 @@ describe('DashboardPage – non-AML Cash (EUR) card', () => {
   beforeEach(() => {
     vi.mocked(useAuthStore).mockReturnValue({
       user: mockNonAmlUser,
+      simulatedRole: null,
+      setSimulatedRole: vi.fn(),
       token: 'token',
       isAuthenticated: true,
       setAuth: vi.fn(),

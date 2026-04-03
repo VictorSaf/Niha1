@@ -19,8 +19,8 @@ function NarrativeContent({ id, content }: { id: string; content: string }) {
           <p className="text-sm text-navy-300 leading-relaxed">{content}</p>
           <MiniScale
             title="The Price Gap"
-            left={{ label: 'EU EUA', value: '€81/t', numericValue: 81, color: 'rgb(96, 165, 250)' }}
-            right={{ label: 'China CEA', value: '~€11/t', numericValue: 11, color: 'rgb(251, 191, 36)' }}
+            left={{ label: 'EU EUA', value: '€81/t', numericValue: 81, color: 'var(--color-eua)' }}
+            right={{ label: 'China CEA', value: '~€11/t', numericValue: 11, color: 'var(--color-cea)' }}
             ratio="7-10× gap"
           />
         </>
@@ -32,8 +32,8 @@ function NarrativeContent({ id, content }: { id: string; content: string }) {
           <MiniBarChart
             title="OTC as % of EU ETS Volume"
             bars={[
-              { label: 'Exchange-traded', value: 75, displayValue: '75-85%', color: 'rgb(96, 165, 250)' },
-              { label: 'OTC / broker', value: 25, displayValue: '15-25%', color: 'rgb(52, 211, 153)' },
+              { label: 'Exchange-traded', value: 75, displayValue: '75-85%', color: 'var(--color-eua)' },
+              { label: 'OTC / broker', value: 25, displayValue: '15-25%', color: 'var(--color-success)' },
             ]}
             annotation="OTC segment = NIHA's primary target market"
           />
@@ -45,8 +45,8 @@ function NarrativeContent({ id, content }: { id: string; content: string }) {
           <p className="text-sm text-navy-300 leading-relaxed">{content}</p>
           <MiniScale
             title="Daily Volume Comparison"
-            left={{ label: 'EU ETS', value: '€3B+', numericValue: 3000, color: 'rgb(96, 165, 250)' }}
-            right={{ label: 'China ETS', value: '€9.5M', numericValue: 9.5, color: 'rgb(251, 191, 36)' }}
+            left={{ label: 'EU ETS', value: '€3B+', numericValue: 3000, color: 'var(--color-eua)' }}
+            right={{ label: 'China ETS', value: '€9.5M', numericValue: 9.5, color: 'var(--color-cea)' }}
             ratio="316× difference"
           />
         </>

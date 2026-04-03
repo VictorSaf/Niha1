@@ -39,14 +39,16 @@ docker compose exec backend alembic upgrade head
 |----------|---------|
 | `app_truth.md` | **SSOT** - roles, routes, ports, business rules |
 | `docs/ROLE_TRANSITIONS.md` | User role flow (NDA → KYC → ... → EUA) |
-| `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` | Troducer → INTRODUCER workflow, client journey, email templates (confirmations/links), yopmail simulations |
+| `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` | Pointer: PREINTRODUCER → INTRODUCER workflow (TRODUCER role removed 0072); see `app_truth.md` |
 | `docs/NDA_TO_EUA_WORKFLOW_SIMULATION.md` | Simulare și verificare workflow NDA → EUA (backoffice aprobă tot), email templates per tranziție, referințe cod |
 | `docs/EMAIL_TEMPLATES_USAGE.md` | Which email templates are used in code vs NU; Settings dropdown and API; user journey coverage |
 | `docs/DOCUMENT_EMAIL_MAPPING.md` | Email template → role → attached documents (account_approved, deposit_announced, etc.) |
-| `docs/API.md` | Request/response examples for Contact, Introducer, Admin; **Settings → Documents** (list/preview); **GET /admin/logging/tickets** (audit trail, action types, counterparty enrichment) |
+| `docs/API.md` | Request/response examples for Contact, Introducer, Admin; **POST /admin/users/create-preintroducer** (Backoffice → Users → Pre-Introducer, NDA invitation + Introducer onboarding row); **Settings → Documents** (list/preview); **GET /admin/logging/tickets** (audit trail, action types, counterparty enrichment); **POST /admin/contact-requests/reconcile-introducer-orphans** (feature 0073 — stale introducer `contact_requests` after user deletion; Backoffice Introducer → **Reconcile orphans**) |
+| `scripts/sql/reconcile_introducer_orphan_contact_requests.sql` | SQL equivalent of the 0073 reconcile endpoint (DBA / non-API cleanup) |
 | `docs/ADMIN_SCRAPING.md` | Price scraping (EUA/CEA), carboncredits.com single fetch, 429 backoff, admin API |
 | `frontend/docs/DESIGN_SYSTEM.md` | UI components, tokens, patterns |
 | `project-goals.md` | Current sprint goals and priorities |
+| `docs/QA_AND_TESTS_TRACKER.md` | Step-by-step QA workflow; **living log** of test runs (pytest, tsc, Vitest, browser matrix) |
 
 ## Architecture
 
@@ -112,14 +114,8 @@ Exceptions: documentation-only changes, comment-only changes, dependency updates
 
 ## Critical Rules
 
-### Frozen Files (Do Not Refactor)
-See `app_truth.md` §10. These files are locked:
-- `frontend/src/pages/onboarding/*` (all onboarding pages)
-- `frontend/src/pages/LoginPage.tsx`
-- `frontend/src/pages/LoginPageAnimations.tsx`
-- `frontend/src/pages/Onboarding1Page.tsx`
-
-**Allowed**: Bug fixes, security fixes only.
+### Layout-stable pages
+See `app_truth.md` §10. Onboarding marketing pages and Onboarding1 are **layout-stable** (avoid gratuitous refactors). **LoginPage / LoginPageAnimations** are no longer globally frozen; still avoid drive-by redesigns.
 
 ### User Role is SSOT
 - Client state comes ONLY from `User.role` or `ContactRequest.user_role`
@@ -134,13 +130,14 @@ See `app_truth.md` §10. These files are locked:
 ## Gotchas
 
 1. **PostgreSQL port**: Host uses 5434 to avoid conflicts with local Postgres
-2. **Migrations**: Current head is `2026_02_19_platform_settings` — new migrations use this as `down_revision`
+2. **Migrations**: Current head is `2026_04_03_userrole_no_troducer` — revision IDs must be ≤32 characters (`alembic_version.version_num`). New migrations use the current Alembic head as `down_revision` (verify with `alembic heads` after pulling)
 3. **WebSocket**: Backoffice uses realtime updates - normalize payloads to snake_case
 4. **Deposits**: APPROVED→FUNDING only via first `announce_deposit` (no manual "fund user")
 5. **Contact requests**: Pending = NDA role only; KYC/REJECTED disappear from list
 6. **Swap market ratio**: `Order.price` = **CEA/EUA ratio** (NOT EUR price!). The ratio represents how many EUA you get per 1 CEA. Example: ratio 0.1177 means 1 CEA → 0.1177 EUA. See `app_truth.md` §5 for full specs
 7. **EUR balance display**: Dashboard, Backoffice User Assets, and Cash Market all show the same EUR (EntityHolding EUR, or Entity.balance_amount fallback). Helper: `balance_utils.get_entity_eur_balance`. See `app_truth.md` §5
 8. **init.sql**: Creates extensions (uuid-ossp) and `jurisdiction` enum only. Tables and seed data come from Alembic migrations. Do not add INSERTs into app tables—they do not exist at init time.
+9. **PDF generator**: `weasyprint` is in `backend/requirements.txt`. It is lazy-imported in `app/services/pdf_generator/renderer.py` so pytest can collect tests without weasyprint installed. Tests in `tests/test_pdf_renderer.py` require weasyprint; after rebuilding the backend image they pass.
 
 ## Testing
 
@@ -167,6 +164,23 @@ docker compose logs backend | grep "Settlement processor"
 # Database shell
 docker compose exec db psql -U niha_user -d niha_carbon
 ```
+
+## Stale Content — Nu încărca în context
+
+Fișierele de mai jos sunt marcate stale. **Nu le citi proactiv și nu le include în context** decât dacă userul cere explicit.
+Registrul complet cu motive și instrucțiuni de reactivare: **`docs/STALE_CONTENT.md`**
+
+| Fișier / Director | Motiv |
+|---|---|
+| `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` | Rol TRODUCER eliminat (feature 0072) |
+| `docs/NIHA_Introducer_Portal_Implementation_Plan_v2.md` | Plan pre-0072, conține TRODUCER |
+| `docs/plans/` (40 fișiere) | Design docs Feb 2026, toate implementate |
+| `agent/scenarios/troducer_flow.py` | Scenario TRODUCER (rol eliminat) |
+| `agent/run_troducer.py` | Runner TRODUCER (rol eliminat) |
+| `docs/features/0010–0069` | Istoric feature implementate — citește doar dacă lucrezi explicit pe acel interval |
+| `*.png` din root (`/`) | Screenshots de development, nu documentație |
+
+**Fișierele stale sunt identificabile prin** header-ul `<!-- [STALE: YYYY-MM-DD] -->` (markdown) sau `# [STALE: YYYY-MM-DD]` (Python) la prima linie.
 
 ## Known Technical Debt
 

@@ -43,21 +43,21 @@ function ConvergenceChart() {
         {/* Grid lines */}
         {[0, 50, 100].map((v) => (
           <g key={v}>
-            <line x1={padL} y1={toY(v)} x2={w - padR} y2={toY(v)} stroke="rgb(51,65,85)" strokeWidth={0.5} strokeDasharray="2,2" />
+            <line x1={padL} y1={toY(v)} x2={w - padR} y2={toY(v)} stroke="var(--color-border)" strokeWidth={0.5} strokeDasharray="2,2" />
             <text x={padL - 4} y={toY(v) + 3} textAnchor="end" className="text-[7px] fill-navy-600">€{v}</text>
           </g>
         ))}
         {/* Area between lines */}
-        <polygon points={areaPoints} fill="rgb(52,211,153)" opacity={0.08} />
+        <polygon points={areaPoints} fill="var(--color-success)" opacity={0.08} />
         {/* EUA line */}
-        <polyline points={euaLine} fill="none" stroke="rgb(96,165,250)" strokeWidth={1.5} />
+        <polyline points={euaLine} fill="none" stroke="var(--color-eua)" strokeWidth={1.5} />
         {/* CEA line */}
-        <polyline points={ceaLine} fill="none" stroke="rgb(251,191,36)" strokeWidth={1.5} />
+        <polyline points={ceaLine} fill="none" stroke="var(--color-cea)" strokeWidth={1.5} />
         {/* Data points + year labels */}
         {data.map((d, i) => (
           <g key={d.year}>
-            <circle cx={toX(i)} cy={toY(d.eua)} r={2} fill="rgb(96,165,250)" />
-            <circle cx={toX(i)} cy={toY(d.cea)} r={2} fill="rgb(251,191,36)" />
+            <circle cx={toX(i)} cy={toY(d.eua)} r={2} fill="var(--color-eua)" />
+            <circle cx={toX(i)} cy={toY(d.cea)} r={2} fill="var(--color-cea)" />
             <text x={toX(i)} y={h - 4} textAnchor="middle" className="text-[7px] fill-navy-500">{d.year}</text>
           </g>
         ))}
@@ -111,8 +111,8 @@ function RiskAccordionContent({ id, mitigation }: { id: string; mitigation: stri
           <RichText text={mitigation} />
           <MiniScale
             title="FX Exposure Window"
-            left={{ label: 'Exchange T+2', value: '48h exposed', numericValue: 48, color: 'rgb(248,113,113)' }}
-            right={{ label: 'NIHA bilateral', value: 'Price locked T+0', numericValue: 1, color: 'rgb(52,211,153)' }}
+            left={{ label: 'Exchange T+2', value: '48h exposed', numericValue: 48, color: 'var(--color-ask)' }}
+            right={{ label: 'NIHA bilateral', value: 'Price locked T+0', numericValue: 1, color: 'var(--color-success)' }}
           />
         </>
       );
@@ -124,9 +124,9 @@ function RiskAccordionContent({ id, mitigation }: { id: string; mitigation: stri
             title="Price Gap Compression"
             horizontal={false}
             bars={[
-              { label: '2026', value: 10, displayValue: '7-10×', color: 'rgb(251,191,36)' },
-              { label: '2028', value: 6, displayValue: '~6×', color: 'rgb(251,191,36)' },
-              { label: '2030', value: 5, displayValue: '~5×', color: 'rgb(100,116,139)' },
+              { label: '2026', value: 10, displayValue: '7-10×', color: 'var(--color-cea)' },
+              { label: '2028', value: 6, displayValue: '~6×', color: 'var(--color-cea)' },
+              { label: '2030', value: 5, displayValue: '~5×', color: 'var(--color-text-muted)' },
             ]}
             annotation="Savings remain material in EUR terms even as ratio compresses"
           />
@@ -141,7 +141,7 @@ function RiskAccordionContent({ id, mitigation }: { id: string; mitigation: stri
             events={[
               { year: '2025', label: 'MoU signed', detail: 'Pilot phase begins' },
               { year: '2026-27', label: 'Trial period', detail: 'Voluntary credits only' },
-              { year: '2028+', label: 'Potential expansion', detail: 'Direct access years away', color: 'rgb(100,116,139)' },
+              { year: '2028+', label: 'Potential expansion', detail: 'Direct access years away', color: 'var(--color-text-muted)' },
             ]}
           />
         </>
@@ -153,9 +153,9 @@ function RiskAccordionContent({ id, mitigation }: { id: string; mitigation: stri
           <MiniBarChart
             title="Supply Pool Growth"
             bars={[
-              { label: 'Power 2021', value: 2200, color: 'rgb(96,165,250)' },
-              { label: '+Steel/Cement 2024', value: 800, color: 'rgb(251,191,36)' },
-              { label: '+Aluminium 2025', value: 500, color: 'rgb(52,211,153)' },
+              { label: 'Power 2021', value: 2200, color: 'var(--color-eua)' },
+              { label: '+Steel/Cement 2024', value: 800, color: 'var(--color-cea)' },
+              { label: '+Aluminium 2025', value: 500, color: 'var(--color-success)' },
             ]}
             annotation="Growing entity count = growing CEA supply"
           />

@@ -280,7 +280,7 @@ async def approve_user(
                 try:
                     content, filename = await get_document_bytes(doc_id, user_with_entity, db)
                     attachments.append({"filename": filename, "content": content})
-                except (ValueError, FileNotFoundError) as e:
+                except Exception as e:
                     logger.warning(
                         "Could not attach %s to account_approved email for user %s: %s",
                         doc_id,

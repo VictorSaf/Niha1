@@ -34,7 +34,6 @@ Lista template-urilor de email: care sunt trimise din cod (**Used**) și care nu
 | test_email.html | admin.py — endpoint test email |
 | trade_confirmation.html | cash_market.py — după trade |
 | trading_activated.html | deposits.py — după clear (AML → CEA) |
-| troducer_welcome.html | admin.py — Create user TRODUCER cu parolă |
 | welcome_activated.html | auth.py — după setare parolă (activare cont) |
 | withdrawal_approved.html | withdrawals.py |
 | withdrawal_completed.html | withdrawals.py |
@@ -46,6 +45,7 @@ Lista template-urilor de email: care sunt trimise din cod (**Used**) și care nu
 | Template | Motiv |
 |----------|--------|
 | **deposit_cleared.html** | Metoda `send_deposit_cleared` există în `email_service.py` dar **nu este apelată** în niciun flux. După clear deposit se trimite doar **trading_activated** către userii AML→CEA (deposits.py). Template-ul ar putea fi folosit dacă se dorește un email separat „Fonduri disponibile” în plus față de trading_activated. |
+| **troducer_welcome.html** | **Eliminat (0072).** Rolul TRODUCER nu mai există; fișierul a fost șters din repo. |
 
 ## User journey: template lipsă?
 
@@ -78,4 +78,4 @@ Renders the template with sample data and returns HTML for the Settings preview 
 - `backend/tests/test_email_lifecycle.py` — `test_list_templates_with_usage_deposit_cleared_not_used`, `test_list_templates_with_usage_every_template_classified` (detectează drift între template-uri și constante)
 - `backend/app/api/v1/admin.py` — `GET /admin/settings/mail/templates`, `GET /admin/settings/mail/preview/{template_name}`
 - `docs/NDA_TO_EUA_WORKFLOW_SIMULATION.md` — flux NDA → EUA și emailuri per tranziție
-- `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` — flux Troducer/Introducer și emailuri
+- `docs/TRODUCER_WORKFLOW_AND_EMAIL_ANALYSIS.md` — redirect către fluxul PREINTRODUCER → INTRODUCER (rolul TRODUCER a fost eliminat în 0072)

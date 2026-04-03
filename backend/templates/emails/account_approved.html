@@ -3,15 +3,15 @@
 {% block content %}
 <div class="icon-header success">&#x2705;</div>
 <h1>Congratulations, {{ name }}!</h1>
-<p>Your account has been verified and approved. You can now
-access the Nihao Carbon Trading Platform.</p>
+<p>Your KYC application has been reviewed and your account is now verified.</p>
 {% if documents_attached %}
 <p>Your contract documents (Master Service Agreement, Custody Agreement, Fee Schedule, Risk Disclosure Statement and Carbon Derivatives Master Agreement) are attached to this email for your records.</p>
 {% endif %}
 <div class="callout success">
-    <p class="callout-title">What's next?</p>
-    <p>To start trading, please fund your account. Contact
-    our support team for funding instructions.</p>
+    <p class="callout-title">Next step: Fund your account</p>
+    <p>To begin trading, please proceed to the funding page and follow the
+    instructions to deposit funds. Trading access will be activated once
+    your deposit has been received and verified.</p>
 </div>
-<a href="http://localhost:5173/dashboard" class="btn btn-primary">Go to Dashboard</a>
+<a href="{{ app_url }}/funding" class="btn btn-primary">Go to Funding Page</a>
 {% endblock %}

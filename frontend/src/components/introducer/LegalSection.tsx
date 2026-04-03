@@ -20,8 +20,8 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
           <RichText text={content} />
           <MiniScale
             title="Market Access Comparison"
-            left={{ label: 'National', value: 'Closed to all foreign', numericValue: 0, color: 'rgb(248,113,113)' }}
-            right={{ label: 'Pilot', value: 'Authorized institutional investors', numericValue: 70, color: 'rgb(251,191,36)' }}
+            left={{ label: 'National', value: 'Closed to all foreign', numericValue: 0, color: 'var(--color-ask)' }}
+            right={{ label: 'Pilot', value: 'Authorized institutional investors', numericValue: 70, color: 'var(--color-cea)' }}
             ratio="Two different systems"
           />
         </>
@@ -64,11 +64,11 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
           <MiniFlow
             title="Required Authorization Chain"
             steps={[
-              { label: 'Cross-border Trading Authorization', detail: 'Government-facilitated carbon trading pathway', color: 'rgb(52,211,153)' },
-              { label: 'Institutional Pilot Market Access', detail: 'Authorized participant via GBA framework', color: 'rgb(52,211,153)' },
-              { label: 'Cross-border Settlement', detail: 'RMB/EUR bilateral clearing channels', color: 'rgb(96,165,250)' },
-              { label: 'Data Governance Compliance', detail: 'GBA regulatory framework', color: 'rgb(96,165,250)' },
-              { label: 'EUA Delivery Capability', detail: 'European carbon market access', color: 'rgb(251,191,36)' },
+              { label: 'Cross-border Trading Authorization', detail: 'Government-facilitated carbon trading pathway', color: 'var(--color-success)' },
+              { label: 'Institutional Pilot Market Access', detail: 'Authorized participant via GBA framework', color: 'var(--color-success)' },
+              { label: 'Cross-border Settlement', detail: 'RMB/EUR bilateral clearing channels', color: 'var(--color-eua)' },
+              { label: 'Data Governance Compliance', detail: 'GBA regulatory framework', color: 'var(--color-eua)' },
+              { label: 'EUA Delivery Capability', detail: 'European carbon market access', color: 'var(--color-cea)' },
             ]}
           />
         </>
@@ -80,11 +80,11 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
           <MiniFlow
             title="5-Step Custody Flow"
             steps={[
-              { label: 'Client deposits EUR', detail: 'Segregated client account, HK law', color: 'rgb(96,165,250)' },
-              { label: 'NIHA acquires Chinese credits', detail: 'Via pilot market through GBA access', color: 'rgb(251,191,36)' },
-              { label: 'Credits registered through NIHA', detail: 'Institutional access (principal)', color: 'rgb(251,191,36)' },
-              { label: 'Swap execution', detail: 'Chinese credits → EUA conversion', color: 'rgb(52,211,153)' },
-              { label: 'EUA delivered to client', detail: 'EU registry, T+3–T+5', color: 'rgb(52,211,153)' },
+              { label: 'Client deposits EUR', detail: 'Segregated client account, HK law', color: 'var(--color-eua)' },
+              { label: 'NIHA acquires Chinese credits', detail: 'Via pilot market through GBA access', color: 'var(--color-cea)' },
+              { label: 'Credits registered through NIHA', detail: 'Institutional access (principal)', color: 'var(--color-cea)' },
+              { label: 'Swap execution', detail: 'Chinese credits → EUA conversion', color: 'var(--color-success)' },
+              { label: 'EUA delivered to client', detail: 'EU registry, T+3–T+5', color: 'var(--color-success)' },
             ]}
           />
         </>
@@ -99,7 +99,7 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
               { year: '2024', label: 'GBA carbon cooperation announced', detail: 'Policy framework established' },
               { year: 'Sep 2025', label: 'Quadripartite MoU signed', detail: 'HKEX + 3 pilot exchanges', highlight: true },
               { year: '2025-26', label: 'Trial phase begins', detail: 'Voluntary credits & pilot coordination' },
-              { year: '2027+', label: 'Potential expansion', detail: 'Direct access years away', color: 'rgb(100,116,139)' },
+              { year: '2027+', label: 'Potential expansion', detail: 'Direct access years away', color: 'var(--color-text-muted)' },
             ]}
           />
         </>
@@ -159,12 +159,12 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
           <MiniFlow
             title="Five Jurisdictions"
             steps={[
-              { label: 'China — Trading Authorization', detail: 'Government-facilitated carbon access', color: 'rgb(248,113,113)' },
-              { label: 'China — Institutional Access', detail: 'Authorized participant on pilot exchanges', color: 'rgb(248,113,113)' },
-              { label: 'China — Settlement', detail: 'Cross-border clearing channels', color: 'rgb(251,191,36)' },
-              { label: 'China — Data Governance', detail: 'GBA compliance framework', color: 'rgb(251,191,36)' },
-              { label: 'EU — Carbon Market Access', detail: 'European allowance participation', color: 'rgb(96,165,250)' },
-              { label: 'Hong Kong — Regulatory Position', detail: 'Carbon not classified as financial instrument', color: 'rgb(52,211,153)' },
+              { label: 'China — Trading Authorization', detail: 'Government-facilitated carbon access', color: 'var(--color-ask)' },
+              { label: 'China — Institutional Access', detail: 'Authorized participant on pilot exchanges', color: 'var(--color-ask)' },
+              { label: 'China — Settlement', detail: 'Cross-border clearing channels', color: 'var(--color-cea)' },
+              { label: 'China — Data Governance', detail: 'GBA compliance framework', color: 'var(--color-cea)' },
+              { label: 'EU — Carbon Market Access', detail: 'European allowance participation', color: 'var(--color-eua)' },
+              { label: 'Hong Kong — Regulatory Position', detail: 'Carbon not classified as financial instrument', color: 'var(--color-success)' },
             ]}
           />
         </>
@@ -176,11 +176,11 @@ function LegalAccordionContent({ id, content }: { id: string; content: string })
           <MiniBarChart
             title="Regulatory Citations by Jurisdiction"
             bars={[
-              { label: 'China (National ETS)', value: 3, displayValue: '3 refs', color: 'rgb(248,113,113)' },
-              { label: 'China (Pilot Markets)', value: 4, displayValue: '4 refs', color: 'rgb(251,191,36)' },
-              { label: 'China (Banking/Data)', value: 3, displayValue: '3 refs', color: 'rgb(251,191,36)' },
-              { label: 'EU ETS / CBAM', value: 4, displayValue: '4 refs', color: 'rgb(96,165,250)' },
-              { label: 'GBA / HK', value: 3, displayValue: '3 refs', color: 'rgb(52,211,153)' },
+              { label: 'China (National ETS)', value: 3, displayValue: '3 refs', color: 'var(--color-ask)' },
+              { label: 'China (Pilot Markets)', value: 4, displayValue: '4 refs', color: 'var(--color-cea)' },
+              { label: 'China (Banking/Data)', value: 3, displayValue: '3 refs', color: 'var(--color-cea)' },
+              { label: 'EU ETS / CBAM', value: 4, displayValue: '4 refs', color: 'var(--color-eua)' },
+              { label: 'GBA / HK', value: 3, displayValue: '3 refs', color: 'var(--color-success)' },
             ]}
           />
         </>

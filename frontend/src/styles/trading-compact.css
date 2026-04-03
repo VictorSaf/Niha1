@@ -94,14 +94,14 @@
 
 /* Card Compact */
 .tt-card {
-  background: rgb(15 23 42); /* navy-900 */
+  background: var(--color-background);
   border-radius: var(--tt-radius-lg);
-  border: 1px solid rgb(30 41 59); /* navy-800 */
+  border: 1px solid var(--color-surface);
 }
 
 .tt-card-header {
   padding: var(--tt-spacing-md) var(--tt-spacing-lg);
-  border-bottom: 1px solid rgb(30 41 59);
+  border-bottom: 1px solid var(--color-surface);
   font-size: var(--tt-font-size-sm);
   font-weight: 600;
   display: flex;
@@ -120,8 +120,8 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgb(148 163 184); /* navy-400 */
-  border-bottom: 1px solid rgb(30 41 59);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-surface);
 }
 
 .tt-table-row {
@@ -134,7 +134,7 @@
 }
 
 .tt-table-row:hover {
-  background: rgb(30 41 59 / 0.5);
+  background: var(--color-surface-elevated);
 }
 
 /* Button Styles */
@@ -156,21 +156,21 @@
 }
 
 .tt-btn-buy {
-  background: linear-gradient(135deg, rgb(16 185 129) 0%, rgb(5 150 105) 100%);
+  background: linear-gradient(135deg, var(--color-bid-hover) 0%, var(--color-primary-active) 100%);
   color: white;
 }
 
 .tt-btn-buy:hover {
-  background: linear-gradient(135deg, rgb(5 150 105) 0%, rgb(4 120 87) 100%);
+  background: linear-gradient(135deg, var(--color-primary-active) 0%, var(--color-primary-dark) 100%);
 }
 
 .tt-btn-sell {
-  background: linear-gradient(135deg, rgb(239 68 68) 0%, rgb(220 38 38) 100%);
+  background: linear-gradient(135deg, var(--color-ask) 0%, var(--color-ask-hover) 100%);
   color: white;
 }
 
 .tt-btn-sell:hover {
-  background: linear-gradient(135deg, rgb(220 38 38) 0%, rgb(185 28 28) 100%);
+  background: var(--color-ask-hover);
 }
 
 /* Input Styles */
@@ -179,8 +179,8 @@
   padding: 0 var(--tt-spacing-lg);
   font-size: var(--tt-font-size-sm);
   font-family: var(--tt-font-family);
-  background: rgb(15 23 42);
-  border: 1px solid rgb(51 65 85);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: var(--tt-radius-md);
   color: white;
   transition: border-color 0.15s;
@@ -188,18 +188,18 @@
 
 .tt-input-field:focus {
   outline: none;
-  border-color: rgb(245 158 11);
+  border-color: var(--color-warning);
 }
 
 .tt-input-field::placeholder {
-  color: rgb(100 116 139);
+  color: var(--input-placeholder);
 }
 
 /* Label Styles */
 .tt-label {
   font-size: var(--tt-font-size-xs);
   font-weight: 500;
-  color: rgb(148 163 184);
+  color: var(--color-text-muted);
   margin-bottom: var(--tt-spacing-xs);
   display: block;
 }
@@ -230,14 +230,14 @@
    ============================================================================= */
 
 /* Bid/Ask Colors */
-.tt-bid { color: rgb(16 185 129); } /* emerald-500 */
-.tt-ask { color: rgb(239 68 68); } /* red-500 */
-.tt-bid-bg { background: rgb(16 185 129 / 0.15); }
-.tt-ask-bg { background: rgb(239 68 68 / 0.15); }
+.tt-bid { color: var(--color-bid-hover); }
+.tt-ask { color: var(--color-ask); }
+.tt-bid-bg { background: var(--color-bid-bg); }
+.tt-ask-bg { background: var(--color-ask-bg); }
 
 /* Muted Text */
-.tt-muted { color: rgb(100 116 139); } /* navy-500 */
-.tt-muted-light { color: rgb(148 163 184); } /* navy-400 */
+.tt-muted { color: var(--input-placeholder); }
+.tt-muted-light { color: var(--color-text-muted); }
 
 /* =============================================================================
    ANIMATIONS
@@ -245,12 +245,12 @@
 
 @keyframes tt-flash-green {
   0%, 100% { background-color: transparent; }
-  50% { background-color: rgb(16 185 129 / 0.2); }
+  50% { background-color: var(--color-bid-light); }
 }
 
 @keyframes tt-flash-red {
   0%, 100% { background-color: transparent; }
-  50% { background-color: rgb(239 68 68 / 0.2); }
+  50% { background-color: var(--color-ask-light); }
 }
 
 .tt-flash-bid {

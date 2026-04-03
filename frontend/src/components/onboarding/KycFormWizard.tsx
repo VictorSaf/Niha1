@@ -102,7 +102,8 @@ export default function KycFormWizard({ onComplete, onStepChange }: KycFormWizar
       if (data.taxResidencyCountry) setTaxResidencyCountry(data.taxResidencyCountry);
       if (data.subjectToCrs !== undefined && data.subjectToCrs !== null) setSubjectToCrs(data.subjectToCrs);
       if (data.declarationsAccepted?.length) setDeclarationsAccepted(data.declarationsAccepted as string[]);
-      if (data.currentStep > 1) setCurrentStep(data.currentStep);
+      const step = data.currentStep ?? data.current_step;
+      if (step != null && step > 1) setCurrentStep(step);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -463,7 +464,7 @@ export default function KycFormWizard({ onComplete, onStepChange }: KycFormWizar
                   Intended Use of Carbon Credit Services
                 </label>
                 <p className="text-xs text-navy-400 mb-2">
-                  Brief description of your company's intended use and commercial rationale.
+                  Brief description of your company&apos;s intended use and commercial rationale.
                 </p>
                 <textarea
                   value={intendedUseDescription}

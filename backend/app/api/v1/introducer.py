@@ -371,16 +371,17 @@ async def send_invitation(
             "smtp_username": mail_config_row.smtp_username,
             "smtp_password": mail_config_row.smtp_password,
             "invitation_link_base_url": mail_config_row.invitation_link_base_url,
+            "app_base_url": mail_config_row.app_base_url,
         }
 
-    raw_base = (mail_config_row.invitation_link_base_url if mail_config_row else None) or ""
-    from ...services.email_service import _strip_path
+    from ...services.email_service import _resolve_base_url
 
     from urllib.parse import quote
 
-    base_url = _strip_path(raw_base.strip()) if raw_base.strip() else "http://localhost:5173"
+    base_url = _resolve_base_url(mail_config_dict)
     safe_ref = quote(current_user.referral_code, safe="")
     invitation_url = f"{base_url}/introducer?invite={raw_token}&ref={safe_ref}"
+    nda_download_url = f"{base_url.rstrip('/')}/api/v1/contact/nda-template" if base_url else None
 
     # Send email
     from ...services.email_service import EmailService
@@ -396,6 +397,7 @@ async def send_invitation(
         invited_first_name=body.first_name,
         personal_note=body.personal_note,
         invitation_url=invitation_url,
+        nda_download_url=nda_download_url,
         mail_config=mail_config_dict,
     )
 

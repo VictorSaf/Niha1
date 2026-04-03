@@ -232,7 +232,7 @@ export function ContactRequestViewModal({
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge
-                  variant={isIntroducer ? clientStatusVariant('TRODUCER') : clientStatusVariant(showingRequest.userRole)}
+                  variant={isIntroducer ? clientStatusVariant('PREINTRODUCER') : clientStatusVariant(showingRequest.userRole)}
                   className="text-[10px]"
                 >
                   {flowLabel}

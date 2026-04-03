@@ -5,25 +5,26 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../../test/utils';
+import { MemoryRouter } from 'react-router-dom';
 import { UsersPage } from '../UsersPage';
 import type { User, UserRole } from '../../types';
 
 const { mockUsers } = vi.hoisted(() => {
-  const active: User & { entity_name?: string; is_active?: boolean } = {
+  const active: User & { entity_name?: string } = {
     id: 'user-active',
     email: 'active@test.com',
-    first_name: 'Active',
-    last_name: 'User',
+    firstName: 'Active',
+    lastName: 'User',
     role: 'ADMIN' as UserRole,
-    is_active: true,
+    isActive: true,
   };
-  const disabled: User & { entity_name?: string; is_active?: boolean } = {
+  const disabled: User & { entity_name?: string } = {
     id: 'user-disabled',
     email: 'disabled@test.com',
-    first_name: 'Disabled',
-    last_name: 'User',
+    firstName: 'Disabled',
+    lastName: 'User',
     role: 'NDA' as UserRole,
-    is_active: false,
+    isActive: false,
   };
   return { mockUsers: [active, disabled] };
 });
@@ -42,13 +43,21 @@ vi.mock('../../services/api', async (importOriginal) => {
   };
 });
 
+function renderUsersPage() {
+  return render(
+    <MemoryRouter initialEntries={['/users']}>
+      <UsersPage />
+    </MemoryRouter>
+  );
+}
+
 describe('UsersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('shows Active in Status column for active users', async () => {
-    render(<UsersPage />);
+    renderUsersPage();
 
     await waitFor(() => {
       expect(screen.getByText('Active')).toBeInTheDocument();
@@ -56,7 +65,7 @@ describe('UsersPage', () => {
   });
 
   it('shows DISABLED in Status column for disabled users', async () => {
-    render(<UsersPage />);
+    renderUsersPage();
 
     await waitFor(() => {
       const disabledBadges = screen.getAllByText('DISABLED');

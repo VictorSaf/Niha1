@@ -72,8 +72,8 @@ export function TokenInput({ token }: TokenInputProps) {
 
         {/* Color preview box */}
         <div
-          className="w-8 h-8 rounded border border-navy-600 flex-shrink-0"
-          style={{ backgroundColor: localValue || '#000' }} // eslint-disable-line no-restricted-syntax
+          className={`w-8 h-8 rounded border border-navy-600 flex-shrink-0 ${!localValue ? 'bg-navy-900' : ''}`}
+          style={localValue ? { backgroundColor: localValue } : undefined}
         />
 
         {/* Color picker (native) */}

@@ -51,7 +51,6 @@ export function CommandPalette() {
     const canSwap = isAdmin || ['CEA', 'CEA_SETTLE', 'SWAP', 'MM'].includes(role!);
     const canOnboarding = isAdmin || ['NDA', 'KYC'].includes(role!);
     const isIntroducer = role === 'INTRODUCER';
-    const isTroducer = role === 'TRODUCER';
     const isPreintroducer = role === 'PREINTRODUCER';
 
     if (canDashboard) nav('dashboard', 'Dashboard', 'Portfolio overview', <LayoutDashboard className="w-4 h-4" />, '/dashboard', ['home', 'portfolio']);
@@ -60,7 +59,6 @@ export function CommandPalette() {
     if (canSwap) nav('swap', 'Swap Market', 'CEA to EUA exchange', <ArrowRightLeft className="w-4 h-4" />, '/swap', ['exchange', 'convert']);
     if (canOnboarding) nav('onboarding', 'Onboarding', 'Continue setup', <FileText className="w-4 h-4" />, '/onboarding');
     if (isIntroducer) nav('introducer', 'Introducer Portal', 'Referral dashboard', <Briefcase className="w-4 h-4" />, '/introducer/dashboard', ['referral']);
-    if (isTroducer) nav('troducer', 'Troducer Code', 'View your referral code', <Keyboard className="w-4 h-4" />, '/troducer', ['referral']);
     if (isPreintroducer) nav('preintroducer', 'Referral Code', 'View your referral code', <Keyboard className="w-4 h-4" />, '/preintroducer');
 
     nav('profile', 'Profile', 'Your account settings', <User className="w-4 h-4" />, '/profile', ['account']);
@@ -72,7 +70,7 @@ export function CommandPalette() {
       list.push({ id: 'settings', label: 'Settings', description: 'Scraping & system config', icon: <Settings className="w-4 h-4" />, action: () => go('/settings'), group: 'Admin', keywords: ['config', 'scraping'] });
       list.push({ id: 'fees', label: 'Fee Settings', description: 'Platform fee configuration', icon: <Sliders className="w-4 h-4" />, action: () => go('/fee-settings'), group: 'Admin', keywords: ['commission'] });
       list.push({ id: 'market-makers', label: 'Market Makers', description: 'MM management', icon: <Activity className="w-4 h-4" />, action: () => go('/market-makers'), group: 'Admin', keywords: ['mm'] });
-      list.push({ id: 'auto-trade', label: 'Auto Trade', description: 'Automated trading rules', icon: <Bot className="w-4 h-4" />, action: () => go('/auto-trade'), group: 'Admin', keywords: ['bot', 'automation'] });
+      list.push({ id: 'auto-trade', label: 'Auto Trade', description: 'Automated trading rules', icon: <Bot className="w-4 h-4" />, action: () => go('/backoffice/auto-trade'), group: 'Admin', keywords: ['bot', 'automation'] });
       list.push({ id: 'theme', label: 'Theme', description: 'Visual customization', icon: <Palette className="w-4 h-4" />, action: () => go('/theme'), group: 'Admin' });
       list.push({ id: 'logging', label: 'Logs', description: 'System logs', icon: <FileText className="w-4 h-4" />, action: () => go('/logging'), group: 'Admin' });
     }

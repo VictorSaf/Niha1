@@ -227,7 +227,7 @@ export default function DocumentLibraryPage() {
         {(selectedPhase !== 'ALL' || selectedCategory !== 'ALL' || searchQuery) && (
           <p className="text-navy-400 text-sm mb-4">
             Showing {filteredDocuments.length} of {documents.length} documents
-            {searchQuery && <span className="ml-1">matching "{searchQuery}"</span>}
+            {searchQuery && <span className="ml-1">matching &quot;{searchQuery}&quot;</span>}
           </p>
         )}
 

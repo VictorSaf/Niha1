@@ -40,7 +40,7 @@ export function IntroducerPage() {
     introducerName: string;
   } | null>(null);
   const [referralCode, setReferralCode] = useState('');
-  const [codeType, setCodeType] = useState<'introducer' | 'troducer' | 'buyer' | null>(null);
+  const [codeType, setCodeType] = useState<'introducer' | 'preintroducer' | 'buyer' | null>(null);
 
   // Fetch invitation info when landing with invite token
   useEffect(() => {
@@ -66,8 +66,10 @@ export function IntroducerPage() {
           if (res.valid && res.type === 'introducer') {
             // Code belongs to an introducer → the invitee is a buyer
             setCodeType('buyer');
+          } else if (res.valid && res.type === 'preintroducer') {
+            setCodeType('preintroducer');
           }
-          // 'preintroducer' and 'troducer' codes → introducer registration flow (default)
+          // 'preintroducer' (default) → introducer registration flow
         })
         .catch(() => {
           // Validation failed — default to introducer flow
@@ -77,9 +79,7 @@ export function IntroducerPage() {
 
   useEffect(() => {
     if (!_hasHydrated || !user) return;
-    if (user.role === 'TRODUCER') {
-      navigate('/introducer/sign-nda', { replace: true });
-    } else if (user.role === 'PREINTRODUCER' && !user.ndaSigned) {
+    if (user.role === 'PREINTRODUCER' && !user.ndaSigned) {
       navigate('/introducer/sign-nda', { replace: true });
     } else if (user.role === 'INTRODUCER') {
       navigate('/introducer/dashboard', { replace: true });
@@ -436,7 +436,7 @@ export function IntroducerPage() {
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <input
                     type="email"
-                    placeholder={codeType === 'troducer' ? 'Email' : 'Corporate Email'}
+                    placeholder={codeType === 'preintroducer' ? 'Email' : 'Corporate Email'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full py-3.5 pl-12 pr-4 bg-white/5 border border-white/10 rounded-lg text-white/90 placeholder-white/30 focus:outline-none focus:border-white/20 transition-colors font-light"

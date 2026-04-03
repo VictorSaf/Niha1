@@ -9,10 +9,10 @@ Generates a branded PDF with:
   - Counterparts clause for wet-ink execution
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Optional
 
-from reportlab.platypus import Spacer, PageBreak, Paragraph, Table, TableStyle
+from reportlab.platypus import Spacer, PageBreak, Paragraph
 from reportlab.lib.units import mm
 
 from .styles import (

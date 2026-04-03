@@ -167,6 +167,7 @@ export function BackofficeLayout({ children, subSubHeaderLeft, subSubHeader }: B
           title="Backoffice"
           description={config.description}
           iconBg={config.iconBg}
+          renderSpacer={!showSubSub}
         >
           <nav className="flex items-center gap-2" aria-label="Backoffice navigation">
             {BACKOFFICE_NAV.map((item) => {
@@ -185,7 +186,11 @@ export function BackofficeLayout({ children, subSubHeaderLeft, subSubHeader }: B
           </nav>
         </Subheader>
         {showSubSub && (
-          <SubSubHeader left={subSubHeaderLeft}>{subSubHeader}</SubSubHeader>
+          <div className="subheader-subsubheader-block">
+            {/* Spacer reserved here (not in Subheader) so SubSubHeader sits flush under the bar with no gap */}
+            <div className="subheader-bar-spacer" aria-hidden="true" />
+            <SubSubHeader left={subSubHeaderLeft}>{subSubHeader}</SubSubHeader>
+          </div>
         )}
       </div>
       <div className="page-container py-6">

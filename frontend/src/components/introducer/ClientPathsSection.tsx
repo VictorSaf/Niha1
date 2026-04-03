@@ -6,18 +6,18 @@ import { MiniScale } from './charts';
 
 const PATH_SCALES: Record<string, { left: { label: string; value: string; numericValue: number; color: string }; right: { label: string; value: string; numericValue: number; color: string }; ratio: string }> = {
   'path-a': {
-    left: { label: 'Direct', value: '€81/t', numericValue: 81, color: 'rgb(248, 113, 113)' },
-    right: { label: 'Via NIHA', value: '€71-74/t', numericValue: 72.5, color: 'rgb(52, 211, 153)' },
+    left: { label: 'Direct', value: '€81/t', numericValue: 81, color: 'var(--color-ask)' },
+    right: { label: 'Via NIHA', value: '€71-74/t', numericValue: 72.5, color: 'var(--color-success)' },
     ratio: '8-12% savings',
   },
   'path-b': {
-    left: { label: 'Domestic', value: '¥97-99/t', numericValue: 98, color: 'rgb(248, 113, 113)' },
-    right: { label: 'Via NIHA', value: '¥103-106/t', numericValue: 104, color: 'rgb(52, 211, 153)' },
+    left: { label: 'Domestic', value: '¥97-99/t', numericValue: 98, color: 'var(--color-ask)' },
+    right: { label: 'Via NIHA', value: '¥103-106/t', numericValue: 104, color: 'var(--color-success)' },
     ratio: '5-8% better',
   },
   'path-c': {
-    left: { label: 'Exchanges', value: '2-4% cost', numericValue: 3, color: 'rgb(248, 113, 113)' },
-    right: { label: 'Via NIHA', value: '~1% cost', numericValue: 1, color: 'rgb(52, 211, 153)' },
+    left: { label: 'Exchanges', value: '2-4% cost', numericValue: 3, color: 'var(--color-ask)' },
+    right: { label: 'Via NIHA', value: '~1% cost', numericValue: 1, color: 'var(--color-success)' },
     ratio: 'Single bilateral swap',
   },
 };

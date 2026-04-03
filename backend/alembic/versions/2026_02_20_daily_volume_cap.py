@@ -19,7 +19,6 @@ Create Date: 2026-02-20
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import text
-from datetime import datetime, timezone
 
 revision = "2026_02_20_daily_volume_cap"
 down_revision = "2026_02_20_ssot_market_settings"

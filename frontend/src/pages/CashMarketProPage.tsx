@@ -197,8 +197,6 @@ function ProfessionalOrderBook({
 
 interface RecentTradesTickerProps {
   trades: CashMarketTrade[];
-  bestBid: number | null;
-  bestAsk: number | null;
 }
 
 function formatTickerTime(dateStr: string): string {
@@ -215,19 +213,23 @@ function formatTickerTime(dateStr: string): string {
   }
 }
 
-function RecentTradesTicker({ trades, bestBid, bestAsk }: RecentTradesTickerProps) {
-  const isBuyFn = useCallback((trade: CashMarketTrade) => {
-    if (trade.side === 'BUY' || trade.side === 'SELL') return trade.side === 'BUY';
-    if (bestBid != null && bestAsk != null) return trade.price >= (bestBid + bestAsk) / 2;
-    return true;
-  }, [bestBid, bestAsk]);
-
-  // Compute buy/sell once per trade-set. React reconciliation updates only
-  // changed children — the animated parent div is never recreated, so the
-  // CSS animation continues uninterrupted (no innerHTML reset needed).
+function RecentTradesTicker({ trades }: RecentTradesTickerProps) {
+  // Color = uptick/downtick vs previous trade price (standard market convention).
+  // trades[0] = newest, trades[i+1] = the trade that happened before trades[i].
+  // up   → green  (price higher than previous)
+  // down → red    (price lower than previous)
+  // flat → neutral gray (same price as previous, or first trade in list)
   const items = useMemo(
-    () => trades.map(t => ({ ...t, buy: isBuyFn(t) })),
-    [trades, isBuyFn],
+    () => trades.map((t, i) => {
+      const prev = trades[i + 1];
+      const direction: 'up' | 'down' | 'flat' =
+        !prev ? 'flat'
+        : t.price > prev.price ? 'up'
+        : t.price < prev.price ? 'down'
+        : 'flat';
+      return { ...t, direction };
+    }),
+    [trades],
   );
 
   if (items.length === 0) {
@@ -239,22 +241,30 @@ function RecentTradesTicker({ trades, bestBid, bestAsk }: RecentTradesTickerProp
   }
 
   const renderCopy = (keySuffix: string) =>
-    items.map((item) => (
-      <div
-        key={`${item.id}${keySuffix}`}
-        className={`flex items-center gap-3 px-3 py-1 rounded shrink-0 ${item.buy ? 'bg-emerald-500/[0.075]' : 'bg-red-500/[0.05]'}`}
-      >
-        <span className={`font-mono font-medium text-xs tabular-nums ${item.buy ? 'text-emerald-400' : 'text-red-400'}`}>
-          €{item.price.toFixed(2)}
-        </span>
-        <span className="text-xs font-mono text-white tabular-nums">
-          {Math.round(item.quantity).toLocaleString()}
-        </span>
-        <span className="text-xs text-navy-500 tabular-nums">
-          {item.executedAt ? formatTickerTime(item.executedAt) : '-'}
-        </span>
-      </div>
-    ));
+    items.map((item) => {
+      const bgCls = item.direction === 'up' ? 'bg-emerald-500/[0.075]'
+        : item.direction === 'down' ? 'bg-red-500/[0.05]'
+        : 'bg-white/[0.03]';
+      const priceCls = item.direction === 'up' ? 'text-emerald-400'
+        : item.direction === 'down' ? 'text-red-400'
+        : 'text-navy-400';
+      return (
+        <div
+          key={`${item.id}${keySuffix}`}
+          className={`flex items-center gap-3 px-3 py-1 rounded shrink-0 ${bgCls}`}
+        >
+          <span className={`font-mono font-medium text-xs tabular-nums ${priceCls}`}>
+            €{item.price.toFixed(2)}
+          </span>
+          <span className="text-xs font-mono text-white tabular-nums">
+            {Math.round(item.quantity).toLocaleString()}
+          </span>
+          <span className="text-xs text-navy-500 tabular-nums">
+            {item.executedAt ? formatTickerTime(item.executedAt) : '-'}
+          </span>
+        </div>
+      );
+    });
 
   return (
     <div className="overflow-hidden">
@@ -444,8 +454,6 @@ export function CashMarketProPage() {
         <div className="sticky top-[8.875rem] md:top-[9.875rem] z-20 bg-navy-900 border-y border-navy-700/30 -mt-[3px]">
           <RecentTradesTicker
             trades={recentTrades}
-            bestBid={safeOrderBook.bestBid}
-            bestAsk={safeOrderBook.bestAsk}
           />
         </div>
       )}

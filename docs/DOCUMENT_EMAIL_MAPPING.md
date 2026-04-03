@@ -16,8 +16,9 @@ This document defines **which platform documents are sent (attached) at which co
 
 | Email template | User role when sent | Attached documents | Pre-filled with client/NIHA data |
 |----------------|---------------------|--------------------|-----------------------------------|
-| **pre_nda_invitation** | — (before account) | NDA | Generated via `document_delivery_service.get_document_bytes("nda", ...)` |
-| **introducer_nda_invitation** | — (before account) | NDA | Same (generated NDA from document_delivery_service) |
+| **pre_nda_invitation** | — (before account) | NDA | Generated via `document_delivery_service.get_document_bytes("nda", ...)`. Email is sent only when NDA PDF generation succeeds; otherwise the request fails (admin sees 503). |
+| **introducer_nda_invitation** | — (before account) | NDA | Same (generated NDA from document_delivery_service). Email is sent only when NDA PDF generation succeeds; otherwise the invitation is not sent. For **Login path** (`POST /contact/introducer-nda-request` with valid `referral_code`, no NDA file): if NDA PDF fails, backend returns **503** and does not create a user (client can retry). Admin "Send NDA" endpoints return 503 on PDF failure. **Triggered by:** (1) Introducer page form submit without NDA (`POST /contact/introducer-request`); (2) **Login** → NDA → "I have a code" → introducer form submit without NDA (`POST /contact/introducer-nda-request` with valid `referral_code`). |
+| **referral_invitation** | — (INTRODUCER inviting) | NDA (link) | Link to platform-served NDA: `GET /api/v1/contact/nda-template` (static `uploads/nda/NDA-Niha-signed.pdf`). No PDF attachment; email contains "Download NDA (PDF)" link. |
 | **account_approved** | APPROVED (KYC just approved) | MSA, Custody, Fee Schedule, Risk Disclosure, Carbon Derivatives Master Agreement | Yes (generated PDFs with client entity, representative, email; NIHA terms) |
 | **deposit_announced** | FUNDING (client announced wire) | Bank Confirmation Letters, Registry Account Overview | No (static PDFs) |
 | deposit_on_hold | AML | — | — |

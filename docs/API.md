@@ -39,22 +39,68 @@ Submit an NDA request (buyer flow). Same body as below but creates `request_flow
 
 ---
 
+### POST /contact/validate-code
+
+Validate a referral code **without consuming it**. Used by the Login page when the user selects NDA → "I have a code" and enters an 8-character code. Rate-limited: **5 attempts per IP per 10 minutes** (returns 429 when exceeded).
+
+**Request (application/x-www-form-urlencoded or multipart/form-data)**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `code` | string | Yes | Referral code (8 characters) |
+
+**Response (200)** — Valid code (owner is **PREINTRODUCER** — routes to introducer application form on Login):
+
+```json
+{
+  "valid": true,
+  "type": "preintroducer"
+}
+```
+
+**Response (200)** — Valid code (owner is **INTRODUCER** — routes to buyer NDA form with referral):
+
+```json
+{
+  "valid": true,
+  "type": "introducer"
+}
+```
+
+`type` is always `"preintroducer"` or `"introducer"` (no other values).
+
+**Response (200)** — Invalid code:
+
+```json
+{
+  "valid": false
+}
+```
+
+**Errors:** 429 (too many attempts; retry after 10 minutes).
+
+---
+
 ### POST /contact/introducer-nda-request
 
-Submit an NDA request for the **Introducer** flow. Creates a contact request with `user_role=NDA` and `request_flow=introducer`. Used by the `/introducer` page. Backoffice approves via create-from-request with `target_role=INTRODUCER`.
+Submit an NDA request for the **Introducer** flow. Used by the **Introducer page** (`/introducer`) and by the **Login page** when the user chose "I have a code", entered a valid PREINTRODUCER or INTRODUCER referral code, and submits the introducer form.
+
+- **With NDA file uploaded (or no valid referral):** Creates a contact request with `user_role=NDA` and `request_flow=introducer`. Backoffice approves via create-from-request with `target_role=INTRODUCER`.
+- **With valid `referral_code` and no NDA file:** Backend creates an **INTRODUCER** user (`nda_signed=true`) and sends **introducer_nda_invitation** email with the NDA PDF attached; the recipient follows the setup-password link, sets a password, and is redirected to `/introducer/dashboard` (no NDA upload or admin approval).
 
 **Request (multipart/form-data)**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `entity_name` | string | Yes | Entity or company name |
+| `entity_name` | string | No | Entity or company name (can be empty) |
 | `contact_email` | string | Yes | Valid email |
 | `contact_first_name` | string | Yes | First name |
 | `contact_last_name` | string | Yes | Last name |
-| `position` | string | Yes | Job title / position |
-| `file` | file | Yes | Signed NDA document (PDF only, max 10MB) |
+| `position` | string | Yes | Job title (can be empty string, e.g. from Login) |
+| `referral_code` | string | No | Required for Login-path; when valid and no file → INTRODUCER user + NDA email (redirect to /introducer/dashboard after setup) |
+| `file` | file | No | Signed NDA (PDF only, max 10MB); optional when referral_code provided |
 
-**Example (curl)**
+**Example (curl, with NDA file)**
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/contact/introducer-nda-request" \
@@ -66,24 +112,21 @@ curl -X POST "http://localhost:8000/api/v1/contact/introducer-nda-request" \
   -F "file=@/path/to/nda.pdf"
 ```
 
-**Response (200)** — `ContactRequestResponse`:
+**Example (Login path: no NDA, with referral code)**
 
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "entity_name": "Introducer Co",
-  "contact_email": "intro@example.com",
-  "contact_first_name": "John",
-  "contact_last_name": "Smith",
-  "position": "Partner",
-  "nda_file_name": "nda.pdf",
-  "user_role": "NDA",
-  "request_flow": "introducer",
-  "created_at": "2026-02-13T12:00:00.000000Z"
-}
+```bash
+curl -X POST "http://localhost:8000/api/v1/contact/introducer-nda-request" \
+  -F "entity_name=Introducer Co" \
+  -F "contact_email=intro@example.com" \
+  -F "contact_first_name=John" \
+  -F "contact_last_name=Smith" \
+  -F "position=" \
+  -F "referral_code=Ab12Cd34"
 ```
 
-**Errors:** 400 (invalid email, file not PDF, file too large).
+**Response (200)** — `ContactRequestResponse` (when contact request is created), or the same shape when INTRODUCER user was created and NDA email sent.
+
+**Errors:** 400 (invalid email, file not PDF, file too large, or invalid/expired referral code when referral_code sent). **409** when the email already has a user with role PREINTRODUCER or INTRODUCER (e.g. "An introducer request for this email already exists. Check your email for the setup link or contact support."). **503** when NDA PDF generation fails (no user is created; client can retry).
 
 ---
 
@@ -135,6 +178,82 @@ Cookie: access_token=...
   }
 }
 ```
+
+---
+
+### POST /admin/contact-requests/reconcile-introducer-orphans
+
+Deletes **introducer** contact requests that no longer have a matching introducer user: rows in `contact_requests` with `request_flow='introducer'` where `contact_email` has **no** user with role `PREINTRODUCER` or `INTRODUCER` (case-insensitive email match). Use after manual user deletion from the database or to clean failed user-creation edge cases. Admin only. In the UI, **Backoffice → Onboarding → Introducer** exposes this as **Reconcile orphans** in the SubSubHeader (same endpoint).
+
+**Example**
+
+```http
+POST /api/v1/admin/contact-requests/reconcile-introducer-orphans
+Cookie: access_token=...
+```
+
+**Response (200)**
+
+```json
+{
+  "deleted": 3
+}
+```
+
+`deleted` is the number of rows removed.
+
+**Troubleshooting**
+
+- Refresh the Introducer tab after the call; the list `total` should decrease by `deleted` (or stay the same if `deleted` is 0).
+- If a row remains visible, a `users` row with role **PREINTRODUCER** or **INTRODUCER** and the same `contact_email` (case-insensitive) still exists — that request is not treated as orphaned and is not deleted.
+- **DBA / no API:** same delete semantics as `scripts/sql/reconcile_introducer_orphan_contact_requests.sql`; take a DB backup before running bulk deletes in production.
+
+---
+
+### POST /admin/users/create-preintroducer
+
+Backoffice **Users → Create User** with role **Pre-Introducer**. Creates a **PREINTRODUCER** user (`nda_signed=false`, invitation token, inactive until password setup), a **`contact_requests`** row (`request_flow=introducer`, `user_role=NDA`), and sends **introducer_nda_invitation** (NDA PDF + link to `/setup-password`). The recipient sets password, uploads signed NDA on `/setup-password` then `/contact/introducer/upload-nda`; the row appears on **Onboarding → Introducer** (NDA status **sent** → **uploaded**). Admin only.
+
+**Query parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User email (must be unique) |
+| `first_name` | string | Yes | First name |
+| `last_name` | string | Yes | Last name |
+| `position` | string | No | Shown on contact request (default `Pre-Introducer (admin)`) |
+
+**Example**
+
+```http
+POST /api/v1/admin/users/create-preintroducer?email=pre@example.com&first_name=Jane&last_name=Doe&position=Partner
+Cookie: access_token=...
+```
+
+**Response (200)**
+
+```json
+{
+  "message": "PREINTRODUCER created; NDA invitation email sent",
+  "success": true,
+  "user": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "email": "pre@example.com",
+    "role": "PREINTRODUCER",
+    "referral_code": "Ab1#xY2z"
+  },
+  "contact_request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Errors:** **400** if email already exists. **503** if NDA PDF cannot be generated (nothing persisted). **503** if the invitation email cannot be sent after the user and contact request are staged in the transaction — the transaction is rolled back, so no orphan rows; retry the request. **503** after a successful email but a failed `commit` is extremely rare; if it happens, the recipient may have received the email while the database has no row — contact support.
+
+**Implementation (server):** NDA PDF is generated first. Then the user and contact request rows are **flushed** in the DB transaction, the **introducer_nda_invitation** email is sent, and **commit** runs only after a successful send. Mail settings for SMTP/Resend are built via shared helper `_mail_config_dict_for_invitation_email` in `backend/app/api/v1/admin.py` (same shape as **`POST /admin/introducer/{request_id}/send-nda`**). `POST /admin/introducer/{request_id}/send-nda` resolves `contact_email` with **case-insensitive** matching when checking for an existing user.
+
+**Troubleshooting**
+
+- **503 after invitation supposedly sent, user missing in DB:** Check backend logs for `create_preintroducer: commit failed after invitation email may have been sent` (includes `email`, `user_id`, `contact_request_id`). Align DB state manually or support retry; recipient may have a valid setup link without a matching row.
+- **Admin UI:** Backoffice → **Users** → **Create User** → role **Pre-Introducer** uses this endpoint; API errors (e.g. 503) surface as a **toast** (`showToast` + `getApiErrorMessage`).
 
 ---
 
@@ -352,8 +471,19 @@ List audit tickets (Backoffice **Audit Logging**). Admin only. Supports filters 
 
 ---
 
+## Onboarding (KYC)
+
+Onboarding status, document upload/list/delete, and submit are described in **`app_truth.md`** (§8, Backoffice Onboarding; §5 where relevant). The frontend KYC form wizard (`KycFormWizard`) optionally persists progress via:
+
+- **GET /onboarding/form** — Optional. Returns saved KYC form data (e.g. `current_step`, `pep_declarations`, carbon experience, source of funds, tax, declarations). When this endpoint is not implemented, the frontend uses a stub that returns `{}` and the wizard loads with default (step 1) state.
+- **PUT /onboarding/form** — Optional. Body: `KYCFormDataUpdate` (snake_case fields such as `current_step`, `pep_declarations`, etc.). When not implemented, the frontend stub no-ops so the wizard can still advance; data is not persisted until the backend adds these endpoints.
+
+Types: `KYCFormDataResponse`, `KYCFormDataUpdate`, `PEPDeclarationItem` in `frontend/src/types/index.ts`; `onboardingApi.getFormData` / `onboardingApi.saveFormData` in `frontend/src/services/api.ts`.
+
+---
+
 ## Other API docs
 
 - **Price scraping (EUA/CEA):** `docs/ADMIN_SCRAPING.md` — GET/POST/PUT scraping-sources, test, refresh, 429 backoff, `is_primary`, config (`xpath_selector`, `css_selector`, `regex_pattern`).
-- **Auto-trade market settings:** `app_truth.md` § Auto Trade & Liquidity Engine — GET/PUT auto-trade-market-settings, `avg_spread`, `tick_size`, response builder.
+- **Auto-trade market settings:** `app_truth.md` § Auto Trade & Liquidity Engine — GET/PUT auto-trade-market-settings, `avg_spread`, `tick_size`, five-priority algorithm (Priority 0: spread narrowing overrides at_target/above_target), response builder.
 - **Deposits, backoffice, swap, cash market, auth:** `app_truth.md` §5, §8 and related sections.

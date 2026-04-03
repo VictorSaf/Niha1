@@ -195,14 +195,15 @@ export function CEALineChart() {
           <AreaChart data={data} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="ceaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="#34d399" stopOpacity={0.20} />
-                <stop offset="100%" stopColor="#34d399" stopOpacity={0.00} />
+                <stop offset="0%"   stopColor="var(--color-primary)" stopOpacity={0.20} />
+                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.00} />
               </linearGradient>
             </defs>
 
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(51,65,85,0.35)"
+              stroke="var(--color-border)"
+              strokeOpacity={0.35}
               vertical={false}
             />
 
@@ -212,16 +213,16 @@ export function CEALineChart() {
               scale="time"
               domain={['dataMin', 'dataMax']}
               tickFormatter={v => formatAxisTime(v, interval.seconds)}
-              tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
+              tick={{ fill: 'var(--color-text-muted)', fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(51,65,85,0.4)' }}
+              axisLine={{ stroke: 'var(--color-border)', strokeOpacity: 0.4 }}
               minTickGap={50}
             />
 
             <YAxis
               domain={yDomain}
               tickFormatter={v => `€${Number(v).toFixed(2)}`}
-              tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
+              tick={{ fill: 'var(--color-text-muted)', fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
               tickLine={false}
               axisLine={false}
               width={52}
@@ -229,17 +230,17 @@ export function CEALineChart() {
 
             <Tooltip
               content={<ChartTooltip />}
-              cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 4' }}
+              cursor={{ stroke: 'var(--color-text-muted)', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
 
             <Area
               type="monotone"
               dataKey="value"
-              stroke="#34d399"
+              stroke="var(--color-primary)"
               strokeWidth={2}
               fill="url(#ceaGradient)"
               dot={false}
-              activeDot={{ r: 4, fill: '#34d399', stroke: '#1e293b', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: 'var(--color-primary)', stroke: 'var(--color-surface)', strokeWidth: 2 }}
               isAnimationActive={false}
             />
           </AreaChart>

@@ -9,6 +9,12 @@ import { RoleSimulationFloater } from '../RoleSimulationFloater';
 
 vi.mock('../../../stores/useStore', () => ({
   useAuthStore: vi.fn(),
+  usePricesStore: vi.fn(() => ({
+    prices: {
+      cea: { price: 10, currency: 'EUR', priceUsd: 11, change24h: 0 },
+      eua: { price: 85, currency: 'EUR', priceUsd: 90, change24h: 0 },
+    },
+  })),
 }));
 
 const { useAuthStore } = await import('../../../stores/useStore');
@@ -25,7 +31,7 @@ describe('RoleSimulationFloater', () => {
   it('renders nothing when user is null', () => {
     const { container } = render(<RoleSimulationFloater />);
     expect(container.firstChild).toBeNull();
-    expect(screen.queryByRole('group', { name: /Simulare rol/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /admin controls/i })).not.toBeInTheDocument();
   });
 
   it('renders nothing when user is not ADMIN', () => {
@@ -36,7 +42,7 @@ describe('RoleSimulationFloater', () => {
     } as ReturnType<typeof useAuthStore>);
     const { container } = render(<RoleSimulationFloater />);
     expect(container.firstChild).toBeNull();
-    expect(screen.queryByRole('group', { name: /Simulare rol/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /admin controls/i })).not.toBeInTheDocument();
   });
 
   it('renders floater when user.role is ADMIN', () => {
@@ -46,7 +52,7 @@ describe('RoleSimulationFloater', () => {
       setSimulatedRole: vi.fn(),
     } as ReturnType<typeof useAuthStore>);
     render(<RoleSimulationFloater />);
-    expect(screen.getByRole('group', { name: 'Simulare rol (test)' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /admin controls/i })).toBeInTheDocument();
     expect(screen.getByLabelText('Selectează rol de simulat')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Fără simulare')).toBeInTheDocument();
   });

@@ -17,15 +17,14 @@ describe('Button', () => {
     render(<Button>Primary</Button>);
 
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('from-emerald-500');
-    expect(button).toHaveClass('to-emerald-600');
+    expect(button).toHaveClass('bg-emerald-500');
   });
 
   it('should apply secondary variant classes', () => {
     render(<Button variant="secondary">Secondary</Button>);
 
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-navy-900');
+    expect(button).toHaveClass('bg-navy-700');
   });
 
   it('should apply outline variant classes', () => {
@@ -33,14 +32,14 @@ describe('Button', () => {
 
     const button = screen.getByRole('button');
     expect(button).toHaveClass('border-2');
-    expect(button).toHaveClass('border-navy-200');
+    expect(button).toHaveClass('border-navy-600');
   });
 
   it('should apply ghost variant classes', () => {
     render(<Button variant="ghost">Ghost</Button>);
 
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('text-navy-600');
+    expect(button).toHaveClass('text-navy-300');
   });
 
   it('should handle click events', () => {

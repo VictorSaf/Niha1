@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# [STALE: 2026-04-03] Runner pentru TRODUCER (rol eliminat în feature 0072). Înlocuitor: agent/run_introducer.py (de creat). Vezi docs/STALE_CONTENT.md.
 # agent/run_troducer.py
 """
 Orchestrated Troducer E2E flow.

@@ -11,6 +11,7 @@ import {
   CheckCircle,
   XCircle,
   Timer,
+  Unlink,
 } from 'lucide-react';
 import { Button, Card, Badge, AlertBanner } from '../components/common';
 import { BackofficeLayout } from '../components/layout';
@@ -149,6 +150,7 @@ export function BackofficeOnboardingPage() {
   const [ipLookupLoading, setIpLookupLoading] = useState(false);
   const [showIpModal, setShowIpModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [reconcileSuccess, setReconcileSuccess] = useState<string | null>(null);
   const [pendingDeposits, setPendingDeposits] = useState<PendingDeposit[]>([]);
   const [amlDeposits, setAmlDeposits] = useState<Deposit[]>([]);
   const [settlementBatches, setSettlementBatches] = useState<AdminSettlementBatch[]>([]);
@@ -222,10 +224,30 @@ export function BackofficeOnboardingPage() {
   }, [activeSubpage, realtimeContactRequests.length, connectionStatus, loadData]);
 
   const handleRefresh = () => {
-    if (activeSubpage === 'requests') {
+    if (activeSubpage === 'requests' || activeSubpage === 'introducer') {
       refreshContactRequests();
     } else {
       loadData();
+    }
+  };
+
+  const handleReconcileIntroducerOrphans = async () => {
+    setActionLoading('reconcile-introducer-orphans');
+    setReconcileSuccess(null);
+    setError(null);
+    try {
+      const { deleted } = await adminApi.reconcileIntroducerOrphanContactRequests();
+      refreshContactRequests();
+      setReconcileSuccess(
+        deleted === 0
+          ? 'No orphan introducer contact requests found.'
+          : `Removed ${deleted} orphan introducer contact request${deleted === 1 ? '' : 's'}.`
+      );
+    } catch (err: unknown) {
+      logger.error('Failed to reconcile introducer orphans', err);
+      setError(getApiErrorMessage(err));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -565,6 +587,19 @@ export function BackofficeOnboardingPage() {
           )}
         </div>
       )}
+      {activeSubpage === 'introducer' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleReconcileIntroducerOrphans}
+          loading={actionLoading === 'reconcile-introducer-orphans'}
+          disabled={!!actionLoading && actionLoading !== 'reconcile-introducer-orphans'}
+          icon={<Unlink className="w-4 h-4" />}
+          title="Remove introducer contact requests when no PREINTRODUCER/INTRODUCER user exists for that email (e.g. after manual user deletion)."
+        >
+          Reconcile orphans
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -581,6 +616,15 @@ export function BackofficeOnboardingPage() {
       subSubHeaderLeft={subSubHeaderLeft}
       subSubHeader={subSubHeaderRight}
     >
+      {reconcileSuccess && (
+        <AlertBanner
+          variant="success"
+          message={reconcileSuccess}
+          onDismiss={() => setReconcileSuccess(null)}
+          className="mb-4"
+        />
+      )}
+
       {error && (
         <AlertBanner
           variant="error"

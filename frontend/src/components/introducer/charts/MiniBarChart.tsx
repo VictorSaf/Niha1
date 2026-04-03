@@ -16,7 +16,7 @@ interface Props {
   annotation?: ReactNode;
 }
 
-const DEFAULT_COLOR = 'rgb(52, 211, 153)';
+const DEFAULT_COLOR = 'var(--color-success)';
 
 export function MiniBarChart({
   bars,

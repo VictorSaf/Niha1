@@ -68,7 +68,6 @@ def _person_table(styles, title: str, fields: list[tuple[str, str]]):
 
 def _internal_review_table(styles):
     """Compliance review table (for internal use)."""
-    from .msa_generator import _data_table
     rows = [
         ["Application Reference No.", "___________________________"],
         ["Date Received", "___________________________"],

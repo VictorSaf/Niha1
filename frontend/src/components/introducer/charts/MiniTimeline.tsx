@@ -11,7 +11,7 @@ interface Props {
   title?: string;
 }
 
-const DEFAULT_COLOR = 'rgb(52, 211, 153)';
+const DEFAULT_COLOR = 'var(--color-success)';
 
 export function MiniTimeline({ events, title }: Props) {
   return (
@@ -26,7 +26,7 @@ export function MiniTimeline({ events, title }: Props) {
                 className="absolute -left-[calc(1rem+4.5px)] w-2.5 h-2.5 rounded-full border-2 top-0.5"
                 style={{
                   borderColor: c,
-                  background: evt.highlight ? c : 'rgb(15, 23, 42)',
+                  background: evt.highlight ? c : 'var(--color-background)',
                 }}
               />
               <div>

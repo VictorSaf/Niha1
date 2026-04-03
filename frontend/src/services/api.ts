@@ -329,7 +329,7 @@ export const authApi = {
     token: string,
     password: string,
     confirmPassword: string
-  ): Promise<{ access_token: string; user: User }> => {
+  ): Promise<{ access_token?: string; accessToken?: string; user: User }> => {
     const { data } = await api.post('/auth/setup-password', {
       token,
       password,
@@ -403,7 +403,7 @@ export const contactApi = {
     return data;
   },
 
-  validateCode: async (code: string): Promise<{ valid: boolean; type?: 'preintroducer' | 'troducer' | 'introducer' }> => {
+  validateCode: async (code: string): Promise<{ valid: boolean; type?: 'preintroducer' | 'introducer' }> => {
     const formData = new FormData();
     formData.append('code', code);
     const { data } = await api.post('/contact/validate-code', formData);
@@ -982,6 +982,12 @@ export const adminApi = {
     return data;
   },
 
+  /** Remove introducer contact requests with no PREINTRODUCER/INTRODUCER user for that email. */
+  reconcileIntroducerOrphanContactRequests: async (): Promise<{ deleted: number }> => {
+    const { data } = await api.post('/admin/contact-requests/reconcile-introducer-orphans');
+    return data;
+  },
+
   // Create user from contact request (approve & create user)
   createUserFromRequest: async (
     requestId: string,
@@ -1252,8 +1258,13 @@ export const adminApi = {
   // Referral / Introducer Management
   createPreintroducer: async (payload: {
     email: string; first_name: string; last_name: string;
-    mode: 'manual' | 'invitation'; password?: string;
-  }): Promise<{ message: string; success: boolean; user: { id: string; email: string; role: string; referral_code: string } }> => {
+    position?: string;
+  }): Promise<{
+    message: string;
+    success: boolean;
+    user: { id: string; email: string; role: string; referral_code: string };
+    contact_request_id?: string;
+  }> => {
     const params = new URLSearchParams();
     Object.entries(payload).forEach(([k, v]) => { if (v) params.set(k, v); });
     const { data } = await api.post(`/admin/users/create-preintroducer?${params}`);
@@ -1900,6 +1911,25 @@ export const onboardingApi = {
   submit: async (): Promise<MessageResponse> => {
     const { data } = await api.post('/onboarding/submit');
     return data;
+  },
+
+  /** KYC form data – stub until backend exposes GET/PUT /onboarding/form. Returns empty so wizard loads; save is no-op. */
+  getFormData: async (): Promise<import('../types').KYCFormDataResponse> => {
+    try {
+      const { data } = await api.get('/onboarding/form');
+      return data ?? {};
+    } catch {
+      return {};
+    }
+  },
+
+  /** KYC form data – stub until backend exposes PUT /onboarding/form. No-op so wizard can advance. */
+  saveFormData: async (_update: import('../types').KYCFormDataUpdate): Promise<void> => {
+    try {
+      await api.put('/onboarding/form', _update);
+    } catch {
+      // No backend endpoint yet; allow wizard to proceed
+    }
   },
 };
 

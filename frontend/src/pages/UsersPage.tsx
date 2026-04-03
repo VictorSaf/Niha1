@@ -14,7 +14,7 @@ import {
   X,
   ShieldAlert,
 } from 'lucide-react';
-import { Button, Card, Badge, ConfirmationModal, Skeleton } from '../components/common';
+import { Button, Card, Badge, ConfirmationModal, Skeleton, showToast } from '../components/common';
 import { BackofficeLayout } from '../components/layout';
 import { AddAssetModal, EditAssetModal } from '../components/backoffice';
 import {
@@ -24,6 +24,7 @@ import {
   UserDetailModal,
 } from '../components/users';
 import { cn, formatRelativeTime } from '../utils';
+import { getApiErrorMessage } from '../utils/errors';
 import { buildDepositAndWithdrawalHistory } from '../utils/depositHistory';
 import { adminApi, backofficeApi } from '../services/api';
 import type { User, UserRole, AdminUserFull, Deposit, EntityBalance, DepositHistoryItem } from '../types';
@@ -160,26 +161,27 @@ export function UsersPage() {
 
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.firstName || !newUser.lastName) return;
-    if (!useInvitation && !newUser.password) return;
+    if (newUser.role !== 'PREINTRODUCER' && !useInvitation && !newUser.password) return;
 
     setSavingUser(true);
     try {
       let created: User;
 
       if (newUser.role === 'PREINTRODUCER') {
-        // Use dedicated endpoint that auto-generates referral code
         const result = await adminApi.createPreintroducer({
           email: newUser.email,
           first_name: newUser.firstName,
           last_name: newUser.lastName,
-          mode: useInvitation ? 'invitation' : 'manual',
-          password: useInvitation ? undefined : newUser.password,
+          position: newUser.position?.trim() || undefined,
         });
         created = {
           id: result.user.id,
           email: result.user.email,
           role: result.user.role as UserRole,
           referralCode: result.user.referral_code,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          position: newUser.position?.trim() || undefined,
         } as User;
       } else {
         const userData: {
@@ -202,6 +204,7 @@ export function UsersPage() {
       setUseInvitation(false);
     } catch (error) {
       console.error('Failed to create user:', error);
+      showToast('error', getApiErrorMessage(error), 'Create user');
     } finally {
       setSavingUser(false);
     }
@@ -530,7 +533,6 @@ export function UsersPage() {
               <option value="ADMIN">Admin</option>
               <option value="MM">MM (Market Maker)</option>
               <option value="PREINTRODUCER">Pre-Introducer</option>
-              <option value="TRODUCER">Troducer</option>
               <option value="INTRODUCER">Introducer</option>
               <option value="NDA">NDA</option>
               <option value="KYC">KYC</option>

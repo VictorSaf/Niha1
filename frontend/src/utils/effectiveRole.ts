@@ -5,7 +5,6 @@ export const USER_ROLES: UserRole[] = [
   'ADMIN',
   'MM',
   'PREINTRODUCER',
-  'TRODUCER',
   'PRE_NDA',
   'INTRODUCER',
   'NDA',

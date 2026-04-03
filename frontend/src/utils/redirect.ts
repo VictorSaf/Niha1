@@ -35,11 +35,6 @@ export function getPostLoginRedirect(userOrRole: UserOrRole): string {
     return '/preintroducer';
   }
 
-  // TRODUCER: referral code page (single-use code, no dashboard)
-  if (role === 'TRODUCER') {
-    return '/troducer';
-  }
-
   // PRE_NDA: upload signed NDA page
   if (role === 'PRE_NDA') {
     return '/pre-nda';

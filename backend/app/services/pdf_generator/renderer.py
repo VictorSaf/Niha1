@@ -9,7 +9,6 @@ Dynamic documents: called by individual *_generator.py wrappers
 from pathlib import Path
 from datetime import date
 import jinja2
-import weasyprint
 
 _BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = _BASE_DIR / "templates"
@@ -37,6 +36,7 @@ def render_pdf(template_name: str, context: dict) -> bytes:
     context.setdefault("doc_ref", "")
 
     html_string = _jinja_env.get_template(f"{template_name}.html.j2").render(**context)
+    import weasyprint  # lazy: avoid import at package load so pytest can collect without weasyprint installed
     return weasyprint.HTML(
         string=html_string,
         base_url=str(STYLES_DIR),

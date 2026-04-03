@@ -25,15 +25,15 @@ describe('isPendingContactRequest', () => {
     expect(isPendingContactRequest('')).toBe(false);
   });
 
-  it('filtering a mixed list leaves only NDA and new', () => {
-    const roles = ['NDA', 'KYC', 'new', 'REJECTED', 'NDA', 'KYC'];
+  it('filtering a mixed list leaves only pending roles (NDA, PRE_NDA, new)', () => {
+    const roles = ['NDA', 'PRE_NDA', 'KYC', 'new', 'REJECTED', 'NDA', 'KYC'];
     const filtered = roles.filter(isPendingContactRequest);
-    expect(filtered).toEqual(['NDA', 'new', 'NDA']);
+    expect(filtered).toEqual(['NDA', 'PRE_NDA', 'new', 'NDA']);
   });
 });
 
 describe('PENDING_CONTACT_REQUEST_ROLES', () => {
-  it('contains only NDA and new', () => {
-    expect(PENDING_CONTACT_REQUEST_ROLES).toEqual(['NDA', 'new']);
+  it('matches contactRequest.ts (NDA, PRE_NDA, new)', () => {
+    expect(PENDING_CONTACT_REQUEST_ROLES).toEqual(['NDA', 'PRE_NDA', 'new']);
   });
 });

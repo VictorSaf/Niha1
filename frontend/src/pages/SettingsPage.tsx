@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Bot,
   Database,
+  Globe,
   RefreshCw,
   Play,
   Clock,
@@ -267,8 +268,9 @@ const TRADING_ECONOMICS_EUA_PRESET = {
     "//a[@href='/commodity/carbon']/ancestor::tr/td[@id='p']",
 };
 
-type SettingsTab = 'scraping' | 'exchange' | 'mail' | 'documents' | 'ai-agent';
+type SettingsTab = 'server' | 'scraping' | 'exchange' | 'mail' | 'documents' | 'ai-agent';
 const SETTINGS_TABS: { key: SettingsTab; label: string; icon: typeof Database }[] = [
+  { key: 'server', label: 'Server', icon: Globe },
   { key: 'scraping', label: 'Price Scraping', icon: Database },
   { key: 'exchange', label: 'Exchange Rate', icon: DollarSign },
   { key: 'mail', label: 'Mail Settings', icon: Mail },
@@ -345,6 +347,7 @@ export function SettingsPage() {
     provider: 'resend',
     useEnvCredentials: true,
     fromEmail: '',
+    appBaseUrl: '',
     invitationLinkBaseUrl: '',
     invitationTokenExpiryDays: 7,
   });
@@ -403,6 +406,7 @@ export function SettingsPage() {
         invitationSubject: mailData.invitationSubject ?? undefined,
         invitationBodyHtml: mailData.invitationBodyHtml ?? undefined,
         invitationLinkBaseUrl: mailData.invitationLinkBaseUrl ?? '',
+        appBaseUrl: mailData.appBaseUrl ?? '',
         invitationTokenExpiryDays: mailData.invitationTokenExpiryDays ?? 7,
         verificationMethod: mailData.verificationMethod ?? undefined,
         authMethod: mailData.authMethod ?? undefined,
@@ -766,6 +770,7 @@ export function SettingsPage() {
         invitationSubject: mailForm.invitationSubject ?? undefined,
         invitationBodyHtml: mailForm.invitationBodyHtml ?? undefined,
         invitationLinkBaseUrl: mailForm.invitationLinkBaseUrl || undefined,
+        appBaseUrl: mailForm.appBaseUrl || undefined,
         invitationTokenExpiryDays: mailForm.invitationTokenExpiryDays ?? undefined,
         verificationMethod: mailForm.verificationMethod ?? undefined,
         authMethod: mailForm.authMethod ?? undefined,
@@ -786,6 +791,7 @@ export function SettingsPage() {
         invitationSubject: mailData.invitationSubject ?? undefined,
         invitationBodyHtml: mailData.invitationBodyHtml ?? undefined,
         invitationLinkBaseUrl: mailData.invitationLinkBaseUrl ?? '',
+        appBaseUrl: mailData.appBaseUrl ?? '',
         invitationTokenExpiryDays: mailData.invitationTokenExpiryDays ?? 7,
         verificationMethod: mailData.verificationMethod ?? undefined,
         authMethod: mailData.authMethod ?? undefined,
@@ -912,6 +918,65 @@ export function SettingsPage() {
         )}
 
         <div className="space-y-6">
+          {/* Server Settings */}
+          {activeTab === 'server' && <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card
+              data-testid="server-settings-card"
+              className="bg-navy-800/50 border-navy-700"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-emerald-500" />
+                  Server URL
+                </h2>
+                <div className="flex items-center gap-3">
+                  {mailSavedSuccess && (
+                    <span className="text-sm font-medium text-emerald-400" role="status">
+                      Saved
+                    </span>
+                  )}
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSaveMailSettings}
+                    loading={mailSaving}
+                    icon={<Save className="w-4 h-4" />}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm text-navy-400 mb-6">
+                The base URL where this application is accessible. Used in all generated links —
+                invitation emails, NDA setup links, referral URLs, and any other absolute URL
+                produced by the server. Change this when deploying to a new host or testing from
+                other devices on the local network (e.g.{' '}
+                <code className="text-emerald-400 bg-navy-900 px-1 rounded text-xs">http://192.168.10.74:5173</code>).
+              </p>
+              <div className="max-w-lg">
+                <label className="block text-sm font-medium text-navy-300 mb-1">
+                  Application URL
+                </label>
+                <input
+                  type="url"
+                  value={mailForm.appBaseUrl ?? ''}
+                  onChange={(e) => setMailForm({ ...mailForm, appBaseUrl: e.target.value })}
+                  className="w-full form-input font-mono"
+                  placeholder="http://192.168.10.74:5173"
+                  spellCheck={false}
+                />
+                <p className="mt-2 text-xs text-navy-500">
+                  Include the protocol and port. No trailing slash.
+                  If empty, falls back to <em>Invitation link base URL</em> in Mail Settings,
+                  then to <code className="text-navy-400">http://localhost:5173</code>.
+                </p>
+              </div>
+            </Card>
+          </motion.div>}
+
           {/* Scraping Sources */}
           {activeTab === 'scraping' && <motion.div
             initial={{ opacity: 0, y: 20 }}

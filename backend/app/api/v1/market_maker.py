@@ -38,6 +38,7 @@ from ...schemas.schemas import (
     MarketMakerUpdate,
     ResetPasswordRequest,
 )
+from ...core.config import settings
 from ...services.market_maker_service import MarketMakerService
 from ...services.ticket_service import TicketService
 from ...services.auto_trade_executor import fill_spread_with_orders, AutoTradeExecutor
@@ -310,12 +311,19 @@ async def reset_all_market_makers(
     Requires password confirmation.
     Admin-only endpoint.
     """
-    # Validate password
-    RESET_PASSWORD = "Niha010!"
-    if request.password != RESET_PASSWORD:
+    # Validate password (from env MM_RESET_PASSWORD; required in production)
+    expected = settings.MM_RESET_PASSWORD
+    if not expected:
+        if not settings.DEBUG:
+            raise HTTPException(
+                status_code=503,
+                detail="MM_RESET_PASSWORD not configured. Set env var to enable reset.",
+            )
+        expected = "Niha010!"  # dev-only fallback when env unset
+    if request.password != expected:
         raise HTTPException(status_code=403, detail="Invalid reset password")
 
-    from ...models.models import CashMarketTrade, TicketLog
+    from ...models.models import CashMarketTrade, CommissionLedger, TicketLog
 
     # Get all market maker IDs
     mm_result = await db.execute(select(MarketMakerClient.id))
@@ -327,6 +335,20 @@ async def reset_all_market_makers(
     # Use subquery instead of explicit ID list to avoid PostgreSQL's
     # 32,767 parameter limit (auto-trade creates tens of thousands of orders)
     mm_orders_subq = select(Order.id).where(Order.market_maker_id.in_(mm_ids))
+
+    # Subquery for cash_market_trades we are about to delete (MM-related)
+    mm_trades_subq = select(CashMarketTrade.id).where(
+        CashMarketTrade.market_maker_id.in_(mm_ids)
+        | CashMarketTrade.buy_order_id.in_(mm_orders_subq)
+        | CashMarketTrade.sell_order_id.in_(mm_orders_subq)
+    )
+
+    # 0. Delete commission_ledger rows that reference those trades (FK constraint)
+    await db.execute(
+        CommissionLedger.__table__.delete().where(
+            CommissionLedger.cash_market_trade_id.in_(mm_trades_subq)
+        )
+    )
 
     # 1. Delete cash market trades where MM is directly involved
     #    OR where the trade references an MM order
@@ -368,9 +390,9 @@ async def reset_all_market_makers(
         .values(eur_balance=0)
     )
 
-    await db.commit()
-
-    # Create audit ticket for the reset action (not linked to any specific MM)
+    # Create audit ticket in the same transaction (before commit) so it is persisted.
+    # get_db only closes the session and does not commit; create_ticket after commit
+    # would run in a new transaction that gets rolled back on close().
     ticket = await TicketService.create_ticket(
         db=db,
         action_type="MM_RESET_ALL",
@@ -385,6 +407,8 @@ async def reset_all_market_makers(
         },
         tags=["market_maker", "reset", "admin"],
     )
+
+    await db.commit()
 
     message = (
         f"Successfully reset {len(mm_ids)} market makers. "

@@ -19,3 +19,20 @@ export function createMockContactRequest(
     ...overrides,
   };
 }
+
+/** Timeline entries up to and including `throughStatus` (for settlement tests). */
+export function createSettlementTimeline(throughStatus: string) {
+  const order = [
+    'PENDING',
+    'TRANSFER_INITIATED',
+    'IN_TRANSIT',
+    'AT_CUSTODY',
+    'SETTLED',
+  ];
+  const idx = order.indexOf(throughStatus);
+  if (idx === -1) return [];
+  return order.slice(0, idx + 1).map((status, i) => ({
+    status,
+    timestamp: new Date(Date.now() + i * 1000).toISOString(),
+  }));
+}

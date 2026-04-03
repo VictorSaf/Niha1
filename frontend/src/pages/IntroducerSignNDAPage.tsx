@@ -18,7 +18,7 @@ export function IntroducerSignNDAPage() {
     setError('');
     try {
       await contactApi.uploadIntroducerNDA(file);
-      // Clear auth — TRODUCER cannot login until admin approves
+      // Clear auth — PREINTRODUCER cannot login until admin approves
       useAuthStore.getState().logout();
       setSuccess(true);
     } catch (e) {

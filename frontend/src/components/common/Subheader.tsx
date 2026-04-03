@@ -17,6 +17,8 @@ interface SubheaderProps {
   to?: string;
   /** Icon container background color class (default: bg-emerald-500/20) */
   iconBg?: string;
+  /** When false, do not render the spacer (use when SubSubHeader follows immediately to avoid gap) */
+  renderSpacer?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export function Subheader({
   className,
   to,
   iconBg = 'bg-emerald-500/20',
+  renderSpacer = true,
 }: SubheaderProps) {
   const content = (
     <>
@@ -89,7 +92,7 @@ export function Subheader({
           </div>
         </div>
       </div>
-      <div className="subheader-bar-spacer" aria-hidden="true" />
+      {renderSpacer && <div className="subheader-bar-spacer" aria-hidden="true" />}
     </>
   );
 }
