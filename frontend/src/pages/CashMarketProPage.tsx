@@ -117,7 +117,7 @@ function ProfessionalOrderBook({
       {/* Column Headers */}
       <div className="flex border-b border-navy-700 whitespace-nowrap">
         <div className="flex-1 flex gap-1 px-2 py-1 text-[10px] text-navy-500">
-          <div className="flex-1 min-w-0 truncate">#</div>
+          <div className="flex-1 min-w-0 truncate pl-3">#</div>
           <div className="flex-1 min-w-0 truncate text-right">Value</div>
           <div className="flex-1 min-w-0 truncate text-right">CumVol</div>
           <div className="flex-1 min-w-0 truncate text-right">Vol</div>
@@ -129,7 +129,7 @@ function ProfessionalOrderBook({
           <div className="flex-1 min-w-0 truncate text-right">Vol</div>
           <div className="flex-1 min-w-0 truncate text-right">CumVol</div>
           <div className="flex-1 min-w-0 truncate text-right">Value</div>
-          <div className="flex-1 min-w-0 truncate text-right">#</div>
+          <div className="flex-1 min-w-0 truncate text-right pr-3">#</div>
         </div>
       </div>
 
@@ -146,7 +146,7 @@ function ProfessionalOrderBook({
                 className={`flex gap-1 px-2 py-1 text-[11px] font-mono tabular-nums cursor-pointer relative hover:bg-navy-700/50 whitespace-nowrap ${isEven ? 'bg-emerald-500/[0.125]' : 'bg-emerald-500/[0.075]'}`}
               >
                 <div className="absolute right-0 top-0 bottom-0 bg-emerald-500/20 transition-all" style={{ width: `${depthPct}%` }} />
-                <div className="relative z-10 flex-1 min-w-0 truncate text-navy-400">{bid.orderCount}</div>
+                <div className="relative z-10 flex-1 min-w-0 truncate text-navy-400 pl-3">{bid.orderCount}</div>
                 <div className="relative z-10 flex-1 min-w-0 truncate text-right text-white/70">{formatEur(bid.cumulativeValue)}</div>
                 <div className="relative z-10 flex-1 min-w-0 truncate text-right text-white/70">{formatQuantity(bid.cumulativeQuantity)}</div>
                 <div className="relative z-10 flex-1 min-w-0 truncate text-right text-white">{formatQuantity(bid.quantity)}</div>
@@ -181,7 +181,7 @@ function ProfessionalOrderBook({
                 <div className={`relative z-10 flex-1 min-w-0 truncate text-right ${isHighlighted ? 'text-yellow-300 font-semibold' : 'text-white'}`}>{formatQuantity(ask.quantity)}</div>
                 <div className="relative z-10 flex-1 min-w-0 truncate text-right text-white/70">{formatQuantity(ask.cumulativeQuantity)}</div>
                 <div className="relative z-10 flex-1 min-w-0 truncate text-right text-white/70">{formatEur(ask.cumulativeValue)}</div>
-                <div className="relative z-10 flex-1 min-w-0 truncate text-right text-navy-400">{ask.orderCount}</div>
+                <div className="relative z-10 flex-1 min-w-0 truncate text-right text-navy-400 pr-3">{ask.orderCount}</div>
               </div>
             );
           })}
@@ -459,8 +459,8 @@ export function CashMarketProPage() {
       )}
 
       {/* Content */}
-      <div className="page-container py-6">
-        <div className="flex flex-col gap-4">
+      <div className="page-container pt-0 pb-4">
+        <div className="flex flex-col gap-2">
 
           {loading && !orderBook ? (
             <>
@@ -493,8 +493,8 @@ export function CashMarketProPage() {
             </div>
           ) : (
             <>
-              {/* 1 — Order Book */}
-              <div className="rounded-xl border border-navy-700/50 bg-navy-800/30 overflow-hidden widget-accent-purple">
+              {/* 1 — Order Book — full-width breakout from page-container padding */}
+              <div className="-mx-4 sm:-mx-6 lg:-mx-8 bg-navy-950/60 overflow-hidden">
                 <ProfessionalOrderBook
                   bids={safeOrderBook.bids}
                   asks={safeOrderBook.asks}
