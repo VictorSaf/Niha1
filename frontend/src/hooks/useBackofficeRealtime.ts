@@ -43,6 +43,7 @@ export function useBackofficeRealtime() {
     setContactRequests,
     addContactRequest,
     updateContactRequest,
+    removeContactRequest,
     setKYCDocuments,
     addKYCDocument,
     updateKYCDocument,
@@ -110,7 +111,10 @@ export function useBackofficeRealtime() {
         break;
 
       case 'request_removed':
-        // Not implemented in backend yet, but ready for future use
+        if (message.data) {
+          const id = toStringOrUndefined((message.data as { id?: unknown }).id);
+          if (id) removeContactRequest(id);
+        }
         break;
 
       // KYC Document Events
@@ -159,12 +163,19 @@ export function useBackofficeRealtime() {
         }
         break;
 
+      // Settlement Events — dispatch custom events for any listening page
+      case 'new_settlement':
+      case 'settlement_status_changed':
+      case 'settlement_settled':
+        window.dispatchEvent(new CustomEvent('nihao:settlementChanged', { detail: message.data }));
+        break;
+
       // System Health Events
       case 'system_health_update':
         window.dispatchEvent(new CustomEvent('nihao:system_health_update', { detail: message.data }));
         break;
     }
-  }, [setConnectionStatus, addContactRequest, updateContactRequest, addKYCDocument, updateKYCDocument, removeKYCDocument]);
+  }, [setConnectionStatus, addContactRequest, updateContactRequest, removeContactRequest, addKYCDocument, updateKYCDocument, removeKYCDocument]);
 
   // Connect WebSocket with reconnection logic
   const connect = useCallback(() => {
@@ -272,5 +283,6 @@ export function useBackofficeRealtime() {
     lastUpdated,
     kycLastUpdated,
     refresh,
+    removeContactRequest,
   };
 }

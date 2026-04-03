@@ -583,7 +583,7 @@ export interface ClientWebSocketMessage {
 
 // Backoffice Realtime Types
 export interface BackofficeWebSocketMessage {
-  type: 'connected' | 'heartbeat' | 'new_request' | 'request_updated' | 'request_removed' | 'kyc_document_uploaded' | 'kyc_document_reviewed' | 'kyc_document_deleted' | 'new_ticket' | 'newTicket' | 'system_health_update';
+  type: 'connected' | 'heartbeat' | 'new_request' | 'request_updated' | 'request_removed' | 'kyc_document_uploaded' | 'kyc_document_reviewed' | 'kyc_document_deleted' | 'new_ticket' | 'newTicket' | 'system_health_update' | 'new_settlement' | 'settlement_status_changed' | 'settlement_settled';
   data?: Record<string, unknown>;
   message?: string;
   timestamp: string;

@@ -165,6 +165,26 @@ class SettlementService:
                 f"Created CEA settlement: {batch_reference} for entity {entity_id}"
             )
 
+            # Notify backoffice admins of new settlement in real-time
+            try:
+                import asyncio
+                from ..api.v1.backoffice import backoffice_ws_manager
+                asyncio.create_task(backoffice_ws_manager.broadcast(
+                    "new_settlement",
+                    {
+                        "batch_id": str(settlement.id),
+                        "batch_reference": batch_reference,
+                        "entity_id": str(entity_id),
+                        "settlement_type": SettlementType.CEA_PURCHASE.value,
+                        "status": SettlementStatus.PENDING.value,
+                        "quantity": float(quantity),
+                        "total_value_eur": float(total_value_eur),
+                        "expected_settlement_date": expected_date.strftime("%Y-%m-%d"),
+                    },
+                ))
+            except Exception as ws_err:
+                logger.warning(f"Failed to send new_settlement backoffice WS notification: {ws_err}")
+
             # Send confirmation email
             try:
                 # Get entity and user information for email
@@ -282,6 +302,7 @@ class SettlementService:
                 import asyncio
                 from .ws_utils import get_entity_user_ids
                 from ..api.v1.client_ws import client_ws_manager
+                from ..api.v1.backoffice import backoffice_ws_manager
 
                 user_ids = await get_entity_user_ids(db, settlement.entity_id)
                 if user_ids:
@@ -302,6 +323,17 @@ class SettlementService:
                             user_ids,
                             {"type": "balance_updated", "data": {"source": "settlement_completed"}},
                         ))
+
+                # Notify backoffice admins of settlement status change
+                asyncio.create_task(backoffice_ws_manager.broadcast(
+                    "settlement_status_changed",
+                    {
+                        "batch_id": str(settlement.id),
+                        "batch_reference": settlement.batch_reference,
+                        "status": new_status.value,
+                        "entity_id": str(settlement.entity_id),
+                    },
+                ))
             except Exception as ws_err:
                 logger.warning(f"Failed to send settlement WS notification: {ws_err}")
 

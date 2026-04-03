@@ -12,6 +12,7 @@ import {
   XCircle,
   Timer,
   Unlink,
+  Trash2,
 } from 'lucide-react';
 import { Button, Card, Badge, AlertBanner } from '../components/common';
 import { BackofficeLayout } from '../components/layout';
@@ -109,6 +110,7 @@ export function BackofficeOnboardingPage() {
     contactRequests: realtimeContactRequests,
     connectionStatus,
     refresh: refreshContactRequests,
+    removeContactRequest,
   } = useBackofficeRealtime();
 
   const allMapped: ContactRequest[] = realtimeContactRequests.map(r => ({
@@ -154,6 +156,11 @@ export function BackofficeOnboardingPage() {
   const [pendingDeposits, setPendingDeposits] = useState<PendingDeposit[]>([]);
   const [amlDeposits, setAmlDeposits] = useState<Deposit[]>([]);
   const [settlementBatches, setSettlementBatches] = useState<AdminSettlementBatch[]>([]);
+  // Real-time settlement count — kept in sync via WS regardless of active subpage
+  const [pendingSettlementsCount, setPendingSettlementsCount] = useState<number>(0);
+  // AML batch selection
+  const [amlSelectedIds, setAmlSelectedIds] = useState<Set<string>>(new Set());
+  const [amlBatchLoading, setAmlBatchLoading] = useState<'reject' | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -206,6 +213,8 @@ export function BackofficeOnboardingPage() {
       } else if (activeSubpage === 'settlements') {
         const res = await adminApi.getAdminPendingSettlements();
         setSettlementBatches(res.data || []);
+        // Keep real-time count in sync with full list
+        setPendingSettlementsCount(res.count ?? res.data?.length ?? 0);
       }
     } catch (err: unknown) {
       logger.error('Failed to load data', err);
@@ -222,6 +231,30 @@ export function BackofficeOnboardingPage() {
       setLoading(realtimeContactRequests.length === 0 && connectionStatus === 'connecting');
     }
   }, [activeSubpage, realtimeContactRequests.length, connectionStatus, loadData]);
+
+  // Fetch settlement count on mount (independent of active subpage — badge must always be current)
+  useEffect(() => {
+    adminApi.getAdminPendingSettlements().then(res => {
+      setPendingSettlementsCount(res.count ?? res.data?.length ?? 0);
+    }).catch(() => {/* ignore — badge stays at 0 */});
+  }, []);
+
+  // Real-time settlement badge: listen for WS events dispatched by useBackofficeRealtime
+  useEffect(() => {
+    const handleSettlementChanged = () => {
+      // Re-fetch count so badge is always accurate
+      adminApi.getAdminPendingSettlements().then(res => {
+        setPendingSettlementsCount(res.count ?? res.data?.length ?? 0);
+        // If currently viewing settlements tab, also refresh the full list
+        if (activeSubpage === 'settlements') {
+          setSettlementBatches(res.data || []);
+        }
+      }).catch(() => {});
+    };
+
+    window.addEventListener('nihao:settlementChanged', handleSettlementChanged);
+    return () => window.removeEventListener('nihao:settlementChanged', handleSettlementChanged);
+  }, [activeSubpage]);
 
   const handleRefresh = () => {
     if (activeSubpage === 'requests' || activeSubpage === 'introducer') {
@@ -375,6 +408,7 @@ export function BackofficeOnboardingPage() {
     setActionLoading(`delete-${requestId}`);
     try {
       await adminApi.deleteContactRequest(requestId);
+      removeContactRequest(requestId);
     } catch (err: unknown) {
       logger.error('Failed to delete request', err);
       setError(getApiErrorMessage(err));
@@ -434,6 +468,17 @@ export function BackofficeOnboardingPage() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleBatchRejectAML = async () => {
+    setAmlBatchLoading('reject');
+    const ids = Array.from(amlSelectedIds);
+    for (const id of ids) {
+      await backofficeApi.rejectDeposit(id).catch(() => {});
+    }
+    setAmlDeposits(prev => prev.filter(d => !amlSelectedIds.has(d.id)));
+    setAmlSelectedIds(new Set());
+    setAmlBatchLoading(null);
   };
 
   const loadDocumentContent = async (documentId: string) => {
@@ -538,7 +583,7 @@ export function BackofficeOnboardingPage() {
       {ONBOARDING_SUBPAGES.map(({ path, label, icon: Icon }) => {
         const to = `/backoffice/onboarding/${path}`;
         const isActive = activeSubpage === path;
-        const count = path === 'requests' ? buyerRequests.length : path === 'introducer' ? introducerRequests.length : path === 'kyc' ? kycUsers.length : path === 'aml' ? amlDeposits.length : path === 'settlements' ? settlementBatches.length : pendingDeposits.length;
+        const count = path === 'requests' ? buyerRequests.length : path === 'introducer' ? introducerRequests.length : path === 'kyc' ? kycUsers.length : path === 'aml' ? amlDeposits.length : path === 'settlements' ? pendingSettlementsCount : pendingDeposits.length;
         return (
           <Link
             key={path}
@@ -707,6 +752,43 @@ export function BackofficeOnboardingPage() {
             </Badge>
           </div>
 
+          {/* Batch action toolbar */}
+          {!loading && amlDeposits.length > 0 && (() => {
+            const allAmlIds = amlDeposits.map(d => d.id);
+            const allAmlSelected = allAmlIds.every(id => amlSelectedIds.has(id));
+            const someAmlSelected = amlSelectedIds.size > 0;
+            return (
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-navy-700">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={allAmlSelected}
+                    ref={el => { if (el) el.indeterminate = someAmlSelected && !allAmlSelected; }}
+                    onChange={() => setAmlSelectedIds(allAmlSelected ? new Set() : new Set(allAmlIds))}
+                    className="w-4 h-4 rounded border-navy-600 bg-navy-800 accent-emerald-500 cursor-pointer"
+                    aria-label="Select all AML deposits"
+                  />
+                  <span className="text-xs text-navy-400">
+                    {someAmlSelected ? `${amlSelectedIds.size} selected` : 'Select all'}
+                  </span>
+                </label>
+                {someAmlSelected && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBatchRejectAML}
+                    loading={amlBatchLoading === 'reject'}
+                    disabled={amlBatchLoading !== null}
+                    className="ml-auto text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Reject {amlSelectedIds.size}
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
+
           {loading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -734,9 +816,27 @@ export function BackofficeOnboardingPage() {
                 return (
                   <div
                     key={deposit.id}
-                    className="p-4 bg-navy-700/50 rounded-xl border border-navy-700"
+                    className={`p-4 rounded-xl border ${
+                      amlSelectedIds.has(deposit.id)
+                        ? 'bg-emerald-500/5 border-emerald-500/20'
+                        : 'bg-navy-700/50 border-navy-700'
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-4">
+                      <input
+                        type="checkbox"
+                        checked={amlSelectedIds.has(deposit.id)}
+                        onChange={() => {
+                          setAmlSelectedIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(deposit.id)) next.delete(deposit.id);
+                            else next.add(deposit.id);
+                            return next;
+                          });
+                        }}
+                        className="w-4 h-4 rounded border-navy-600 bg-navy-800 accent-emerald-500 cursor-pointer mt-1 flex-shrink-0"
+                        aria-label={`Select ${entityName}`}
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-white">

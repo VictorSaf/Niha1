@@ -163,7 +163,7 @@ function ProfessionalOrderBook({
             const isHighlighted = highlightAskCount > 0 && idx < highlightAskCount;
 
             const rowBg = isHighlighted
-              ? 'bg-yellow-400/50'
+              ? 'bg-yellow-400/15'
               : isEven ? 'bg-red-500/[0.05]' : 'bg-red-500/[0.10]';
 
             const depthBg = isHighlighted

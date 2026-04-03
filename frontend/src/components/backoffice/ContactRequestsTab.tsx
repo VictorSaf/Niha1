@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Eye, Trash2, CheckCircle2 } from 'lucide-react';
+import { Users, Eye, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button, Badge } from '../common';
 import { Typography } from '../common/Typography';
 import { clientStatusVariant } from '../../utils/roleBadge';
@@ -66,6 +66,47 @@ export function ContactRequestsTab({
   const [approveModalRequest, setApproveModalRequest] = useState<ContactRequest | null>(null);
   const [viewModalRequest, setViewModalRequest] = useState<ContactRequest | null>(null);
   const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<ContactRequest | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState<'reject' | 'delete' | null>(null);
+  const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
+
+  const allIds = contactRequests.map(r => r.id);
+  const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  };
+
+  const handleBatchReject = async () => {
+    setBatchLoading('reject');
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await Promise.resolve(onReject(id)).catch(() => {});
+    }
+    setSelectedIds(new Set());
+    setBatchLoading(null);
+  };
+
+  const handleBatchDelete = async () => {
+    setBatchLoading('delete');
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await Promise.resolve(onDelete(id)).catch(() => {});
+    }
+    setSelectedIds(new Set());
+    setBatchLoading(null);
+    setBatchDeleteConfirm(false);
+  };
 
   const handleApproveClick = (request: ContactRequest) => {
     setApproveModalRequest(request);
@@ -102,6 +143,52 @@ export function ContactRequestsTab({
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="rounded-xl border-2 border-navy-700 py-6 px-4 bg-navy-800/50">
+          {/* Batch action toolbar */}
+          {!loading && contactRequests.length > 0 && (
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-navy-700">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={el => {
+                    if (el) el.indeterminate = someSelected && !allSelected;
+                  }}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-800 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer accent-emerald-500"
+                  aria-label="Select all"
+                />
+                <span className="text-xs text-navy-400">
+                  {someSelected ? `${selectedIds.size} selected` : 'Select all'}
+                </span>
+              </label>
+              {someSelected && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="text-amber-400 hover:bg-amber-500/10 border-amber-500/30"
+                    onClick={handleBatchReject}
+                    loading={batchLoading === 'reject'}
+                    disabled={batchLoading !== null}
+                  >
+                    <XCircle className="w-3.5 h-3.5 mr-1" />
+                    Reject {selectedIds.size}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="text-red-400 hover:bg-red-500/10 border-red-500/30"
+                    onClick={() => setBatchDeleteConfirm(true)}
+                    loading={batchLoading === 'delete'}
+                    disabled={batchLoading !== null}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Delete {selectedIds.size}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
@@ -117,11 +204,21 @@ export function ContactRequestsTab({
                 <div
                   key={request.id}
                   className={`card_contact_request_list ${
-                    request.introducerNdaStatus === 'uploaded' || request.buyerNdaStatus === 'uploaded'
+                    selectedIds.has(request.id)
                       ? 'bg-emerald-500/5 border border-emerald-500/20 rounded-lg'
-                      : ''
+                      : request.introducerNdaStatus === 'uploaded' || request.buyerNdaStatus === 'uploaded'
+                        ? 'bg-emerald-500/5 border border-emerald-500/20 rounded-lg'
+                        : ''
                   }`}
                 >
+                  {/* Row checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(request.id)}
+                    onChange={() => toggleSelect(request.id)}
+                    className="w-4 h-4 rounded border-navy-600 bg-navy-800 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer accent-emerald-500 flex-shrink-0 mr-1"
+                    aria-label={`Select ${ariaName(request)}`}
+                  />
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 min-w-0">
                     <span className="flex items-center gap-1.5 shrink-0">
                       <Typography as="span" variant="sectionLabel" color="muted">
@@ -399,6 +496,20 @@ export function ContactRequestsTab({
           { label: 'Submitted', value: formatRelativeTime(deleteConfirmRequest.createdAt) },
         ] : []}
         loading={actionLoading === `delete-${deleteConfirmRequest?.id}`}
+      />
+
+      {/* Batch Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={batchDeleteConfirm}
+        onClose={() => setBatchDeleteConfirm(false)}
+        onConfirm={handleBatchDelete}
+        title={`Delete ${selectedIds.size} Contact Request${selectedIds.size !== 1 ? 's' : ''}`}
+        message={`This will permanently delete ${selectedIds.size} selected contact request${selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.size} Requests`}
+        cancelText="Cancel"
+        variant="danger"
+        details={[{ label: 'Selected', value: `${selectedIds.size} contact request${selectedIds.size !== 1 ? 's' : ''}` }]}
+        loading={batchLoading === 'delete'}
       />
     </>
   );

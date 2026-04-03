@@ -1361,6 +1361,8 @@ class AutoTradeExecutor:
         market_price: Optional[Decimal],
         balances: Dict[str, Dict[str, Decimal]],
         certificate_type: CertificateType,
+        best_bid: Optional[Decimal] = None,
+        best_ask: Optional[Decimal] = None,
     ) -> Tuple[bool, str]:
         """
         Validate that an order can be placed.
@@ -1369,7 +1371,11 @@ class AutoTradeExecutor:
         1. Max active orders limit
         2. Min balance requirement
         3. Sufficient balance for the order
-        4. Price deviation from scraped price
+        4. Price deviation — checked against scraped price OR market mid-price.
+           If the market has moved significantly (e.g. after a large buy), the
+           scraped price can lag behind. Accepting the order when it is within
+           deviation% of the current mid-price prevents autotrade from freezing
+           until the scraper catches up.
 
         Returns: (is_valid, reason)
         """
@@ -1383,11 +1389,25 @@ class AutoTradeExecutor:
 
         # Market makers have unlimited resources — skip balance checks
 
-        # Check price deviation from scraped price
-        if rule.max_price_deviation and market_price and price:
-            deviation_pct = abs(price - market_price) / market_price * Decimal("100")
-            if deviation_pct > rule.max_price_deviation:
-                return False, f"price_deviation_exceeded ({deviation_pct:.2f}% > {rule.max_price_deviation}%)"
+        # Check price deviation.
+        # Primary reference: scraped market price.
+        # Fallback: current order-book mid-price (avoids freeze when scraper lags after large moves).
+        if rule.max_price_deviation and price:
+            if market_price:
+                scraped_dev = abs(price - market_price) / market_price * Decimal("100")
+                if scraped_dev <= rule.max_price_deviation:
+                    return True, "ok"
+                # Scraped price check failed — try mid-price fallback
+                if best_bid and best_ask and best_bid > 0 and best_ask > 0:
+                    mid_price = (best_bid + best_ask) / Decimal("2")
+                    mid_dev = abs(price - mid_price) / mid_price * Decimal("100")
+                    if mid_dev <= rule.max_price_deviation:
+                        logger.info(
+                            f"validate_order: scraped deviation {scraped_dev:.1f}% > limit, "
+                            f"but mid-price deviation {mid_dev:.1f}% OK — allowing order"
+                        )
+                        return True, "ok"
+                return False, f"price_deviation_exceeded ({scraped_dev:.2f}% vs scraped, mid fallback unavailable or also exceeded)"
 
         return True, "ok"
 
@@ -2146,7 +2166,8 @@ class AutoTradeExecutor:
             # Validate order
             is_valid, validation_reason = await AutoTradeExecutor.validate_order(
                 db, rule, market_maker, price, quantity, market_price,
-                balances, certificate_type
+                balances, certificate_type,
+                best_bid=best_bid, best_ask=best_ask,
             )
 
             if not is_valid:

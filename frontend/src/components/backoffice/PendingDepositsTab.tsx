@@ -20,7 +20,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Banknote, Clock, CheckCircle, XCircle, DollarSign, X, AlertCircle, Shield, Timer } from 'lucide-react';
-import { Button, Card, ClientStatusBadge, NumberInput } from '../common';
+import { Button, Card, ClientStatusBadge, NumberInput, ConfirmationModal } from '../common';
 import { formatCurrency, formatRelativeTime, cn } from '../../utils';
 import type { PendingDeposit } from '../../types/backoffice';
 import type { Deposit } from '../../types';
@@ -52,6 +52,37 @@ export function PendingDepositsTab({
   const [clearNotes, setClearNotes] = useState('');
   const [forceClear, setForceClear] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchRejectConfirm, setBatchRejectConfirm] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const allDepositIds = pendingDeposits.map(d => d.id);
+  const allSelected = allDepositIds.length > 0 && allDepositIds.every(id => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(allDepositIds));
+  };
+
+  const handleBatchReject = async () => {
+    setBatchLoading(true);
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await onReject(id).catch(() => {});
+    }
+    setSelectedIds(new Set());
+    setBatchLoading(false);
+    setBatchRejectConfirm(false);
+  };
 
   const getHoldTimeRemaining = (expiresAt: string | undefined): string => {
     if (!expiresAt) return 'Unknown';
@@ -246,6 +277,38 @@ export function PendingDepositsTab({
             Pending Deposits
           </h2>
 
+          {/* Batch action toolbar */}
+          {!loading && pendingDeposits.length > 0 && (
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-navy-700">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={el => {
+                    if (el) el.indeterminate = someSelected && !allSelected;
+                  }}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-navy-600 bg-navy-800 accent-emerald-500 cursor-pointer"
+                  aria-label="Select all deposits"
+                />
+                <span className="text-xs text-navy-400">
+                  {someSelected ? `${selectedIds.size} selected` : 'Select all'}
+                </span>
+              </label>
+              {someSelected && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="ml-auto text-red-400 hover:bg-red-500/10 border-red-500/30"
+                  onClick={() => setBatchRejectConfirm(true)}
+                  disabled={batchLoading}
+                >
+                  <XCircle className="w-3.5 h-3.5 mr-1" />
+                  Reject {selectedIds.size}
+                </Button>
+              )}
+            </div>
+          )}
           {loading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -260,8 +323,17 @@ export function PendingDepositsTab({
               {pendingDeposits.map((deposit) => (
                 <div
                   key={deposit.id}
-                  className="p-3 bg-navy-700/50 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className={`p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    selectedIds.has(deposit.id) ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-navy-700/50'
+                  }`}
                 >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(deposit.id)}
+                    onChange={() => toggleSelect(deposit.id)}
+                    className="w-4 h-4 rounded border-navy-600 bg-navy-800 accent-emerald-500 cursor-pointer flex-shrink-0 self-start mt-1 sm:self-center sm:mt-0"
+                    aria-label={`Select deposit from ${deposit.entityName}`}
+                  />
                   <div className="flex-1 min-w-0">
                     {/* Primary: Entity + Amount highlighted */}
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1">
@@ -588,6 +660,20 @@ export function PendingDepositsTab({
           </motion.div>
         </div>
       )}
+
+      {/* Batch Reject Confirmation */}
+      <ConfirmationModal
+        isOpen={batchRejectConfirm}
+        onClose={() => setBatchRejectConfirm(false)}
+        onConfirm={handleBatchReject}
+        title={`Reject ${selectedIds.size} Deposit${selectedIds.size !== 1 ? 's' : ''}`}
+        message={`This will reject ${selectedIds.size} selected deposit${selectedIds.size !== 1 ? 's' : ''}. This action cannot be undone.`}
+        confirmText={`Reject ${selectedIds.size} Deposits`}
+        cancelText="Cancel"
+        variant="danger"
+        details={[{ label: 'Selected', value: `${selectedIds.size} deposit${selectedIds.size !== 1 ? 's' : ''}` }]}
+        loading={batchLoading}
+      />
     </>
   );
 }

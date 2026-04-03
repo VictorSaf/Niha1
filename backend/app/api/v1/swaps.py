@@ -38,6 +38,7 @@ from ...services.price_scraper import price_scraper
 from ...services.settlement_service import SettlementService
 from ...services.ticket_service import TicketService
 from .client_ws import client_ws_manager
+from .backoffice import backoffice_ws_manager
 
 logger = logging.getLogger(__name__)
 
@@ -1088,6 +1089,20 @@ async def execute_swap(
     asyncio.create_task(client_ws_manager.broadcast_to_users(
         [current_user.id],
         {"type": "balance_updated", "data": {"source": "swap_executed"}},
+    ))
+    # Notify backoffice admins of new swap settlement
+    asyncio.create_task(backoffice_ws_manager.broadcast(
+        "new_settlement",
+        {
+            "batch_id": str(settlement.id),
+            "batch_reference": settlement.batch_reference,
+            "entity_id": str(current_user.entity_id),
+            "settlement_type": SettlementType.SWAP_CEA_TO_EUA.value,
+            "status": SettlementStatus.PENDING.value,
+            "quantity": float(eua_output),
+            "total_value_eur": float(eua_output * eua_price),
+            "expected_settlement_date": expected_settlement.strftime("%Y-%m-%d"),
+        },
     ))
 
     # Swap confirmation email (fire-and-forget)
