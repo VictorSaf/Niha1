@@ -731,11 +731,12 @@ class AutoTradeExecutor:
                 threshold=tick * 2,  # align when > 2 ticks away
             )
             if align_price is not None:
-                # Guard: BUY must not cross above best_ask; SELL must not cross below best_bid
+                # Guard: BUY must not cross above best_ask (would immediately execute at wrong price).
+                # SELL is intentionally allowed to cross below best_bid — this causes the order to
+                # execute immediately against old bids at their (better) price, consuming stale volume
+                # and driving the book toward the real market price (convergence).
                 if side == OrderSide.BUY and best_ask is not None and align_price >= best_ask:
                     align_price = best_ask - tick
-                elif side == OrderSide.SELL and best_bid is not None and align_price <= best_bid:
-                    align_price = best_bid + tick
                 if align_price > Decimal("0"):
                     return align_price, "priority2_price_alignment"
 
@@ -1363,6 +1364,7 @@ class AutoTradeExecutor:
         certificate_type: CertificateType,
         best_bid: Optional[Decimal] = None,
         best_ask: Optional[Decimal] = None,
+        price_reason: str = "",
     ) -> Tuple[bool, str]:
         """
         Validate that an order can be placed.
@@ -1388,6 +1390,12 @@ class AutoTradeExecutor:
                 return False, f"max_active_orders_reached ({active_count}/{rule.max_active_orders})"
 
         # Market makers have unlimited resources — skip balance checks
+
+        # Alignment orders are intentionally placed toward the scraped price, potentially crossing
+        # the spread to consume stale volume. Bypassing deviation check for them is correct —
+        # they ARE moving toward the real price, not away from it.
+        if price_reason == "priority2_price_alignment":
+            return True, "ok_alignment"
 
         # Check price deviation.
         # Primary reference: scraped market price.
@@ -2168,6 +2176,7 @@ class AutoTradeExecutor:
                 db, rule, market_maker, price, quantity, market_price,
                 balances, certificate_type,
                 best_bid=best_bid, best_ask=best_ask,
+                price_reason=price_reason,
             )
 
             if not is_valid:

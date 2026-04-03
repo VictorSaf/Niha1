@@ -170,10 +170,30 @@ async def get_recent_trades(
     trades = result.unique().scalars().all()
 
     def _aggressor_side(t):
-        """Side of the taker: BUY if buy order was placed at or after sell order, else SELL."""
-        if t.buy_order and t.sell_order:
-            return "BUY" if t.buy_order.created_at >= t.sell_order.created_at else "SELL"
-        return "BUY"
+        """
+        Determine which side was the aggressor (taker).
+
+        For real-user vs MM trades: the user is always the aggressor.
+        For MM-to-MM internal trades: created_at is unreliable (both orders
+        pre-exist in the book before the internal matcher runs). Use a
+        deterministic hash of the trade ID to alternate green/red visually.
+        For user-vs-user trades: the later order is the aggressor.
+        """
+        if not t.buy_order or not t.sell_order:
+            return "BUY"
+
+        buy_is_mm = t.buy_order.market_maker_id is not None
+        sell_is_mm = t.sell_order.market_maker_id is not None
+
+        if buy_is_mm and sell_is_mm:
+            # Internal MM-to-MM liquidity trade — alternate for visual balance
+            return "BUY" if int(str(t.id).replace("-", ""), 16) % 2 == 0 else "SELL"
+        elif not buy_is_mm:
+            # Real user placed the buy → user lifted the ask → BUY aggressor
+            return "BUY"
+        else:
+            # Real user placed the sell → user hit the bid → SELL aggressor
+            return "SELL"
 
     return [
         CashMarketTradeResponse(
