@@ -250,7 +250,7 @@ function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
         ids.forEach((id) => next.delete(id));
         return next;
       });
-    }, 900);
+    }, 1800);
 
     return () => clearTimeout(timer);
   }, [items]);
