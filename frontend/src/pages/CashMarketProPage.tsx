@@ -223,6 +223,38 @@ function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
     [trades],
   );
 
+  // Flash detection — persists seen IDs across renders without triggering re-renders
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const [flashingIds, setFlashingIds] = useState<Map<string, 'up' | 'down' | 'flat'>>(new Map());
+
+  useEffect(() => {
+    const newOnes: Array<[string, 'up' | 'down' | 'flat']> = [];
+    items.forEach((item) => {
+      if (!seenIdsRef.current.has(item.id)) {
+        newOnes.push([item.id, item.direction]);
+        seenIdsRef.current.add(item.id);
+      }
+    });
+    if (newOnes.length === 0) return;
+
+    setFlashingIds((prev) => {
+      const next = new Map(prev);
+      newOnes.forEach(([id, dir]) => next.set(id, dir));
+      return next;
+    });
+
+    const ids = newOnes.map(([id]) => id);
+    const timer = setTimeout(() => {
+      setFlashingIds((prev) => {
+        const next = new Map(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [items]);
+
   return (
     <div className="flex flex-col">
       {/* Header — aligned with summary row + column headers of order book */}
@@ -245,11 +277,18 @@ function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
             : item.direction === 'down'
             ? (isEven ? 'bg-red-500/[0.08]' : 'bg-red-500/[0.04]')
             : (isEven ? 'bg-white/[0.02]' : '');
+          const flashDir = flashingIds.get(item.id);
+          const flashCls = flashDir === 'up' ? 'trade-flash-green'
+            : flashDir === 'down' ? 'trade-flash-red'
+            : flashDir ? 'trade-flash-grey'
+            : '';
+
           return (
-            <div key={item.id} className={`flex px-3 py-1 text-[11px] font-mono tabular-nums whitespace-nowrap ${baseBg}`}>
-              <span className="flex-1 text-navy-500">{formatTradeTime(item.executedAt ?? '')}</span>
-              <span className={`flex-1 text-right font-medium ${priceCls}`}>€{item.price.toFixed(2)}</span>
-              <span className="flex-1 text-right text-white/80 pr-3">{Math.round(item.quantity).toLocaleString()}</span>
+            <div key={item.id} className={`relative flex px-3 py-1 text-[11px] font-mono tabular-nums whitespace-nowrap ${baseBg}`}>
+              {flashCls && <div className={`absolute inset-0 ${flashCls} pointer-events-none`} />}
+              <span className="relative z-10 flex-1 text-navy-500">{formatTradeTime(item.executedAt ?? '')}</span>
+              <span className={`relative z-10 flex-1 text-right font-medium ${priceCls}`}>€{item.price.toFixed(2)}</span>
+              <span className="relative z-10 flex-1 text-right text-white/80 pr-3">{Math.round(item.quantity).toLocaleString()}</span>
             </div>
           );
         })}

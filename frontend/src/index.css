@@ -153,6 +153,23 @@
     animation: ticker-scroll 100s linear infinite;
   }
 
+  /* Trade row flash — one-shot attention pulse on new rows */
+  @keyframes trade-flash-green {
+    0%   { background-color: rgba(52, 211, 153, 0.50); }
+    100% { background-color: transparent; }
+  }
+  @keyframes trade-flash-red {
+    0%   { background-color: rgba(248, 113, 113, 0.50); }
+    100% { background-color: transparent; }
+  }
+  @keyframes trade-flash-grey {
+    0%   { background-color: rgba(255, 255, 255, 0.18); }
+    100% { background-color: transparent; }
+  }
+  .trade-flash-green { animation: trade-flash-green 0.6s ease-out forwards; }
+  .trade-flash-red   { animation: trade-flash-red   0.6s ease-out forwards; }
+  .trade-flash-grey  { animation: trade-flash-grey  0.6s ease-out forwards; }
+
   .table-row {
     @apply border-b border-navy-700 hover:bg-navy-800 transition-colors;
   }
