@@ -169,31 +169,23 @@ async def get_recent_trades(
     )
     trades = result.unique().scalars().all()
 
-    def _aggressor_side(t):
-        """
-        Determine which side was the aggressor (taker).
-
-        For real-user vs MM trades: the user is always the aggressor.
-        For MM-to-MM internal trades: created_at is unreliable (both orders
-        pre-exist in the book before the internal matcher runs). Use a
-        deterministic hash of the trade ID to alternate green/red visually.
-        For user-vs-user trades: the later order is the aggressor.
-        """
-        if not t.buy_order or not t.sell_order:
-            return "BUY"
-
-        buy_is_mm = t.buy_order.market_maker_id is not None
-        sell_is_mm = t.sell_order.market_maker_id is not None
-
-        if buy_is_mm and sell_is_mm:
-            # Internal MM-to-MM liquidity trade — alternate for visual balance
-            return "BUY" if int(str(t.id).replace("-", ""), 16) % 2 == 0 else "SELL"
-        elif not buy_is_mm:
-            # Real user placed the buy → user lifted the ask → BUY aggressor
-            return "BUY"
-        else:
-            # Real user placed the sell → user hit the bid → SELL aggressor
-            return "SELL"
+    # Uptick/downtick rule: color reflects price direction vs previous trade.
+    # Trades are sorted DESC (newest first), so index i+1 is the previous trade in time.
+    # For consecutive same-price trades, carry the last known direction (no flicker).
+    trades_list = list(trades)
+    sides: list[str] = ["BUY"] * len(trades_list)
+    last_direction = "BUY"
+    # Walk oldest→newest (reverse of the DESC list) to propagate direction correctly
+    for i in range(len(trades_list) - 1, -1, -1):
+        if i + 1 < len(trades_list):
+            cur = float(trades_list[i].price)
+            prev = float(trades_list[i + 1].price)
+            if cur > prev:
+                last_direction = "BUY"
+            elif cur < prev:
+                last_direction = "SELL"
+            # Same price: keep last_direction (carry)
+        sides[i] = last_direction
 
     return [
         CashMarketTradeResponse(
@@ -201,10 +193,10 @@ async def get_recent_trades(
             certificate_type=t.certificate_type.value,
             price=float(t.price),
             quantity=int(round(float(t.quantity))),
-            side=_aggressor_side(t),
+            side=sides[i],
             executed_at=t.executed_at,
         )
-        for t in trades
+        for i, t in enumerate(trades_list)
     ]
 
 

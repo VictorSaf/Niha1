@@ -1600,12 +1600,18 @@ class AutoTradeExecutor:
                 if match_qty <= 0:
                     continue
 
-                # Trade price: use sell price if it's a limit order, otherwise use buy price
-                # This handles MARKET orders which have price=0
-                if sell_order.price and sell_order.price > 0:
-                    trade_price = sell_order.price
+                # Trade executes at the MAKER's price (price-time priority).
+                # The maker is whoever placed their order first (earlier created_at).
+                # When an alignment SELL at €10.70 crosses a resting BUY at €11.50,
+                # the BUY is the maker → trade executes at €11.50 (correct).
+                buy_created = getattr(buy_order, 'created_at', None)
+                sell_created = getattr(sell_order, 'created_at', None)
+                if buy_created and sell_created and buy_created <= sell_created:
+                    # Buy order was in book first — use buy (maker) price
+                    trade_price = buy_order.price if buy_order.price and buy_order.price > 0 else sell_order.price
                 else:
-                    trade_price = buy_order.price
+                    # Sell order was in book first — use sell (maker) price
+                    trade_price = sell_order.price if sell_order.price and sell_order.price > 0 else buy_order.price
                 # Round to 0.1 EUR step
                 trade_price = (trade_price / Decimal("0.1")).quantize(Decimal("1")) * Decimal("0.1")
 
