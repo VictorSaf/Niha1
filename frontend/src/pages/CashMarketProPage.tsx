@@ -211,12 +211,10 @@ function formatTradeTime(dateStr: string): string {
 
 function RecentTradesTable({ trades }: { trades: CashMarketTrade[] }) {
   const items = useMemo(
-    () => trades.slice(0, 60).map((t, i) => {
-      const prev = trades[i + 1];
+    () => trades.slice(0, 60).map((t) => {
       const direction: 'up' | 'down' | 'flat' =
-        !prev ? 'flat'
-        : t.price > prev.price ? 'up'
-        : t.price < prev.price ? 'down'
+        t.side === 'BUY' ? 'up'
+        : t.side === 'SELL' ? 'down'
         : 'flat';
       return { ...t, direction };
     }),
