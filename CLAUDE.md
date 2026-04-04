@@ -139,6 +139,17 @@ See `app_truth.md` §10. Onboarding marketing pages and Onboarding1 are **layout
 8. **init.sql**: Creates extensions (uuid-ossp) and `jurisdiction` enum only. Tables and seed data come from Alembic migrations. Do not add INSERTs into app tables—they do not exist at init time.
 9. **PDF generator**: `weasyprint` is in `backend/requirements.txt`. It is lazy-imported in `app/services/pdf_generator/renderer.py` so pytest can collect tests without weasyprint installed. Tests in `tests/test_pdf_renderer.py` require weasyprint; after rebuilding the backend image they pass.
 
+## Test Strategy (current phase)
+
+Integration tests run against the **live dev database** — intentional during pre-launch. This surfaces real integration issues (e.g. tests that write real data without rollback are visible immediately). When a real production environment is stood up, a separate staging DB + CI pipeline will gate deploys.
+
+**Known consequence**: Tests that write to the DB leave real data. If you see unexpected balances or records, check `asset_transactions.notes` for `"pytest ..."` strings to identify test artifacts.
+
+**Convention for integration tests that write data:**
+- Prefer explicit teardown (delete what you created)
+- If using `_get_first_entity_id()` or similar helpers, add `ORDER BY created_at` or target a named test entity to avoid hitting prod-like entities (e.g. admin@nihaogroup.com)
+- Mark test-created data with a recognizable `notes` prefix (already done: `"pytest ..."`)
+
 ## Testing
 
 ```bash
