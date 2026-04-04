@@ -589,6 +589,7 @@ class AutoTradeExecutor:
         side: OrderSide,
         tick_size: Decimal = Decimal("0.1"),
         threshold: Decimal = Decimal("0.2"),
+        market_settings: Optional["AutoTradeMarketSettings"] = None,
     ) -> Optional[Decimal]:
         """
         Priority 2: Price alignment toward scraped reference price.
@@ -611,7 +612,8 @@ class AutoTradeExecutor:
             return None  # Close enough — no alignment needed
 
         # 60 % correction toward ideal
-        adjustment = deviation * Decimal("0.6")
+        correction = Decimal(str(market_settings.alignment_correction_factor)) if market_settings and market_settings.alignment_correction_factor else Decimal("0.60")
+        adjustment = deviation * correction
         if side == OrderSide.SELL:
             new_price = best_price - adjustment
         else:
@@ -728,7 +730,8 @@ class AutoTradeExecutor:
         if scraped_price and best_price:
             align_price = AutoTradeExecutor.calculate_alignment_price(
                 scraped_price, best_price, side, tick,
-                threshold=tick * 2,  # align when > 2 ticks away
+                threshold=tick * (market_settings.alignment_threshold_ticks if market_settings and market_settings.alignment_threshold_ticks else 2),
+                market_settings=market_settings,
             )
             if align_price is not None:
                 # Guard: BUY must not cross above best_ask (would immediately execute at wrong price).
@@ -744,7 +747,7 @@ class AutoTradeExecutor:
         if best_price and market_settings:
             thin_price = await AutoTradeExecutor.find_thin_levels_near_best(
                 db, certificate_type, side, best_price,
-                max_per_level, depth_levels=5, tick_size=tick,
+                max_per_level, depth_levels=(int(market_settings.level_rebalance_depth) if market_settings and market_settings.level_rebalance_depth else 5), tick_size=tick,
             )
             if thin_price is not None:
                 return thin_price, "priority3_level_rebalance"
