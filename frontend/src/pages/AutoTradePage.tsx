@@ -388,6 +388,10 @@ interface AllSideSettings {
   maxOrdersPerLevelVariationPct: number;
   minOrderValueVariationPct: number;
   orderIntervalVariationPct: number;
+  // Executor algorithm params
+  alignmentCorrectionFactor: number;
+  alignmentThresholdTicks: number;
+  levelRebalanceDepth: number;
 }
 
 function extractAllSettings(s: AutoTradeMarketSettings): AllSideSettings {
@@ -410,6 +414,9 @@ function extractAllSettings(s: AutoTradeMarketSettings): AllSideSettings {
     maxOrdersPerLevelVariationPct: s.maxOrdersPerLevelVariationPct,
     minOrderValueVariationPct: s.minOrderValueVariationPct,
     orderIntervalVariationPct: s.orderIntervalVariationPct,
+    alignmentCorrectionFactor: s.alignmentCorrectionFactor,
+    alignmentThresholdTicks: s.alignmentThresholdTicks,
+    levelRebalanceDepth: s.levelRebalanceDepth,
   };
 }
 
@@ -715,6 +722,42 @@ function SideSettingsForm({
                 tipKey="orderIntervalVariationPct"
               />
             </div>
+            <div className="border-t border-navy-700/20 pt-3 mt-3">
+              <p className="text-[11px] text-navy-500 mb-2 font-medium">Priority Engine Params</p>
+              <div className="grid grid-cols-3 gap-3">
+                <SettingsInput
+                  label="Correction Factor"
+                  value={settings.alignmentCorrectionFactor}
+                  onChange={v => update({ alignmentCorrectionFactor: v ?? 0.60 })}
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  decimals={2}
+                  hint="0.60"
+                  tipKey="alignmentCorrectionFactor"
+                />
+                <SettingsInput
+                  label="Align Threshold"
+                  value={settings.alignmentThresholdTicks}
+                  onChange={v => update({ alignmentThresholdTicks: v ?? 2 })}
+                  suffix="ticks"
+                  min={1}
+                  max={20}
+                  hint="2"
+                  tipKey="alignmentThresholdTicks"
+                />
+                <SettingsInput
+                  label="Rebalance Depth"
+                  value={settings.levelRebalanceDepth}
+                  onChange={v => update({ levelRebalanceDepth: v ?? 5 })}
+                  suffix="lvls"
+                  min={1}
+                  max={20}
+                  hint="5"
+                  tipKey="levelRebalanceDepth"
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -822,6 +865,9 @@ function LiquiditySettingsPanel({
                       maxOrdersPerLevelVariationPct: s.maxOrdersPerLevelVariationPct,
                       minOrderValueVariationPct: s.minOrderValueVariationPct,
                       orderIntervalVariationPct: s.orderIntervalVariationPct,
+                      alignmentCorrectionFactor: s.alignmentCorrectionFactor,
+                      alignmentThresholdTicks: s.alignmentThresholdTicks,
+                      levelRebalanceDepth: s.levelRebalanceDepth,
                     } : prev);
                   }}
                   showBidAsk
