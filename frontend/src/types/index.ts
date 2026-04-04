@@ -1152,6 +1152,9 @@ export interface AutoTradeMarketSettings {
   internalTradeVolumeMax: number | null;  // Max volume per internal trade (EUR)
   avgSpread: number | null;  // Average bid-ask spread
   tickSize: number | null;  // Minimum price increment
+  alignmentCorrectionFactor: number;  // Mean-reversion weight for P2 (0.1–1.0), default 0.60
+  alignmentThresholdTicks: number;    // Ticks from ideal before P2 triggers, default 2
+  levelRebalanceDepth: number;        // Depth levels for P3 scan, default 5
   createdAt: string;
   updatedAt: string;
   marketMakers: MarketMakerSummary[];
@@ -1180,6 +1183,9 @@ export interface AutoTradeMarketSettingsUpdate {
   internalTradeVolumeMax?: number | null;
   avgSpread?: number | null;
   tickSize?: number | null;
+  alignmentCorrectionFactor?: number;
+  alignmentThresholdTicks?: number;
+  levelRebalanceDepth?: number;
 }
 
 export interface AutoTradeStatus {
