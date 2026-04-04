@@ -3,6 +3,7 @@ import { Send, DollarSign, Clock, CheckCircle2, Copy, Check } from 'lucide-react
 import { Badge } from '../common';
 import { introducerApi } from '../../services/api';
 import { useAuthStore } from '../../stores/useStore';
+import { parseUtcDate } from '../../utils';
 
 // ─── Types ───────────────────────────────────────────────────
 interface Invitation {
@@ -44,7 +45,7 @@ function formatEur(value: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  return (parseUtcDate(iso) ?? new Date(iso)).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

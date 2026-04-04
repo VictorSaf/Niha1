@@ -17,6 +17,7 @@ import {
   type AutoTradeRule,
 } from '../../services/api';
 import { getApiErrorMessage } from '../../utils/errors';
+import { parseUtcDate } from '../../utils';
 import type { MarketMaker } from '../../types';
 
 interface MarketMakerAutoTradeTabProps {
@@ -183,7 +184,7 @@ export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTab
                       </span>
                       {rule.enabled && rule.nextExecutionAt && (
                         <span className="text-emerald-400 font-medium">
-                          Next: {Math.max(0, Math.round((new Date(rule.nextExecutionAt).getTime() - Date.now()) / 1000))}s
+                          Next: {Math.max(0, Math.round(((parseUtcDate(rule.nextExecutionAt)?.getTime() ?? 0) - Date.now()) / 1000))}s
                         </span>
                       )}
                     </div>
@@ -223,7 +224,7 @@ export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTab
                   <div className="col-span-2">
                     <p className="text-[10px] text-navy-600 mb-0.5">Last Execution</p>
                     <p className="text-[11px] text-white/60 font-mono">
-                      {new Date(selectedRule.lastExecutedAt).toLocaleString()}
+                      {parseUtcDate(selectedRule.lastExecutedAt)?.toLocaleString() ?? '—'}
                     </p>
                   </div>
                 )}

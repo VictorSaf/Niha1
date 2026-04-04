@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { adminApi } from '../services/api';
 import { logger } from '../utils/logger';
+import { parseUtcDate } from '../utils';
 import type { AutoTradeStatus } from '../types';
 
 // ============================================================================
@@ -48,7 +49,7 @@ export const useAutoOrdersStore = create<AutoOrdersState>(() => ({
 async function fetchStatus() {
   try {
     const status = await adminApi.getAutoTradeStatus();
-    const nextCycleAt = status.nextCycleAt ? new Date(status.nextCycleAt).getTime() : null;
+    const nextCycleAt = status.nextCycleAt ? (parseUtcDate(status.nextCycleAt)?.getTime() ?? null) : null;
     const now = Date.now();
     const secondsUntilNext = nextCycleAt ? Math.max(0, Math.round((nextCycleAt - now) / 1000)) : null;
 

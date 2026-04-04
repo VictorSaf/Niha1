@@ -68,9 +68,22 @@ export function formatCertificateQuantity(value: number | undefined | null): str
   }).format(Math.round(value));
 }
 
+/**
+ * Parse a UTC datetime string from the API into a Date object.
+ * The backend returns naive UTC timestamps without 'Z' (e.g. "2026-04-04T04:17:19").
+ * Without 'Z', JS treats them as local time — wrong in any non-UTC timezone.
+ * This helper appends 'Z' when missing to force correct UTC interpretation.
+ */
+export function parseUtcDate(str: string | null | undefined): Date | null {
+  if (!str) return null;
+  const s = str.endsWith('Z') || str.includes('+') || (str.includes('-', 11)) ? str : str + 'Z';
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 // Format date (locale date string)
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
+  const d = typeof date === 'string' ? (parseUtcDate(date) ?? new Date(date)) : date;
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
