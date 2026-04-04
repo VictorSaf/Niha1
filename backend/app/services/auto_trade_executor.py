@@ -343,7 +343,7 @@ class AutoTradeExecutor:
         Get best bid and ask prices from the order book.
         Returns: (best_bid, best_ask)
         """
-        # Best bid = highest buy price
+        # Best bid = highest buy price (skip near-exhausted orders with remaining < 1)
         result = await db.execute(
             select(Order.price)
             .where(
@@ -351,6 +351,7 @@ class AutoTradeExecutor:
                     Order.certificate_type == certificate_type,
                     Order.side == OrderSide.BUY,
                     Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
+                    (Order.quantity - Order.filled_quantity) >= 1,
                 )
             )
             .order_by(Order.price.desc())
@@ -358,7 +359,7 @@ class AutoTradeExecutor:
         )
         best_bid = result.scalar_one_or_none()
 
-        # Best ask = lowest sell price
+        # Best ask = lowest sell price (skip near-exhausted orders with remaining < 1)
         result = await db.execute(
             select(Order.price)
             .where(
@@ -366,6 +367,7 @@ class AutoTradeExecutor:
                     Order.certificate_type == certificate_type,
                     Order.side == OrderSide.SELL,
                     Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
+                    (Order.quantity - Order.filled_quantity) >= 1,
                 )
             )
             .order_by(Order.price.asc())
@@ -975,6 +977,7 @@ class AutoTradeExecutor:
             # Find a SELL order to consume (best ask = lowest price first, oldest first)
             # We take the best ask order regardless of trade_price - the trade_price is just
             # for recording the trade, not for filtering orders
+            # Filter out near-exhausted orders (remaining < 1) to avoid match_qty rounding to 0
             sell_result = await db.execute(
                 select(Order)
                 .where(
@@ -983,6 +986,7 @@ class AutoTradeExecutor:
                         Order.side == OrderSide.SELL,
                         Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
                         Order.market_maker_id.isnot(None),
+                        (Order.quantity - Order.filled_quantity) >= 1,
                     )
                 )
                 .order_by(Order.price.asc(), Order.created_at.asc())
@@ -999,6 +1003,7 @@ class AutoTradeExecutor:
                         Order.side == OrderSide.BUY,
                         Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
                         Order.market_maker_id.isnot(None),
+                        (Order.quantity - Order.filled_quantity) >= 1,
                     )
                 )
                 .order_by(Order.price.desc(), Order.created_at.asc())
