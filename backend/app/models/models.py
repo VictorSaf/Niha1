@@ -1511,6 +1511,12 @@ class AutoTradeMarketSettings(Base):
     avg_spread = Column(Numeric(10, 4), nullable=True)
     # Tick size / minimum price increment (EUR for cash, ratio for swap) — used for price rounding
     tick_size = Column(Numeric(10, 4), nullable=True)
+    # Price alignment (P2) — correction toward scraped price
+    alignment_correction_factor = Column(Numeric(5, 2), nullable=False, default=Decimal("0.60"))
+    # Ticks away from ideal before P2 alignment triggers
+    alignment_threshold_ticks = Column(Integer, nullable=False, default=2)
+    # Depth levels scanned for P3 level rebalancing
+    level_rebalance_depth = Column(Integer, nullable=False, default=5)
 
     # Internal trade settings (when liquidity is at target)
     # Interval in seconds for internal trades

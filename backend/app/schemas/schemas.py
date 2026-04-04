@@ -1685,6 +1685,9 @@ class AutoTradeMarketSettingsResponse(BaseModel):
     internal_trade_volume_max: Optional[Decimal] = None  # Max volume per internal trade (EUR)
     avg_spread: Optional[Decimal] = None  # Average spread (EUR for cash, ratio for swap)
     tick_size: Optional[Decimal] = None  # Tick size / price increment (EUR for cash, ratio for swap)
+    alignment_correction_factor: Decimal = Decimal("0.60")
+    alignment_threshold_ticks: int = 2
+    level_rebalance_depth: int = 5
     created_at: datetime
     updated_at: datetime
 
@@ -1723,6 +1726,9 @@ class AutoTradeMarketSettingsUpdate(BaseModel):
     internal_trade_volume_max: Optional[Decimal] = Field(None, ge=0, description="Max volume per internal trade in EUR")
     avg_spread: Optional[Decimal] = Field(None, ge=0, description="Average spread (EUR for cash, ratio for swap)")
     tick_size: Optional[Decimal] = Field(None, gt=0, description="Price increment per tick")
+    alignment_correction_factor: Optional[Decimal] = Field(None, gt=0, le=1, description="Mean-reversion weight for P2 alignment (0.1–1.0)")
+    alignment_threshold_ticks: Optional[int] = Field(None, ge=1, le=20, description="Ticks from ideal before P2 alignment triggers")
+    level_rebalance_depth: Optional[int] = Field(None, ge=1, le=20, description="Depth levels scanned for P3 rebalancing")
 
 
 # Market Order (Admin) Schemas
