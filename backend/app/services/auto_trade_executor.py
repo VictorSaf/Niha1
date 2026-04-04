@@ -1856,7 +1856,34 @@ class AutoTradeExecutor:
                         "placing spread-narrowing order (priority 0 exceeds liquidity level)"
                     )
                 else:
-                    # Liquidity is at target and spread OK — try periodic internal trade if interval allows
+                    # Priority 2: price alignment override — if book price deviates from scraped
+                    # price by more than threshold, place an alignment order even when at target.
+                    # This is the primary mechanism for converging the platform price toward
+                    # the real market price. Only applies to cash markets (not SWAP).
+                    if market_type != MarketType.SWAP:
+                        _at_scraped = await AutoTradeExecutor.get_market_price(certificate_type.value)
+                        _at_best_price = best_ask if rule.side == OrderSide.SELL else best_bid
+                        _at_tick = max(
+                            Decimal(str(market_settings.tick_size)) if market_settings and market_settings.tick_size else Decimal("0.1"),
+                            Decimal("0.0001"),
+                        )
+                        if _at_scraped and _at_best_price:
+                            _at_align_price = AutoTradeExecutor.calculate_alignment_price(
+                                _at_scraped, _at_best_price, rule.side, _at_tick,
+                                threshold=_at_tick * (market_settings.alignment_threshold_ticks if market_settings and market_settings.alignment_threshold_ticks else 2),
+                                market_settings=market_settings,
+                            )
+                            if _at_align_price is not None:
+                                status = "below_target"  # fall through to order placement
+                                result["action"] = "place_order_alignment_priority"
+                                logger.info(
+                                    f"Rule {rule.name}: At target but price misaligned "
+                                    f"({_at_best_price} vs scraped {_at_scraped}) — "
+                                    "placing alignment order (priority 2 overrides at_target)"
+                                )
+
+                if status == "at_target":
+                    # Spread OK, price aligned — try periodic internal trade if interval allows
                     if (
                         market_settings
                         and market_settings.internal_trade_interval
@@ -1909,7 +1936,31 @@ class AutoTradeExecutor:
                         "placing spread-narrowing order (priority 0 exceeds liquidity level)"
                     )
                 else:
-                    # Liquidity exceeds target - consume via internal trade
+                    # Priority 2: price alignment — place alignment order even when above target
+                    if market_type != MarketType.SWAP:
+                        _ab_scraped = await AutoTradeExecutor.get_market_price(certificate_type.value)
+                        _ab_best_price = best_ask_at if rule.side == OrderSide.SELL else best_bid_at
+                        _ab_tick = max(
+                            Decimal(str(market_settings.tick_size)) if market_settings and market_settings.tick_size else Decimal("0.1"),
+                            Decimal("0.0001"),
+                        )
+                        if _ab_scraped and _ab_best_price:
+                            _ab_align_price = AutoTradeExecutor.calculate_alignment_price(
+                                _ab_scraped, _ab_best_price, rule.side, _ab_tick,
+                                threshold=_ab_tick * (market_settings.alignment_threshold_ticks if market_settings and market_settings.alignment_threshold_ticks else 2),
+                                market_settings=market_settings,
+                            )
+                            if _ab_align_price is not None:
+                                status = "below_target"  # fall through to order placement
+                                result["action"] = "place_order_alignment_priority"
+                                logger.info(
+                                    f"Rule {rule.name}: Above target but price misaligned "
+                                    f"({_ab_best_price} vs scraped {_ab_scraped}) — "
+                                    "placing alignment order (priority 2 overrides above_target)"
+                                )
+
+                if status == "above_target":
+                    # Spread OK, price aligned — consume excess via internal trade
                     logger.info(
                         f"Rule {rule.name}: Liquidity above target ({current_liq}/{target_liq} EUR) - "
                         f"executing internal trade to consume excess"
