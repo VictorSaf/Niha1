@@ -21,7 +21,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Banknote, Clock, CheckCircle, XCircle, DollarSign, X, AlertCircle, Shield, Timer } from 'lucide-react';
 import { Button, Card, ClientStatusBadge, NumberInput, ConfirmationModal } from '../common';
-import { formatCurrency, formatRelativeTime, cn } from '../../utils';
+import { formatCurrency, formatRelativeTime, cn, parseUtcDate } from '../../utils';
 import type { PendingDeposit } from '../../types/backoffice';
 import type { Deposit } from '../../types';
 
@@ -86,7 +86,7 @@ export function PendingDepositsTab({
 
   const getHoldTimeRemaining = (expiresAt: string | undefined): string => {
     if (!expiresAt) return 'Unknown';
-    const expires = new Date(expiresAt);
+    const expires = parseUtcDate(expiresAt) ?? new Date(0);
     const now = new Date();
     const diff = expires.getTime() - now.getTime();
 
@@ -101,7 +101,7 @@ export function PendingDepositsTab({
 
   const isHoldExpired = (expiresAt: string | undefined): boolean => {
     if (!expiresAt) return false;
-    return new Date(expiresAt) <= new Date();
+    return (parseUtcDate(expiresAt) ?? new Date(0)) <= new Date();
   };
 
   const handleClearDeposit = async () => {
@@ -170,10 +170,10 @@ export function PendingDepositsTab({
                 const holdExpiresAtValue = deposit.holdExpiresAt;
 
                 const daysPassed = confirmedAtValue
-                  ? Math.floor((Date.now() - new Date(confirmedAtValue).getTime()) / (1000 * 60 * 60 * 24))
+                  ? Math.floor((Date.now() - (parseUtcDate(confirmedAtValue) ?? new Date(0)).getTime()) / (1000 * 60 * 60 * 24))
                   : 0;
                 const confirmedDate = confirmedAtValue
-                  ? new Date(confirmedAtValue).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                  ? parseUtcDate(confirmedAtValue)?.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) ?? 'N/A'
                   : 'N/A';
                 const expired = isHoldExpired(holdExpiresAtValue);
 

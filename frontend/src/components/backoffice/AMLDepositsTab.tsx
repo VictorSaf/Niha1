@@ -24,7 +24,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { Button, Card, Badge, ClientStatusBadge, AlertBanner, NumberInput } from '../common';
-import { formatCurrency, formatRelativeTime } from '../../utils';
+import { formatCurrency, formatRelativeTime, parseUtcDate } from '../../utils';
 import { backofficeApi } from '../../services/api';
 import type {
   Deposit,
@@ -189,7 +189,7 @@ export function AMLDepositsTab() {
 
   const getHoldTimeRemaining = (expiresAt: string | undefined): string => {
     if (!expiresAt) return 'Unknown';
-    const expires = new Date(expiresAt);
+    const expires = parseUtcDate(expiresAt) ?? new Date(0);
     const now = new Date();
     const diff = expires.getTime() - now.getTime();
 
@@ -204,7 +204,7 @@ export function AMLDepositsTab() {
 
   const isHoldExpired = (expiresAt: string | undefined): boolean => {
     if (!expiresAt) return false;
-    return new Date(expiresAt) <= new Date();
+    return (parseUtcDate(expiresAt) ?? new Date(0)) <= new Date();
   };
 
 
@@ -428,10 +428,10 @@ export function AMLDepositsTab() {
             <div className="space-y-4">
               {onHoldDeposits.map((deposit) => {
                 const daysPassed = deposit.confirmedAt
-                  ? Math.floor((Date.now() - new Date(deposit.confirmedAt).getTime()) / (1000 * 60 * 60 * 24))
+                  ? Math.floor((Date.now() - (parseUtcDate(deposit.confirmedAt) ?? new Date(0)).getTime()) / (1000 * 60 * 60 * 24))
                   : 0;
                 const confirmedDate = deposit.confirmedAt
-                  ? new Date(deposit.confirmedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                  ? parseUtcDate(deposit.confirmedAt)?.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) ?? 'N/A'
                   : 'N/A';
 
                 return (

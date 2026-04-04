@@ -23,6 +23,7 @@ import {
 import { AlertBanner, LoadingState } from '../common';
 import { withdrawalApi } from '../../services/api';
 import { getApiErrorMessage } from '../../utils/errors';
+import { parseUtcDate } from '../../utils';
 import type {
   Withdrawal,
   WithdrawalStats,
@@ -178,7 +179,7 @@ export const WithdrawalsTab: React.FC = () => {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString();
+    return parseUtcDate(dateStr)?.toLocaleString() ?? '—';
   };
 
   const formatAmount = (amount: number, assetType: AssetType) => {
