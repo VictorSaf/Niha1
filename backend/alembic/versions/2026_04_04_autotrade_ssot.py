@@ -1,7 +1,7 @@
 """autotrade_ssot — add alignment/rebalance params to market settings
 
 Revision ID: 2026_04_04_autotrade_ssot
-Revises: 2026_04_03_userrole_no_troducer
+Revises: 2026_04_03_app_base_url
 Create Date: 2026-04-04
 """
 from alembic import op

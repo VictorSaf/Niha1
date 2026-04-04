@@ -130,7 +130,7 @@ See `app_truth.md` §10. Onboarding marketing pages and Onboarding1 are **layout
 ## Gotchas
 
 1. **PostgreSQL port**: Host uses 5434 to avoid conflicts with local Postgres
-2. **Migrations**: Current head is `2026_04_03_userrole_no_troducer` — revision IDs must be ≤32 characters (`alembic_version.version_num`). New migrations use the current Alembic head as `down_revision` (verify with `alembic heads` after pulling)
+2. **Migrations**: Current head is `2026_04_04_autotrade_ssot` — revision IDs must be ≤32 characters (`alembic_version.version_num`). New migrations use the current Alembic head as `down_revision` (verify with `alembic heads` after pulling)
 3. **WebSocket**: Backoffice uses realtime updates - normalize payloads to snake_case
 4. **Deposits**: APPROVED→FUNDING only via first `announce_deposit` (no manual "fund user")
 5. **Contact requests**: Pending = NDA role only; KYC/REJECTED disappear from list
