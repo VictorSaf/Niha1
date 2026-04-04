@@ -3,23 +3,18 @@ import { motion } from 'framer-motion';
 import {
   Play,
   Pause,
-  Plus,
   Clock,
   TrendingUp,
   TrendingDown,
   AlertCircle,
   Settings,
   Zap,
-  Target,
-  Gauge,
 } from 'lucide-react';
 import { Button, LoadingState } from '../common';
 import {
   getAutoTradeRules,
-  createAutoTradeRule,
   updateAutoTradeRule,
   type AutoTradeRule,
-  type AutoTradeRuleCreate,
 } from '../../services/api';
 import { getApiErrorMessage } from '../../utils/errors';
 import type { MarketMaker } from '../../types';
@@ -28,73 +23,12 @@ interface MarketMakerAutoTradeTabProps {
   marketMaker: MarketMaker;
 }
 
-// Presets for quick configuration
-const PRESETS = {
-  aggressive: {
-    name: 'Aggressive',
-    icon: Zap,
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/10 border-red-500/30 hover:border-red-500',
-    description: 'High frequency, tight spread',
-    config: {
-      price_mode: 'spread_from_best' as const,
-      spread_from_best: 0.1,
-      quantity_mode: 'random_range' as const,
-      min_quantity: 10000,
-      max_quantity: 50000,
-      interval_mode: 'random' as const,
-      interval_seconds: 15,
-      interval_min_seconds: 10,
-      interval_max_seconds: 20,
-    }
-  },
-  balanced: {
-    name: 'Balanced',
-    icon: Gauge,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10 border-blue-500/30 hover:border-blue-500',
-    description: 'Medium frequency, moderate spread',
-    config: {
-      price_mode: 'random_spread' as const,
-      spread_min: 0.2,
-      spread_max: 0.4,
-      quantity_mode: 'random_range' as const,
-      min_quantity: 5000,
-      max_quantity: 20000,
-      interval_mode: 'random' as const,
-      interval_seconds: 30,
-      interval_min_seconds: 20,
-      interval_max_seconds: 45,
-    }
-  },
-  conservative: {
-    name: 'Conservative',
-    icon: Target,
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500',
-    description: 'Low frequency, wide spread',
-    config: {
-      price_mode: 'random_spread' as const,
-      spread_min: 0.3,
-      spread_max: 0.6,
-      quantity_mode: 'random_range' as const,
-      min_quantity: 1000,
-      max_quantity: 10000,
-      interval_mode: 'fixed' as const,
-      interval_seconds: 60,
-      interval_minutes: 1,
-    }
-  }
-};
 
 export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTabProps) {
   const [rules, setRules] = useState<AutoTradeRule[]>([]);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isSeller = marketMaker.mmType === 'CEA_SELLER' || marketMaker.mmType === 'EUA_OFFER';
 
   // Load rules from API
   const loadRules = useCallback(async () => {
@@ -116,50 +50,17 @@ export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTab
     loadRules();
   }, [loadRules]);
 
-  // Auto-refresh every 5 seconds for live stats
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isCreating) loadRules();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [loadRules, isCreating]);
-
   const selectedRule = rules.find(r => r.id === selectedRuleId);
-
-  const handleAddRule = async () => {
-    setIsCreating(true);
-    setError(null);
-    try {
-      const newRuleData: AutoTradeRuleCreate = {
-        name: `${isSeller ? 'ASK' : 'BID'} Rule ${rules.length + 1}`,
-        enabled: false,
-        side: isSeller ? 'SELL' : 'BUY',
-        order_type: 'LIMIT', // Always LIMIT for auto-trade
-        ...PRESETS.balanced.config,
-      };
-      const result = await createAutoTradeRule(marketMaker.id, newRuleData);
-      await loadRules();
-      setSelectedRuleId(result.id);
-    } catch (err: unknown) {
-      console.error('Failed to create rule:', err);
-      setError(getApiErrorMessage(err));
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const handleToggleRule = async (ruleId: string) => {
     const rule = rules.find(r => r.id === ruleId);
     if (!rule) return;
-    setIsCreating(true);
     try {
       await updateAutoTradeRule(marketMaker.id, ruleId, { enabled: !rule.enabled });
       setRules(prev => prev.map(r => r.id === ruleId ? { ...r, enabled: !rule.enabled } : r));
     } catch (err: unknown) {
       console.error('Failed to toggle rule:', err);
       setError(getApiErrorMessage(err));
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -211,14 +112,6 @@ export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTab
             </p>
           </div>
         </div>
-        <Button
-          onClick={handleAddRule}
-          disabled={isCreating}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Rule
-        </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -227,7 +120,7 @@ export function MarketMakerAutoTradeTab({ marketMaker }: MarketMakerAutoTradeTab
           {rules.length === 0 ? (
             <div className="p-6 rounded-xl border-2 border-dashed border-navy-600 text-center">
               <p className="text-navy-400 text-sm">
-                No rules configured.<br />Click &quot;Add Rule&quot; to create one.
+                No rules configured.
               </p>
             </div>
           ) : (
