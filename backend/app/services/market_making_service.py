@@ -11,9 +11,9 @@ import asyncio
 import logging
 import random
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from typing import Optional
 
 from sqlalchemy import and_, select
@@ -63,8 +63,8 @@ class MarketState:
     """
     mid_price: Decimal
     pressure: float = 0.0
-    buy_price: Decimal = field(default_factory=lambda: Decimal("0"))
-    sell_price: Decimal = field(default_factory=lambda: Decimal("0"))
+    buy_price: Decimal = Decimal("0")
+    sell_price: Decimal = Decimal("0")
 
     def tick(self, scraped_price: Decimal, settings: PressureSettings) -> None:
         """
@@ -196,7 +196,6 @@ async def tick(
         max_qty = rule.max_quantity or Decimal("1000")
         qty_range = max_qty - min_qty
         quantity = min_qty + Decimal(str(random.random())) * qty_range
-        from decimal import ROUND_DOWN
         quantity = max(Decimal("1"), quantity.quantize(Decimal("1"), rounding=ROUND_DOWN))
 
         # Get admin user ID (first admin entity)

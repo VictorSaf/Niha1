@@ -16,12 +16,14 @@ SCRAPED = Decimal("12.09")
 
 
 def test_pressure_stays_in_band():
-    """After 100 ticks, mid_price stays within ±3 ticks of scraped price."""
+    """mid_price must stay within ±3 ticks of scraped on every tick for 100 ticks."""
     state = MarketState(mid_price=SCRAPED, pressure=0.0)
+    band = DEFAULT_SETTINGS.tick_size * DEFAULT_SETTINGS.band_amplitude_ticks
     for _ in range(100):
         state.tick(scraped_price=SCRAPED, settings=DEFAULT_SETTINGS)
-    band = DEFAULT_SETTINGS.tick_size * DEFAULT_SETTINGS.band_amplitude_ticks
-    assert abs(state.mid_price - SCRAPED) <= band
+        assert abs(state.mid_price - SCRAPED) <= band, (
+            f"mid_price {state.mid_price} exceeded band ±{band} from scraped {SCRAPED}"
+        )
 
 
 def test_pressure_mean_reverts():
