@@ -1518,6 +1518,12 @@ class AutoTradeMarketSettings(Base):
     # Depth levels scanned for P3 level rebalancing
     level_rebalance_depth = Column(Integer, nullable=False, default=5)
 
+    # Pressure model parameters (bid/ask volatility around scraped price)
+    pressure_momentum = Column(Numeric(4, 2), nullable=False, server_default="0.70")
+    pressure_sigma = Column(Numeric(4, 2), nullable=False, server_default="0.25")
+    reversion_alpha = Column(Numeric(4, 2), nullable=False, server_default="0.20")
+    band_amplitude_ticks = Column(Integer, nullable=False, server_default="3")
+
     # Internal trade settings (when liquidity is at target)
     # Interval in seconds for internal trades
     internal_trade_interval = Column(Integer, nullable=True)
