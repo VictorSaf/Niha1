@@ -914,9 +914,10 @@ class AutoTradeExecutor:
 
         1. Check internal_trade_interval cooldown (if market_settings provided)
         2. Find best bid and best ask
-        3. Calculate random price within spread
-        4. Match a BUY order with a SELL order, applying volume limits
-        5. Create trade record
+        3. Find matching BUY and SELL orders
+        4. Set trade price to midpoint of matched order prices (deterministic, no random spread)
+        5. Match quantity, applying volume limits
+        6. Create trade record
 
         Volume limits: if market_settings has internal_trade_volume_min/max,
         the match quantity is capped using log-normal distribution between
@@ -959,24 +960,7 @@ class AutoTradeExecutor:
                 result["reason"] = "no_spread_to_trade_in"
                 return result
 
-            # Calculate random price within spread (rounded to 0.1 EUR)
-            spread = best_ask - best_bid
-            random_offset = Decimal(str(random.random())) * spread
-            trade_price = best_bid + random_offset
-            trade_price = (trade_price / Decimal("0.1")).quantize(Decimal("1")) * Decimal("0.1")
-
-            # Ensure price is within spread
-            trade_price = max(trade_price, best_bid + Decimal("0.1"))
-            trade_price = min(trade_price, best_ask - Decimal("0.1"))
-
-            # If spread is too tight (<=0.1), use mid price
-            if trade_price <= best_bid or trade_price >= best_ask:
-                trade_price = (best_bid + best_ask) / 2
-                trade_price = (trade_price / Decimal("0.1")).quantize(Decimal("1")) * Decimal("0.1")
-
             # Find a SELL order to consume (best ask = lowest price first, oldest first)
-            # We take the best ask order regardless of trade_price - the trade_price is just
-            # for recording the trade, not for filtering orders
             # Filter out near-exhausted orders (remaining < 1) to avoid match_qty rounding to 0
             sell_result = await db.execute(
                 select(Order)
@@ -1020,6 +1004,16 @@ class AutoTradeExecutor:
                 result["reason"] = "only_same_mm_orders_available"
                 return result
 
+            # Trade price = midpoint of the two matched orders' actual prices, rounded to tick.
+            # This ensures every recorded trade price is directly derived from real order prices
+            # in the book (no random spread sampling that produces phantom prices).
+            _tick = max(
+                Decimal(str(market_settings.tick_size)) if market_settings and market_settings.tick_size else Decimal("0.1"),
+                Decimal("0.0001"),
+            )
+            trade_price = (buy_order.price + sell_order.price) / 2
+            trade_price = (trade_price / _tick).quantize(Decimal("1")) * _tick
+
             # Calculate match quantity (smaller of remaining quantities)
             sell_remaining = sell_order.quantity - sell_order.filled_quantity
             buy_remaining = buy_order.quantity - buy_order.filled_quantity
@@ -1030,7 +1024,6 @@ class AutoTradeExecutor:
                 market_settings
                 and market_settings.internal_trade_volume_min is not None
                 and market_settings.internal_trade_volume_max is not None
-                and trade_price > 0
             ):
                 vol_min = float(market_settings.internal_trade_volume_min)
                 vol_max = float(market_settings.internal_trade_volume_max)
