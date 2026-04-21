@@ -729,41 +729,21 @@ class AutoTradeExecutor:
                 if side == OrderSide.SELL and best_ask - tick > best_bid:
                     return best_ask - tick, "priority0_spread_narrow"
 
-        # Priority 1 — gap filling
-        gaps = await AutoTradeExecutor.find_price_gaps(
-            db, certificate_type, side, tick
-        )
-        if gaps:
-            gap_price = AutoTradeExecutor.pick_gap_fill_price(gaps, tick)
-            if gap_price is not None:
-                return gap_price, "priority1_gap_fill"
-
-        # Priority 2 — price alignment toward scraped
+        # Priority 1 — price alignment toward scraped reference price
+        # Both BUY and SELL are allowed to cross the spread:
+        # a BUY above ask (or SELL below bid) executes immediately at the maker's price,
+        # driving the book toward the real market price (convergence).
         if scraped_price and best_price:
             align_price = AutoTradeExecutor.calculate_alignment_price(
                 scraped_price, best_price, side, tick,
                 threshold=tick * (market_settings.alignment_threshold_ticks if market_settings and market_settings.alignment_threshold_ticks else 2),
                 market_settings=market_settings,
             )
-            if align_price is not None:
-                # Both BUY and SELL alignment orders are allowed to cross the spread.
-                # When a BUY alignment price exceeds the best ask (or SELL drops below best bid),
-                # the order executes immediately against resting contra-side orders at the maker's
-                # price — driving the book toward the real market reference price (convergence).
-                if align_price > Decimal("0"):
-                    return align_price, "priority2_price_alignment"
+            if align_price is not None and align_price > Decimal("0"):
+                return align_price, "priority1_price_alignment"
 
-        # Priority 3 — level rebalancing
-        if best_price and market_settings:
-            thin_price = await AutoTradeExecutor.find_thin_levels_near_best(
-                db, certificate_type, side, best_price,
-                max_per_level, depth_levels=(int(market_settings.level_rebalance_depth) if market_settings and market_settings.level_rebalance_depth else 5), tick_size=tick,
-            )
-            if thin_price is not None:
-                return thin_price, "priority3_level_rebalance"
-
-        # Priority 4 — normal (caller handles)
-        return None, "priority4_normal"
+        # Priority 2 — normal (caller uses default price logic)
+        return None, "priority2_normal"
 
     @staticmethod
     async def calculate_current_liquidity(
@@ -1404,6 +1384,13 @@ class AutoTradeExecutor:
             buy_remaining = buy_order.quantity - buy_order.filled_quantity
             if buy_remaining <= 0:
                 continue
+            # Auto-fill zombie buy orders with fractional remainder
+            if buy_remaining < 1:
+                buy_order.filled_quantity = buy_order.quantity
+                buy_order.status = OrderStatus.FILLED
+                buy_order.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                logger.info(f"Auto-filled zombie BUY order {buy_order.id} (remainder {buy_remaining} < 1)")
+                continue
 
             for sell_order in sell_orders:
                 # Check if orders can match (buy price >= sell price)
@@ -1417,6 +1404,15 @@ class AutoTradeExecutor:
 
                 sell_remaining = sell_order.quantity - sell_order.filled_quantity
                 if sell_remaining <= 0:
+                    continue
+
+                # Auto-fill zombie orders: fractional remainder < 1 can never trade
+                # (integer-only certificates). Mark as filled to remove from book.
+                if sell_remaining < 1:
+                    sell_order.filled_quantity = sell_order.quantity
+                    sell_order.status = OrderStatus.FILLED
+                    sell_order.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    logger.info(f"Auto-filled zombie SELL order {sell_order.id} (remainder {sell_remaining} < 1)")
                     continue
 
                 # Calculate match quantity (must be integer)
