@@ -20,8 +20,8 @@ async def test_run_cycle_produces_active_orders():
     After bootstrap + 3 cycles, BUY and SELL orders should exist
     for CEA at prices within a reasonable range.
 
-    Orders may be OPEN or FILLED (if the matching engine crosses them),
-    so we check for any recently-created MM orders on both sides.
+    Only checks OPEN/PARTIALLY_FILLED orders created during this test run
+    (created_at >= test start) to avoid vacuous passes from pre-existing data.
     """
     async with AsyncSessionLocal() as db:
         # Bootstrap rules if they don't exist
@@ -51,7 +51,7 @@ async def test_run_cycle_produces_active_orders():
             )
             await db.commit()
 
-        # Check BUY orders exist (OPEN or FILLED — matching may have crossed them)
+        # Check BUY orders created during THIS test run
         buy_result = await db.execute(
             select(Order).where(
                 and_(
@@ -60,15 +60,15 @@ async def test_run_cycle_produces_active_orders():
                     Order.status.in_([
                         OrderStatus.OPEN,
                         OrderStatus.PARTIALLY_FILLED,
-                        OrderStatus.FILLED,
                     ]),
                     Order.market_maker_id.isnot(None),
+                    Order.created_at >= now,
                 )
             ).order_by(desc(Order.created_at)).limit(10)
         )
         buy_orders = list(buy_result.scalars().all())
 
-        # Check SELL orders exist
+        # Check SELL orders created during THIS test run
         sell_result = await db.execute(
             select(Order).where(
                 and_(
@@ -77,9 +77,9 @@ async def test_run_cycle_produces_active_orders():
                     Order.status.in_([
                         OrderStatus.OPEN,
                         OrderStatus.PARTIALLY_FILLED,
-                        OrderStatus.FILLED,
                     ]),
                     Order.market_maker_id.isnot(None),
+                    Order.created_at >= now,
                 )
             ).order_by(desc(Order.created_at)).limit(10)
         )
@@ -105,9 +105,12 @@ async def test_pressure_model_state_initialized():
     async with AsyncSessionLocal() as db:
         await AutoTradeExecutor.bootstrap_rules(db)
         await db.commit()
-        await AutoTradeExecutor.run_cycle(db)
+        result = await AutoTradeExecutor.run_cycle(db)
 
-    # After a cycle, market states should be populated
-    # (they may or may not be populated depending on whether scraped price is available)
-    # Just verify the dict exists and is accessible
-    assert isinstance(_market_states, dict)
+    # If no rules were processed (e.g. no rules in DB), we cannot verify state
+    if result["rules_processed"] == 0:
+        pytest.skip("No rules processed — cannot verify pressure state")
+
+    assert len(_market_states) > 0, (
+        "Expected market states to be initialized after run_cycle()"
+    )
