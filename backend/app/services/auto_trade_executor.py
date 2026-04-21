@@ -822,7 +822,7 @@ class AutoTradeExecutor:
         Status can be:
         - "below_target": need to place new orders
         - "at_target": within 5% tolerance, do nothing
-        - "above_target": need to consume orders via internal trades
+        - "above_target": liquidity above tolerance band, cancel excess orders
         - "no_target": no target set, do nothing
         """
         settings = await AutoTradeExecutor.get_liquidity_settings(db, certificate_type)
@@ -865,10 +865,10 @@ class AutoTradeExecutor:
         Returns: (status, current_liquidity, target_liquidity, market_settings)
 
         Status can be:
-        - "exceeds_max_threshold": URGENT - exceeds max_liquidity_threshold, trigger aggressive internal trades
+        - "exceeds_max_threshold": URGENT - exceeds max_liquidity_threshold, cancel excess orders aggressively
         - "below_target": need to place new orders
         - "at_target": within 5% tolerance, do nothing
-        - "above_target": need to consume orders via internal trades
+        - "above_target": liquidity above tolerance band, cancel excess orders
         - "no_target": no target set or market disabled
         """
         market_settings = await AutoTradeExecutor.get_market_settings(db, market_key)
@@ -901,262 +901,78 @@ class AutoTradeExecutor:
             return "at_target", current, target, market_settings
 
     @staticmethod
-    async def execute_internal_trade(
+    async def cancel_excess_orders(
         db: AsyncSession,
         certificate_type: CertificateType,
-        admin_user_id: uuid.UUID,
-        market_settings: Optional[AutoTradeMarketSettings] = None,
-        market_key: Optional[str] = None,
+        side: OrderSide,
+        target_liquidity: Decimal,
+        market_type: Optional[MarketType] = None,
+        max_cancels: int = 10,
     ) -> Dict:
         """
-        Execute an internal trade between market makers.
-        Used when liquidity limit is reached - consumes existing orders.
+        Cancel MM orders to bring liquidity at or below target.
 
-        1. Check internal_trade_interval cooldown (if market_settings provided)
-        2. Find best bid and best ask
-        3. Find matching BUY and SELL orders
-        4. Set trade price to midpoint of matched order prices (deterministic, no random spread)
-        5. Match quantity, applying volume limits
-        6. Create trade record
+        Cancels orders at the most extreme price levels first:
+        - BUY orders: cancel lowest prices first (furthest from ask, least price-competitive)
+        - SELL orders: cancel highest prices first (furthest from bid, least price-competitive)
 
-        Volume limits: if market_settings has internal_trade_volume_min/max,
-        the match quantity is capped using log-normal distribution between
-        those bounds. Otherwise, matches the full remaining qty.
+        This is the correct mechanism for reducing excess MM liquidity.
+        No fake trades, no synthetic prices — pure order management.
 
-        Returns: dict with trade details or error
+        Returns: {"success": bool, "cancelled": int, "freed_eur": str, "reason": str|None}
         """
-        result = {
-            "success": False,
-            "trade_id": None,
-            "price": None,
-            "quantity": None,
-            "reason": None,
-        }
+        result: Dict = {"success": False, "cancelled": 0, "freed_eur": "0", "reason": None}
 
         try:
-            # Check internal trade interval cooldown
-            if market_key and market_settings and market_settings.internal_trade_interval:
-                now = datetime.now(timezone.utc).replace(tzinfo=None)
-                last_at = _last_internal_trade_at.get(market_key)
-                if last_at:
-                    elapsed = (now - last_at).total_seconds()
-                    if elapsed < market_settings.internal_trade_interval:
-                        result["reason"] = (
-                            f"internal_trade_cooldown ({int(elapsed)}s / "
-                            f"{market_settings.internal_trade_interval}s)"
+            current = await AutoTradeExecutor.calculate_current_liquidity(
+                db, certificate_type, side, market_type
+            )
+            excess = current - target_liquidity
+            if excess <= 0:
+                result["reason"] = "already_at_target"
+                return result
+
+            # Cancel from most extreme price (least likely to match naturally)
+            order_sort = Order.price.asc() if side == OrderSide.BUY else Order.price.desc()
+
+            freed = Decimal("0")
+            cancelled = 0
+
+            for _ in range(max_cancels):
+                if freed >= excess:
+                    break
+
+                order_result = await db.execute(
+                    select(Order)
+                    .where(
+                        and_(
+                            Order.certificate_type == certificate_type,
+                            Order.side == side,
+                            Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
+                            Order.market_maker_id.isnot(None),
                         )
-                        return result
-
-            # Get best prices
-            best_bid, best_ask = await AutoTradeExecutor.get_best_prices(
-                db, certificate_type
-            )
-
-            if not best_bid or not best_ask:
-                result["reason"] = "no_spread_available"
-                return result
-
-            if best_bid >= best_ask:
-                result["reason"] = "no_spread_to_trade_in"
-                return result
-
-            # Find a SELL order to consume (best ask = lowest price first, oldest first)
-            # Filter out near-exhausted orders (remaining < 1) to avoid match_qty rounding to 0
-            sell_result = await db.execute(
-                select(Order)
-                .where(
-                    and_(
-                        Order.certificate_type == certificate_type,
-                        Order.side == OrderSide.SELL,
-                        Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
-                        Order.market_maker_id.isnot(None),
-                        (Order.quantity - Order.filled_quantity) >= 1,
                     )
+                    .order_by(order_sort, Order.created_at.asc())
+                    .limit(1)
                 )
-                .order_by(Order.price.asc(), Order.created_at.asc())
-                .limit(1)
-            )
-            sell_order = sell_result.scalar_one_or_none()
+                order = order_result.scalar_one_or_none()
+                if not order:
+                    break
 
-            # Find a BUY order to consume (best bid = highest price first, oldest first)
-            buy_result = await db.execute(
-                select(Order)
-                .where(
-                    and_(
-                        Order.certificate_type == certificate_type,
-                        Order.side == OrderSide.BUY,
-                        Order.status.in_([OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]),
-                        Order.market_maker_id.isnot(None),
-                        (Order.quantity - Order.filled_quantity) >= 1,
-                    )
-                )
-                .order_by(Order.price.desc(), Order.created_at.asc())
-                .limit(1)
-            )
-            buy_order = buy_result.scalar_one_or_none()
+                remaining = order.quantity - order.filled_quantity
+                order.status = OrderStatus.CANCELLED
+                order.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                freed += remaining * order.price
+                cancelled += 1
+                await db.flush()
 
-            if not sell_order or not buy_order:
-                result["reason"] = "no_matching_orders_found"
-                return result
-
-            # Don't match same market maker
-            if sell_order.market_maker_id == buy_order.market_maker_id:
-                result["reason"] = "only_same_mm_orders_available"
-                return result
-
-            # Trade price = midpoint of the two matched orders' actual prices, rounded to tick.
-            # This ensures every recorded trade price is directly derived from real order prices
-            # in the book (no random spread sampling that produces phantom prices).
-            _tick = max(
-                Decimal(str(market_settings.tick_size)) if market_settings and market_settings.tick_size else Decimal("0.1"),
-                Decimal("0.0001"),
-            )
-            trade_price = (buy_order.price + sell_order.price) / 2
-            trade_price = (trade_price / _tick).quantize(Decimal("1")) * _tick
-
-            # Calculate match quantity (smaller of remaining quantities)
-            sell_remaining = sell_order.quantity - sell_order.filled_quantity
-            buy_remaining = buy_order.quantity - buy_order.filled_quantity
-            max_available_qty = min(sell_remaining, buy_remaining)
-
-            # Apply internal trade volume limits from market_settings
-            if (
-                market_settings
-                and market_settings.internal_trade_volume_min is not None
-                and market_settings.internal_trade_volume_max is not None
-            ):
-                vol_min = float(market_settings.internal_trade_volume_min)
-                vol_max = float(market_settings.internal_trade_volume_max)
-                if vol_max <= vol_min:
-                    vol_max = vol_min * 2
-                variety = market_settings.volume_variety or 5
-                sigma = 0.05 + (max(1, min(10, variety)) - 1) * 0.083
-                raw = random.lognormvariate(0.0, sigma)
-                midpoint = (vol_min + vol_max) / 2.0
-                volume_eur = max(vol_min, min(vol_max, raw * midpoint))
-                # Convert EUR volume to quantity using trade price
-                target_qty = Decimal(str(round(volume_eur, 2))) / trade_price
-                match_qty = min(max_available_qty, target_qty)
-            else:
-                match_qty = max_available_qty
-
-            # Round to integer
-            match_qty = match_qty.quantize(Decimal("1"), rounding=ROUND_DOWN)
-
-            if match_qty <= 0:
-                result["reason"] = "no_quantity_to_match"
-                return result
-
-            # Create trade
-            trade = CashMarketTrade(
-                buy_order_id=buy_order.id,
-                sell_order_id=sell_order.id,
-                market_maker_id=buy_order.market_maker_id,
-                certificate_type=certificate_type,
-                price=trade_price,
-                quantity=match_qty,
-                executed_at=datetime.now(timezone.utc).replace(tzinfo=None),
-            )
-            db.add(trade)
-            await db.flush()
-
-            # Persist trade price in price_history for chart data
-            db.add(PriceHistory(
-                certificate_type=certificate_type,
-                price=trade_price,
-                currency="EUR",
-                source="auto_trade",
-                recorded_at=trade.executed_at,
-            ))
-
-            # Create audit ticket for internal trade
-            buy_ticket_id = getattr(buy_order, 'ticket_id', None)
-            sell_ticket_id = getattr(sell_order, 'ticket_id', None)
-            related = [tid for tid in [buy_ticket_id, sell_ticket_id] if tid]
-
-            trade_ticket = await TicketService.create_ticket(
-                db=db,
-                action_type="TRADE_EXECUTED",
-                entity_type="Trade",
-                entity_id=trade.id,
-                status=TicketStatus.SUCCESS,
-                user_id=admin_user_id,
-                market_maker_id=buy_order.market_maker_id,
-                request_payload={
-                    "match_type": "internal_trade",
-                    "buy_order_id": str(buy_order.id),
-                    "sell_order_id": str(sell_order.id),
-                },
-                response_data={
-                    "trade_id": str(trade.id),
-                    "buy_order_id": str(buy_order.id),
-                    "sell_order_id": str(sell_order.id),
-                    "buyer_mm_id": str(buy_order.market_maker_id) if buy_order.market_maker_id else None,
-                    "seller_mm_id": str(sell_order.market_maker_id) if sell_order.market_maker_id else None,
-                    "certificate_type": certificate_type.value,
-                    "price": str(trade_price),
-                    "quantity": str(match_qty),
-                },
-                related_ticket_ids=related,
-                tags=["trade", "internal_trade", certificate_type.value.lower()],
-            )
-            trade.ticket_id = trade_ticket.ticket_id
-
-            # Update buy order
-            buy_order.filled_quantity = buy_order.filled_quantity + match_qty
-            if buy_order.filled_quantity >= buy_order.quantity:
-                buy_order.status = OrderStatus.FILLED
-            else:
-                buy_order.status = OrderStatus.PARTIALLY_FILLED
-            buy_order.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-
-            # Update sell order
-            sell_order.filled_quantity = sell_order.filled_quantity + match_qty
-            if sell_order.filled_quantity >= sell_order.quantity:
-                sell_order.status = OrderStatus.FILLED
-            else:
-                sell_order.status = OrderStatus.PARTIALLY_FILLED
-            sell_order.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-
-            await db.commit()
-
-            logger.info(
-                f"Internal trade executed: {match_qty} {certificate_type.value} @ {trade_price} "
-                f"(BUY {buy_order.id} <-> SELL {sell_order.id})"
-            )
-
-            # Broadcast trade to all clients so chart + activity update in real-time
-            try:
-                from app.api.v1.client_ws import client_ws_manager
-                asyncio.create_task(client_ws_manager.broadcast_to_all({
-                    "type": "trade_executed",
-                    "data": {
-                        "id": str(trade.id),
-                        "certificate_type": certificate_type.value,
-                        "price": float(trade_price),
-                        "quantity": int(round(float(match_qty))),
-                        "side": "BUY",
-                        "executed_at": trade.executed_at.isoformat() if trade.executed_at else datetime.now(timezone.utc).isoformat(),
-                    },
-                }))
-            except Exception as ws_err:
-                logger.debug(f"WS broadcast failed for internal trade: {ws_err}")
-
-            result["success"] = True
-            result["trade_id"] = str(trade.id) if hasattr(trade, 'id') else None
-            result["price"] = str(trade_price)
-            result["quantity"] = str(match_qty)
-            result["buy_order_id"] = str(buy_order.id)
-            result["sell_order_id"] = str(sell_order.id)
-
-            # Update interval tracker
-            if market_key:
-                _last_internal_trade_at[market_key] = datetime.now(timezone.utc).replace(tzinfo=None)
-
+            result["success"] = cancelled > 0
+            result["cancelled"] = cancelled
+            result["freed_eur"] = str(freed.quantize(Decimal("0.01")))
             return result
 
         except Exception as e:
-            logger.exception(f"Error executing internal trade: {e}")
+            logger.exception(f"Error cancelling excess orders: {e}")
             await db.rollback()
             result["reason"] = f"exception: {str(e)}"
             return result
@@ -1780,40 +1596,24 @@ class AutoTradeExecutor:
 
             # Handle based on liquidity status
             if status == "exceeds_max_threshold":
-                # URGENT: Liquidity exceeds max threshold - aggressively reduce via internal trades
+                # URGENT: Liquidity exceeds max threshold - cancel excess orders to reduce
                 max_threshold = market_settings.max_liquidity_threshold if market_settings else None
                 logger.warning(
                     f"Rule {rule.name}: Liquidity EXCEEDS MAX THRESHOLD ({current_liq}/{max_threshold} EUR) - "
-                    f"executing internal trades to reduce"
+                    f"cancelling excess orders"
                 )
 
-                # Execute multiple internal trades to bring liquidity below threshold
-                trades_executed = 0
-                max_trades = 5  # Limit to avoid infinite loops
-
-                while trades_executed < max_trades:
-                    internal_result = await AutoTradeExecutor.execute_internal_trade(
-                        db, certificate_type, admin_user_id,
-                        market_settings=market_settings,
-                        market_key=market_key,
-                    )
-
-                    if not internal_result["success"]:
-                        break
-
-                    trades_executed += 1
+                cancel_result = await AutoTradeExecutor.cancel_excess_orders(
+                    db, certificate_type, rule.side,
+                    max_threshold if max_threshold else Decimal("0"),
+                    market_type=market_type,
+                    max_cancels=10,
+                )
+                if cancel_result["cancelled"] > 0:
                     logger.info(
-                        f"Rule {rule.name} threshold reduction trade #{trades_executed}: "
-                        f"{internal_result['quantity']} @ {internal_result['price']}"
+                        f"Rule {rule.name}: Cancelled {cancel_result['cancelled']} orders, "
+                        f"freed {cancel_result['freed_eur']} EUR"
                     )
-
-                    # Re-check liquidity
-                    new_current = await AutoTradeExecutor.calculate_current_liquidity(
-                        db, certificate_type, rule.side, market_type
-                    )
-                    if new_current and max_threshold and new_current <= max_threshold:
-                        logger.info(f"Rule {rule.name}: Liquidity now {new_current} EUR, below threshold")
-                        break
 
                 # Update rule execution tracking
                 rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -1821,10 +1621,10 @@ class AutoTradeExecutor:
                 rule.execution_count = (rule.execution_count or 0) + 1
                 await db.commit()
 
-                result["success"] = trades_executed > 0
+                result["success"] = cancel_result["cancelled"] > 0
                 result["action"] = "threshold_reduction"
-                result["trades_executed"] = trades_executed
-                result["reason"] = f"executed {trades_executed} internal trades to reduce excess liquidity"
+                result["cancelled"] = cancel_result["cancelled"]
+                result["reason"] = f"cancelled {cancel_result['cancelled']} orders to reduce excess liquidity"
                 return result
 
             if status == "at_target":
@@ -1876,30 +1676,19 @@ class AutoTradeExecutor:
                                 )
 
                 if status == "at_target":
-                    # Spread OK, price aligned — try periodic internal trade if interval allows
-                    if (
-                        market_settings
-                        and market_settings.internal_trade_interval
-                        and market_settings.internal_trade_volume_min is not None
-                    ):
-                        internal_result = await AutoTradeExecutor.execute_internal_trade(
-                            db, certificate_type, admin_user_id,
-                            market_settings=market_settings,
-                            market_key=market_key,
+                    # Spread OK, price aligned — try real order matching (crossing orders only)
+                    trades_matched = await AutoTradeExecutor.try_match_orders(
+                        db, certificate_type, admin_user_id
+                    )
+                    if trades_matched > 0:
+                        logger.info(
+                            f"Rule {rule.name}: At-target — matched {trades_matched} crossing order(s)"
                         )
-                        if internal_result["success"]:
-                            logger.info(
-                                f"Rule {rule.name}: At-target periodic internal trade: "
-                                f"{internal_result['quantity']} @ {internal_result['price']}"
-                            )
-                            result["success"] = True
-                            result["action"] = "internal_trade_periodic"
-                            result["internal_trade"] = internal_result
-                        else:
-                            result["reason"] = f"at_target_internal_skipped: {internal_result['reason']}"
-                            result["action"] = "skipped"
+                        result["success"] = True
+                        result["action"] = "at_target_orders_matched"
+                        result["trades_matched"] = trades_matched
                     else:
-                        result["reason"] = "liquidity_at_target"
+                        result["reason"] = "at_target_no_crossing_orders"
                         result["action"] = "skipped"
 
                     rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -1953,16 +1742,17 @@ class AutoTradeExecutor:
                                 )
 
                 if status == "above_target":
-                    # Spread OK, price aligned — consume excess via internal trade
+                    # Spread OK, price aligned — cancel excess orders to reduce liquidity
                     logger.info(
                         f"Rule {rule.name}: Liquidity above target ({current_liq}/{target_liq} EUR) - "
-                        f"executing internal trade to consume excess"
+                        f"cancelling excess orders"
                     )
 
-                    internal_result = await AutoTradeExecutor.execute_internal_trade(
-                        db, certificate_type, admin_user_id,
-                        market_settings=market_settings,
-                        market_key=market_key,
+                    cancel_result = await AutoTradeExecutor.cancel_excess_orders(
+                        db, certificate_type, rule.side,
+                        target_liq if target_liq else Decimal("0"),
+                        market_type=market_type,
+                        max_cancels=5,
                     )
 
                     rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -1970,18 +1760,18 @@ class AutoTradeExecutor:
                     rule.execution_count = (rule.execution_count or 0) + 1
                     await db.commit()
 
-                    result["success"] = internal_result["success"]
-                    result["action"] = "internal_trade"
-                    result["internal_trade"] = internal_result
+                    result["success"] = cancel_result["success"]
+                    result["action"] = "cancel_excess_orders"
+                    result["cancelled"] = cancel_result["cancelled"]
 
-                    if internal_result["success"]:
+                    if cancel_result["success"]:
                         logger.info(
-                            f"Rule {rule.name} executed internal trade: "
-                            f"{internal_result['quantity']} @ {internal_result['price']}"
+                            f"Rule {rule.name}: Cancelled {cancel_result['cancelled']} excess orders, "
+                            f"freed {cancel_result['freed_eur']} EUR"
                         )
                     else:
-                        result["reason"] = f"internal_trade_failed: {internal_result['reason']}"
-                        logger.warning(f"Rule {rule.name} internal trade failed: {internal_result['reason']}")
+                        result["reason"] = f"cancel_excess_failed: {cancel_result['reason']}"
+                        logger.warning(f"Rule {rule.name} excess cancel failed: {cancel_result['reason']}")
 
                     return result
 
@@ -2140,38 +1930,39 @@ class AutoTradeExecutor:
                             break
 
                     if not shifted:
-                        # Fallback: execute internal trade to free capacity
-                        if market_settings and market_settings.internal_trade_volume_min is not None:
-                            logger.info(
-                                f"Rule {rule.name}: All price levels at max capacity — "
-                                f"executing internal trade to free capacity"
-                            )
-                            internal_result = await AutoTradeExecutor.execute_internal_trade(
-                                db, certificate_type, admin_user_id,
-                                market_settings=market_settings,
-                                market_key=market_key,
-                            )
-                            rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                            rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
-                                rule,
-                                interval_variation_pct=_interval_var,
-                                override_interval_factor=None,
-                            )
-                            rule.execution_count = (rule.execution_count or 0) + 1
-                            await db.commit()
+                        # Fallback: cancel one order at the most extreme price level to free capacity
+                        logger.info(
+                            f"Rule {rule.name}: All price levels at max capacity — "
+                            f"cancelling one extreme order to free capacity"
+                        )
+                        # Cancel 1 order at the most extreme price level
+                        cancel_result = await AutoTradeExecutor.cancel_excess_orders(
+                            db, certificate_type, rule.side,
+                            # target = current - 1 EUR to force at least 1 cancel
+                            (current_liq or Decimal("0")) - Decimal("1"),
+                            market_type=market_type,
+                            max_cancels=1,
+                        )
+                        rule.last_executed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
+                            rule,
+                            interval_variation_pct=_interval_var,
+                            override_interval_factor=None,
+                        )
+                        rule.execution_count = (rule.execution_count or 0) + 1
+                        await db.commit()
 
-                            if internal_result["success"]:
-                                result["success"] = True
-                                result["action"] = "internal_trade_capacity_relief"
-                                result["internal_trade"] = internal_result
-                                result["reason"] = "capacity_full_executed_internal_trade"
-                                logger.info(
-                                    f"Rule {rule.name}: Capacity relief trade: "
-                                    f"{internal_result['quantity']} @ {internal_result['price']}"
-                                )
-                            else:
-                                result["reason"] = f"all_price_levels_at_max_capacity_internal_failed: {internal_result['reason']}"
-                            return result
+                        if cancel_result["success"]:
+                            result["success"] = True
+                            result["action"] = "cancel_for_capacity_relief"
+                            result["cancelled"] = cancel_result["cancelled"]
+                            result["reason"] = "capacity_full_cancelled_one_order"
+                            logger.info(
+                                f"Rule {rule.name}: Cancelled 1 order for capacity relief"
+                            )
+                        else:
+                            result["reason"] = f"all_price_levels_at_max_capacity_cancel_failed: {cancel_result['reason']}"
+                        return result
 
                         result["reason"] = "all_price_levels_at_max_capacity"
                         rule.next_execution_at = AutoTradeExecutor.calculate_next_execution_time(
@@ -2314,9 +2105,6 @@ class AutoTradeExecutor:
 # Background task for running auto-trade execution
 _executor_task: Optional[asyncio.Task] = None
 _executor_running = False
-
-# Module-level internal trade interval tracking (per market_key)
-_last_internal_trade_at: Dict[str, datetime] = {}
 
 # Module-level status tracking (read by GET /admin/auto-trade-status)
 _executor_status: Dict = {
