@@ -711,7 +711,17 @@ class AutoTradeExecutor:
         )
 
         # Priority 0 — spread narrowing (first when MM introduces order)
-        if best_bid is not None and best_ask is not None:
+        # Skip P0 when P2 alignment would move in the opposite direction:
+        # - SELL rule: if scraped >> ask (rising market), P0 would undercut the ask and anchor
+        #   price too low; let P2 drive the ask upward instead.
+        # - BUY rule: if scraped << bid (falling market), P0 would push bid too high; let P2 drive bid down.
+        _p0_suppressed = False
+        if scraped_price is not None and not is_swap:
+            if side == OrderSide.SELL and best_ask is not None and scraped_price > best_ask + tick:
+                _p0_suppressed = True  # Rising market — P2 should raise the ask, not P0 lower it
+            if side == OrderSide.BUY and best_bid is not None and scraped_price < best_bid - tick:
+                _p0_suppressed = True  # Falling market — P2 should lower the bid, not P0 raise it
+        if not _p0_suppressed and best_bid is not None and best_ask is not None:
             spread = best_ask - best_bid
             if spread > target_spread:
                 if side == OrderSide.BUY and best_bid + tick < best_ask:
