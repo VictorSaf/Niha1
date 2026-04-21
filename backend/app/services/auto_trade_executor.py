@@ -11,14 +11,12 @@ import logging
 import random
 import uuid
 from datetime import datetime, timezone, timedelta
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
-from sqlalchemy import func
 
 from app.models.models import (
     AutoTradeMarketSettings,
@@ -26,7 +24,6 @@ from app.models.models import (
     AutoTradeQuantityMode,
     AutoTradeRule,
     AutoTradeSettings,
-    CashMarketTrade,
     CertificateType,
     MarketMakerClient,
     MarketMakerType,
@@ -34,13 +31,8 @@ from app.models.models import (
     Order,
     OrderSide,
     OrderStatus,
-    PriceHistory,
-    TicketStatus,
-    TransactionType,
 )
-from app.services.market_maker_service import MarketMakerService
 from app.services.price_scraper import price_scraper
-from app.services.ticket_service import TicketService
 
 logger = logging.getLogger(__name__)
 
@@ -586,7 +578,7 @@ class AutoTradeExecutor:
             for _ in range(cycle_result["orders_placed"]):
                 results.append({"success": True, "order_id": "via_tick"})
             for _ in range(cycle_result["rules_processed"] - cycle_result["orders_placed"]):
-                results.append({"success": False, "reason": "tick_no_order"})
+                results.append({"success": True, "reason": "tick_no_order"})
             for _ in range(cycle_result["errors"]):
                 results.append({"success": False, "reason": "tick_error"})
             return results
