@@ -3828,62 +3828,6 @@ async def place_random_order(
         bid_levels_set = set(bid_levels)
         ask_levels_set = set(ask_levels)
 
-        # ════════════════════════════════════════════════════════════════
-        # STEP 1a: Spread reduction — internal trade when spread >> target
-        # Threshold derived from avg_spread (e.g. 5×) or min 0.5 EUR
-        # Execute internal trade between MMs to consume top of book.
-        # ════════════════════════════════════════════════════════════════
-        market_settings_spread = bid_target or ask_target
-        avg_spread_val = (
-            Decimal(str(market_settings_spread.avg_spread))
-            if market_settings_spread and market_settings_spread.avg_spread is not None
-            else Decimal("0.1")
-        )
-        spread_reduction_threshold = max(Decimal("0.5"), avg_spread_val * Decimal("5"))
-        current_spread = best_ask - best_bid
-        if current_spread > spread_reduction_threshold:
-            from app.services.auto_trade_executor import AutoTradeExecutor
-
-            market_settings = market_settings_spread
-            internal_result = await AutoTradeExecutor.execute_internal_trade(
-                db=db,
-                certificate_type=CertificateType.CEA,
-                admin_user_id=current_user.id,
-                market_settings=market_settings,
-                market_key="CEA_BID",
-            )
-            if internal_result.get("success"):
-                logger.info(
-                    f"place_random_order: spread reduction internal trade executed "
-                    f"(spread_before={current_spread})"
-                )
-                # Frontend expects side, market_maker as strings; volume_eur derived
-                _p = Decimal(str(internal_result.get("price") or "0"))
-                _q = Decimal(str(internal_result.get("quantity") or "0"))
-                _vol = str(_p * _q) if _p and _q else ""
-                return {
-                    "success": True,
-                    "action": "spread_reduction_internal_trade",
-                    "side": "internal_trade",
-                    "price": internal_result.get("price", ""),
-                    "quantity": internal_result.get("quantity", ""),
-                    "volume_eur": _vol,
-                    "is_market_like": True,
-                    "trades_matched": 0,
-                    "market_maker": "",
-                    "status": "internal_trade",
-                    "spread_corrected": False,
-                    "spread_orders": [],
-                    "internal_trade": internal_result,
-                    "scraped_price": str(scraped_cea) if scraped_cea else None,
-                    "spread_before": str(current_spread),
-                    "bid_liquidity_pct": str(round(bid_liq / bid_target_eur * 100, 1))
-                    if bid_target_eur > 0
-                    else None,
-                    "ask_liquidity_pct": str(round(ask_liq / ask_target_eur * 100, 1))
-                    if ask_target_eur > 0
-                    else None,
-                }
 
         # ════════════════════════════════════════════════════════════════
         # STEP 1 (pre-step): Spread + gap correction
