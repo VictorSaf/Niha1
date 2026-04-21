@@ -736,12 +736,10 @@ class AutoTradeExecutor:
                 market_settings=market_settings,
             )
             if align_price is not None:
-                # Guard: BUY must not cross above best_ask (would immediately execute at wrong price).
-                # SELL is intentionally allowed to cross below best_bid — this causes the order to
-                # execute immediately against old bids at their (better) price, consuming stale volume
-                # and driving the book toward the real market price (convergence).
-                if side == OrderSide.BUY and best_ask is not None and align_price >= best_ask:
-                    align_price = best_ask - tick
+                # Both BUY and SELL alignment orders are allowed to cross the spread.
+                # When a BUY alignment price exceeds the best ask (or SELL drops below best bid),
+                # the order executes immediately against resting contra-side orders at the maker's
+                # price — driving the book toward the real market reference price (convergence).
                 if align_price > Decimal("0"):
                     return align_price, "priority2_price_alignment"
 
@@ -1355,6 +1353,7 @@ class AutoTradeExecutor:
         Returns: number of trades created
         """
         trades_created = 0
+        _trade_events: list = []
 
         # Get crossing orders: buy orders that can match with sell orders
         # BUY orders sorted by price DESC (highest first)
@@ -1445,6 +1444,16 @@ class AutoTradeExecutor:
                 db.add(trade)
                 await db.flush()
 
+                # Collect for WS broadcast after commit
+                _trade_events.append({
+                    "id": str(trade.id),
+                    "certificate_type": certificate_type.value,
+                    "price": float(trade_price),
+                    "quantity": int(round(float(match_qty))),
+                    "side": "BUY",
+                    "executed_at": trade.executed_at.isoformat(),
+                })
+
                 # Persist trade price in price_history for chart data
                 db.add(PriceHistory(
                     certificate_type=certificate_type,
@@ -1519,9 +1528,14 @@ class AutoTradeExecutor:
             await db.commit()
             logger.info(f"Created {trades_created} auto-trade matches for {certificate_type.value}")
 
-            # Broadcast orderbook_updated so activity feed refreshes
+            # Broadcast each trade + orderbook update so UI trade feed refreshes in real-time
             try:
                 from app.api.v1.client_ws import client_ws_manager
+                for te in _trade_events:
+                    asyncio.create_task(client_ws_manager.broadcast_to_all({
+                        "type": "trade_executed",
+                        "data": te,
+                    }))
                 asyncio.create_task(client_ws_manager.broadcast_to_all(
                     {"type": "orderbook_updated", "data": {"certificate_type": certificate_type.value}},
                 ))
